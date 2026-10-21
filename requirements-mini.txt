@@ -1,0 +1,12 @@
+# Python environment on the mini (uv pip install -r requirements-mini.txt)
+TotalSegmentator==2.18.0
+numpy
+scipy
+scikit-image
+pydicom
+nibabel
+SimpleITK
+aiohttp
+idc-index
+playwright
+pytest
