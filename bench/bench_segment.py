@@ -89,7 +89,7 @@ def main() -> int:
                          and c["dice_min"] >= a.min_dice and mean >= 0.95) if a.out_name != a.ref else True
     write(Path(a.out), res)
     print(json.dumps({"ok": p.returncode == 0, "out": a.out, "wall_s": res["wall_s"],
-                      "totalsegmentator_s": res.get("segment", {}).get("timings_s", {}).get("totalsegmentator"),
+                      "totalsegmentator_s": res.get("segment", {}).get("totalsegmentator", {}).get("wall_s"),
                       "correctness_pass": res.get("correctness", {}).get("pass"),
                       "dice_min": res.get("correctness", {}).get("dice_min")}))
     return 0 if p.returncode == 0 else 1
