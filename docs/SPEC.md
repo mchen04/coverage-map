@@ -7,7 +7,7 @@ changing an interface.
 
 ## Hosts and locations
 
-- Code is edited on mbp-main in this checkout. Everything executes on the Mac mini in
+- Code is edited on mbp-old in this checkout (/Users/michaelchen/Projects/Apps/coverage-map; nothing that can exceed 4 GB runs here). Everything executes on the Mac mini in
   `$MINI_WORK=/Users/michaelchen/coverage-map-work` (task-owned):
   `venv/` (Python 3.12, `requirements-mini.txt`), `deps/node` (Node 24 + pnpm 12),
   `deps/orthanc` (Orthanc 1.13 + DicomWeb plugin), `ohif/` (OHIF v3.13.13 checkout),
@@ -117,6 +117,12 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
 - For stack viewports `sop` is the displayed instance and fixes `k` (authoritative over
   corners for the slice axis). Unknown `sop`/`series` → `ignored.unknown_image`.
 - `voi` is in modality units (HU after rescale).
+- Reader actions are events in the same log (so replay reproduces them):
+  `{"kind": "annotation", "organ": "<key>", "action": "done" | "na" | "flag" | "clear", "note": "..."}`
+  (`done` = the reader attests review of an organ the measurement does not show as reviewed;
+  `na` = not applicable, e.g. absent/out of scope; `flag` = suspicious segmentation/outline;
+  `clear` removes that organ's annotations) and
+  `{"kind": "finish", "confirmed": true|false, "remaining": ["<key>", ...]}`.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -157,7 +163,11 @@ displayed but the voxel was never inside the visible rectangle), `never_displaye
  "timing_ms": {"score": 0.0}}
 ```
 
-`unseen` values are fractions of organ voxels. `baseline` is the per-image viewed/unviewed
+`unseen` values are fractions of organ voxels. Each organ also carries the reader layer
+`"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
+`status` never changes because of annotations. `summary` adds `attested` (reader done on a
+non-reviewed organ), `not_applicable`, `flagged`, and `remaining` (keys of organs that are not
+reviewed and not marked done/na — the finish list), plus `finished` (last finish event or null). `baseline` is the per-image viewed/unviewed
 model (`covmap/baseline.py`): an image counts as viewed when it was displayed in any
 viewport for any duration under any window and zoom (≥ 1 view event naming it, or a volume
 viewport state whose plane is that acquisition slice). This models the described
@@ -173,10 +183,16 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/organs` | `seg/organs.json` |
 | `GET /api/cases/{case}/volume` | `volume.json` |
 | `GET /api/cases/{case}/meshes.json`, `/meshes.bin` | mesh files (bin as `application/octet-stream`) |
-| `POST /api/sessions` `{case, label?}` | `{session, case}` |
+| `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
 | `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) |
 | `GET /api/sessions/{id}/coverage` | committed coverage JSON |
 | `GET /api/sessions/{id}/events.jsonl` | the session's event log |
+| `POST /api/sessions/{id}/rules` `{min_dwell_ms?, reviewed_threshold?, skipped_threshold?}` | re-score the whole session under these research rules; returns coverage JSON |
+| `GET /api/sessions/{id}/timeline?frames=40` | `{frames: [{t_ms, summary, statuses: {key: status}}]}` coverage snapshots for replay |
+| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log, coverage JSON, per-organ CSV (attachment) |
+| `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
+| `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
+| `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
 | `GET /dicom-web/*`, `/wado*` | reverse proxy to Orthanc (`http://127.0.0.1:8042`) |
 | `GET /render.html`, `/render/*` | standalone vtk.js organ-map page used by `covmap render` |
 | `GET /*` | OHIF dist (`$COVMAP_OHIF_DIST`), SPA fallback to `index.html` |
@@ -211,3 +227,27 @@ Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout.
 
 `expected` gives the intended status per organ key; `"*"` covers every other organ in the
 case. A scenario passes when every organ's status equals its expected status.
+
+## Demo and sample sessions
+
+- The default demo case is `pancreas-0051` (configurable `COVMAP_DEMO_CASE`); `GET /` opens
+  `/coverage?StudyInstanceUIDs=<its study>` directly, so a visitor needs no import step.
+- Sample sessions live in `$COVMAP_DATA/samples/<case>/<name>.jsonl` with `<name>.json`
+  metadata `{label, source, description, created}`. They are real recordings of the OHIF
+  instrumentation driven by the scripted browser reader (`source: browser-scripted`) or
+  labeled simulated logs (`source: simulated`); the UI shows the label and source.
+
+## UI contract (coverage mode, one page)
+
+The page never scrolls; only the organ list (and dialogs' lists) scroll. Right panel, top to
+bottom: summary line (reviewed/partial/skipped/remaining counts, overall %, session menu:
+new reading, load sample, replay, rules, export), the vtk.js 3D map (click a gray/yellow organ
+→ jump to its center slice with the correct window preset), quick actions (Next gap,
+Soft/Lung/Bone windows, Finish), the live organ list (status dot, %, window badge, reader
+state; row click jumps; row actions done / N/A / flag), and a one-line research-use note.
+Finish opens a compact list of remaining gray/yellow organs with Go back / Confirm finish.
+Keyboard: `N` next gap, `D` mark selected organ done, `A` mark selected organ not applicable,
+`G` flag selected organ's segmentation, `O` toggle selected organ outline on the image,
+`F` finish, `1` soft, `2` lung, `3` bone, `4` liver, `5` brain (coverage mode only; stock
+modes keep stock hotkeys). Every claim in the UI stays research-only: coverage measures what
+was displayed (slice, region, window, dwell), not what was perceived or diagnosed.
