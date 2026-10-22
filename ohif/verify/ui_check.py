@@ -16,6 +16,7 @@ Writes c-*.png screenshots and c-ui-check-<case>.json; exit 0 only if every chec
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 import re
@@ -36,6 +37,7 @@ PRESET_BUTTON = {"1": "soft", "2": "lung", "3": "bone"}
 SOURCE_TEXT = {"browser-scripted": "scripted automated reading (not a human)",
                "simulated": "simulated reading (not a human)", "ohif": "reader in this viewer"}
 HINT_RE = re.compile(r"(\d+% unseen · )?(never shown|wrong window|off-view|too brief)")
+FIRST_USE_KEY = "covmap:first-use-hint"
 MAP_BG = (7, 10, 20)  # organ-map background (0.027, 0.039, 0.078)
 
 VIEW_JS = r"""
@@ -103,6 +105,31 @@ ROWS_JS = r"""
   key: r.dataset.key, status: r.dataset.status, reader: r.dataset.reader, flagged: r.dataset.flagged,
   pct: (r.querySelector('.cm-pct') || {}).textContent || null,
   hint: (r.querySelector('.cm-hint') || {}).textContent || null}))
+"""
+
+
+# R4: per organ row, is the name cut (beyond its two lines, or sideways) and is the hint shown
+NAMES_JS = r"""
+() => [...document.querySelectorAll('[data-testid^="covmap-organ-"][data-key]')].map(r => {
+  const n = r.querySelector('.cm-name'), h = r.querySelector('.cm-hint');
+  const nb = n.getBoundingClientRect(), hb = h ? h.getBoundingClientRect() : null;
+  return {key: r.dataset.key, name: n.textContent, w: Math.round(nb.width), lines: Math.round(nb.height / 13),
+          cut: n.scrollHeight > n.clientHeight + 1 || n.scrollWidth > n.clientWidth + 1,
+          hint: h ? h.textContent : null, hint_h: hb ? Math.round(hb.height) : 0,
+          hint_cut: h ? h.scrollWidth > h.clientWidth + 1 : false};
+})
+"""
+# R1: what the panel shows: rows (status, floored %) and the header counts
+SCREEN_JS = r"""
+() => ({rows: [...document.querySelectorAll('[data-testid^="covmap-organ-"][data-key]')].map(r => ({
+          key: r.dataset.key, status: r.dataset.status, pct: (r.querySelector('.cm-pct') || {}).textContent || null})),
+        counts: [...document.querySelectorAll('[data-testid="covmap-summary"] .cm-count')].map(e => parseInt(e.textContent.trim(), 10)),
+        finished: !!document.querySelector('[data-testid="covmap-finished"]')})
+"""
+# R5: the viewer's own image counter, "I:99 (87/185)"
+OVERLAY_JS = r"""
+() => { const m = /I:\s*(\d+)\s*\((\d+)\/(\d+)\)/.exec(document.body.innerText);
+        return m ? {instance: +m[1], n: +m[2], of: +m[3]} : null; }
 """
 
 
@@ -339,8 +366,9 @@ def main() -> int:
                      && e.textContent.trim() === 'Coverage Map' && e.getBoundingClientRect().width > 0)"""),
                  "panel label 'Coverage Map' missing")
             need(tid("covmap-resumed").count() == 0, "first open shows 'resumed'")
+            need(tid("covmap-first-use").is_visible(), "R6: no first-use hint on a fresh browser")
             return {"open_s": round(time.perf_counter() - t0, 2), "viewer": info["state"], "marks_ms": marks_,
-                    "voi": view(), "title": title}
+                    "voi": view(), "title": title, "first_use_hint": tid("covmap-first-use").inner_text()}
         opened = C.run("open coverage mode: first image, case lookup, session, map ready, soft window, title", open_app)
         if not opened:
             browser.close()
@@ -363,6 +391,27 @@ def main() -> int:
             need(all(sw <= cw + 1 for sw, cw in lay["header"]), f"header line overflows sideways: {lay['header']}")
             return {tag: lay}
         C.run("no page scroll at 1440x900", lambda: no_scroll("1440x900"))
+
+        # ---- R6 first-use hint -------------------------------------------------------------
+        def first_use():
+            hint = tid("covmap-first-use")
+            text = hint.inner_text()
+            need("Scroll the CT" in text and "green" in text and "next gap" in text, f"hint text {text!r}")
+            at_1440 = round(hint.bounding_box()["height"])
+            page.set_viewport_size({"width": 1280, "height": 800})
+            page.wait_for_timeout(1200)
+            lay = no_scroll("1280x800 with the first-use hint")
+            at_1280 = round(hint.bounding_box()["height"])
+            shot("r6-first-use-1280x800", tid("covmap-panel"))
+            tid("covmap-first-use-dismiss").click()
+            hint.wait_for(state="detached", timeout=2000)
+            stored = page.evaluate("k => localStorage.getItem(k)", FIRST_USE_KEY)
+            need(stored == "dismissed", f"dismissal not remembered: {FIRST_USE_KEY}={stored!r}")
+            page.set_viewport_size({"width": 1440, "height": 900})
+            page.wait_for_timeout(800)
+            return {"text": text, "height_px": {"1440": at_1440, "1280": at_1280}, "stored": stored, **lay}
+        C.run("R6 first-use hint on a fresh browser; no page scroll with it at 1280x800; dismissed and remembered",
+              first_use)
 
         # ---- U6 radiological orientation -------------------------------------------------
         def orientation():
@@ -502,6 +551,32 @@ def main() -> int:
             return {"partial_rows": partial}
         C.run("U20/U11 rows floor the % (never shows the threshold early); hints '34% unseen · reason'", pct_and_hints)
 
+        def names_whole(tag, need_hints=False):
+            """R4: no organ name is cut; a hint never takes the name's width (it sits under the
+            name, and a two-line name hides it)."""
+            rows_ = page.evaluate(NAMES_JS)
+            cut = [(r["key"], r["name"], r["w"]) for r in rows_ if r["cut"]]
+            need(not cut, f"{tag}: organ names truncated: {cut}")
+            shown = [r for r in rows_ if r["hint"] and r["hint_h"] >= 8]
+            if need_hints:
+                need(shown, f"{tag}: no row shows an unseen hint")
+            return {tag: {"rows": len(rows_), "name_width_px": sorted({r["w"] for r in rows_}),
+                          "hints_shown": [(r["key"], r["hint"]) for r in shown],
+                          "hints_cut": [r["key"] for r in shown if r["hint_cut"]],
+                          "two_line_names": [(r["key"], bool(r["hint"]), r["hint_h"]) for r in rows_ if r["lines"] >= 2]}}
+
+        def names_r4():
+            res = names_whole("1440x900", need_hints=True)
+            shot("r4-names-1440x900", tid("covmap-organ-list"))
+            page.set_viewport_size({"width": 1280, "height": 800})
+            page.wait_for_timeout(1200)
+            res.update(names_whole("1280x800", need_hints=True))
+            shot("r4-names-1280x800", tid("covmap-panel"))
+            page.set_viewport_size({"width": 1440, "height": 900})
+            page.wait_for_timeout(800)
+            return res
+        C.run("R4 organ names never truncated by the unseen hint (1440x900, 1280x800)", names_r4)
+
         def events_logged():
             evs = api.events(session())
             views = [e for e in evs if e["kind"] == "view"]
@@ -602,7 +677,7 @@ def main() -> int:
                 return None
             vr = viewer_ranges(g["ranges"])
             if g["unseen_voxels"] > 0 and vr:
-                return f"Still to read: images {ranges_text(vr)}."
+                return f"Still to read: images {ranges_text(vr)} of {len(viewer_sops)}."
             if g["unseen_voxels"] > 0:
                 return "Unseen parts are in view; window or dwell is missing."
             return "Nothing left unseen."
@@ -621,7 +696,8 @@ def main() -> int:
                 need(any(r0 <= here <= r1 for r0, r1 in todo), f"image {here} not in still-to-read {todo}")
             # U2: the detail line uses the viewer's image numbers (n of n/N), not case slice indices
             o = by_key[key]
-            want_ext = f"On images {ranges_text(viewer_ranges([o['k_range']]), 2)} of {len(viewer_sops)}."
+            n_img = len(viewer_sops)
+            want_ext = f"On images {ranges_text(viewer_ranges([o['k_range']]), 2)} of {n_img} (viewer n/{n_img})."
             deadline = time.perf_counter() + 4
             while True:
                 t = detail_texts(key)
@@ -630,10 +706,23 @@ def main() -> int:
                 need(time.perf_counter() < deadline, f"detail {t} != extent {want_ext!r} / todo {want_todo(t['gap'])!r}")
                 page.wait_for_timeout(200)
             shot("u01-u02-row-detail", tid("covmap-panel"))
-            return {"key": key, "gap": g, "image": here, "of": len(viewer_sops), "extent": t["extent"],
-                    "still_to_read": t["todo"], "k_range": o["k_range"]}
-        C.run("U1/U2 organ row click -> gap slice; detail shows extent and still-to-read in viewer image numbers",
-              row_click)
+            # R5: the panel's numbers are the viewer's bracketed (n/N) counter, and it says so
+            ov = None
+            for _ in range(15):
+                ov = page.evaluate(OVERLAY_JS)
+                if ov and ov["n"] == here:
+                    break
+                page.wait_for_timeout(200)
+            need(ov and ov["n"] == here and ov["of"] == n_img, f"viewer counter {ov} vs image {here} of {n_img}")
+            parts = ("extent", "gap") if t["todo"].startswith("Still to read") else ("extent",)
+            tips = {w: tid(f"covmap-organ-{key}-{w}").get_attribute("title") for w in parts}
+            for w, tip in tips.items():
+                need(tip and f"(n/{n_img})" in tip and "not its I: instance number" in tip, f"{w} tooltip {tip!r}")
+            shot("r5-numbering", page.locator(".cornerstone-canvas").first.locator("xpath=.."))
+            return {"key": key, "gap": g, "image": here, "of": n_img, "extent": t["extent"],
+                    "still_to_read": t["todo"], "k_range": o["k_range"], "viewer_counter": ov, "tooltips": tips}
+        C.run("U1/U2/R5 organ row click -> gap slice; detail shows extent and still-to-read in viewer image numbers "
+              "'of N (viewer n/N)', matching the viewer's (n/N) counter", row_click)
 
         rem_keys = page.evaluate("() => window.__covmap.remaining()")
 
@@ -1200,19 +1289,169 @@ def main() -> int:
         C.run("U10/U24/C6 New reading (confirm, and the __covmap.newReading hook) while scrolling: seq 0, t~0, "
               "no leaks", new_reading)
 
+        # ---- R1 finish at the confirm moment: screen, finish list, exports and reload agree ----
+        def screen():
+            page.wait_for_timeout(300)  # the reply of the export's flush is rendered
+            return page.evaluate(SCREEN_JS)
+
+        def export_now(tag):
+            """Coverage JSON and organs CSV through the Session menu links (each sends what is
+            queued first); CSV must equal JSON."""
+            tid("covmap-session-menu").click()
+            files = {}
+            for f in ("json", "csv"):
+                with page.expect_download(timeout=15000) as dl:
+                    tid(f"covmap-export-{f}").click()
+                target = out / f"c-r1-{tag}-{a.case}.{f}"
+                dl.value.save_as(str(target))
+                files[f] = target
+            page.keyboard.press("Escape")
+            j = json.loads(files["json"].read_text())
+            with open(files["csv"], newline="") as fh:
+                rows_csv = list(csv.DictReader(fh))
+            jo = {o["key"]: o for o in j["organs"]}
+            need(sorted(r["organ"] for r in rows_csv) == sorted(jo), f"{tag}: CSV organs differ from JSON")
+            bad = [(r["organ"], r["status"], r["coverage"], jo[r["organ"]]["status"], jo[r["organ"]]["coverage"])
+                   for r in rows_csv if r["status"] != jo[r["organ"]]["status"]
+                   or float(r["coverage"]) != jo[r["organ"]]["coverage"]
+                   or int(r["seen_voxels"]) != jo[r["organ"]]["seen_voxels"]]
+            need(not bad, f"{tag}: CSV != JSON: {bad}")
+            return j, rows_csv, {f: str(v) for f, v in files.items()}
+
+        def same_as_screen(j, scr, tag):
+            jo = {o["key"]: o for o in j["organs"]}
+            diff = [(r["key"], r["status"], r["pct"], jo[r["key"]]["status"], jo[r["key"]]["coverage"])
+                    for r in scr["rows"] if r["status"] != jo[r["key"]]["status"]
+                    or r["pct"] != f"{math.floor(jo[r['key']]['coverage'] * 100 + 1e-9)}%"]
+            need(not diff, f"{tag}: export differs from the screen: {diff}")
+            sm = j["summary"]
+            need(scr["counts"] == [sm["reviewed"], sm["partial"], sm["skipped"]],
+                 f"{tag}: screen counts {scr['counts']} vs export summary {sm}")
+
+        def comparable(j):
+            return {"organs": [{k: o[k] for k in ("key", "status", "coverage", "seen_voxels", "unseen")} for o in j["organs"]],
+                    "summary": j["summary"]}
+
+        def finish_export():
+            s = session()
+            neutral()
+            seen = {o["key"]: o["seen_voxels"] for o in api.coverage(s)["organs"]}
+            cand = [o for o in organs if o["windows"] == ["soft"] and seen.get(o["key"], 0) == 0 and o.get("k_range")]
+            need(cand, "no unread soft-tissue organ")
+            n_sl = lambda o: o["k_range"][1] - o["k_range"][0] + 1  # noqa: E731
+            mid = [o for o in cand if 6 <= n_sl(o) <= 40]
+            key = (sorted(mid, key=n_sl) or sorted(cand, key=lambda o: -n_sl(o)))[0]["key"]
+            # read it image by image (each jump: the slice with the most unseen, soft window) until
+            # just past the reviewed threshold, then stay on that last image
+            steps, prev, c = [], 0.0, 0.0
+            for _ in range(60):
+                exp = expect_jump(key)
+                need(exp["gap"].get("k") is not None, f"{key}: no gap left at {c}")
+                page.evaluate("k => window.__covmap.jump(k)", key)
+                wait_view(sop=exp["sop"], preset=exp["preset"])
+                page.wait_for_timeout(250)
+                flush()
+                c = next(o for o in cov()["organs"] if o["key"] == key)["coverage"]
+                steps.append([view()["idx"] + 1, round(c, 4)])
+                if c >= 0.9:
+                    break
+                prev = c
+            need(prev < 0.9 <= c, f"{key}: did not cross 90% on one image: {steps}")
+            last = view()
+            shot("r1-a-read-past-90", tid("covmap-panel"))
+            scr0 = screen()
+            r0 = next(r for r in scr0["rows"] if r["key"] == key)
+            need(r0["status"] == "reviewed", f"{key} on screen {r0} at {c}")
+            # mid-reading export, no finish: provisional, as on the screen
+            j_mid, _, f_mid = export_now("mid-reading")
+            need(j_mid.get("provisional") is True, f"mid-reading export provisional={j_mid.get('provisional')}")
+            same_as_screen(j_mid, screen(), "mid-reading export")
+            # F: the organ is not listed; Confirm
+            drv.press_key("f")
+            dlg = tid("covmap-finish-dialog")
+            dlg.wait_for(timeout=3000)
+            need(tid(f"covmap-finish-{key}").count() == 0, f"{key} listed at Finish")
+            listed = [x.get_attribute("data-testid")[len("covmap-finish-"):]
+                      for x in dlg.locator('.cm-organ[data-testid^="covmap-finish-"]').all()]
+            shot("r1-b-finish-dialog", tid("covmap-panel"))
+            tid("covmap-confirm-finish").click()
+            tid("covmap-finished").wait_for(timeout=3000)
+            fin = [e for e in api.events(s) if e["kind"] == "finish"]
+            need(fin and fin[-1]["confirmed"] and key not in fin[-1]["remaining"], f"finish event {fin[-1:]}")
+            need(sorted(fin[-1]["remaining"]) == sorted(listed), f"finish remaining {fin[-1]['remaining']} vs listed {listed}")
+            j1, csv1, f1 = export_now("finished")
+            scr1 = screen()
+            same_as_screen(j1, scr1, "export after Confirm")
+            o1 = next(o for o in j1["organs"] if o["key"] == key)
+            need(o1["status"] == "reviewed" and o1["coverage"] >= 0.9, f"{key} exported {o1['status']} {o1['coverage']}")
+            need((j1["summary"].get("finished") or {}).get("confirmed") is True, f"export not finished: {j1['summary']}")
+            shot("r1-c-after-confirm", tid("covmap-panel"))
+            # reload: the same session, finished, back on the last image (R2); the same exports
+            drv.open(url)
+            reattach(a.case)
+            need(session() == s, f"reload opened {session()} instead of {s}")
+            page.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
+            tid("covmap-finished").wait_for(timeout=5000)
+            wait_view(sop=last["sop"], preset=(last["wc"], last["ww"]), timeout=10000)
+            page.wait_for_timeout(500)
+            flush()
+            j2, csv2, f2 = export_now("after-reload")
+            scr2 = screen()
+            same_as_screen(j2, scr2, "export after reload")
+            need(comparable(j2) == comparable(j1), "export after reload differs from the export at Confirm")
+            need(csv2 == csv1, "CSV after reload differs")
+            shot("r1-d-after-reload", tid("covmap-panel"))
+            return {"session": s, "organ": key, "slices": n_sl(by_key[key]), "steps_image_cov": steps,
+                    "screen_pct": r0["pct"], "listed_at_finish": listed, "counts_on_screen": scr1["counts"],
+                    "mid": {"provisional": j_mid["provisional"], "summary": j_mid["summary"], "files": f_mid},
+                    "finished": {"provisional": j1["provisional"], "summary": j1["summary"],
+                                 "organ": {k: o1[k] for k in ("status", "coverage", "seen_voxels")}, "files": f1},
+                    "after_reload": {"provisional": j2["provisional"], "files": f2, "restored_view": view()}}
+        C.run("R1 Finish at the confirm moment: an organ read just past 90% on its last image is not listed, "
+              "Confirm; JSON/CSV exports (mid-reading and finished) match the screen, CSV == JSON, same after reload",
+              finish_export)
+
         def resume():
             s0 = session()
+            # R2: leave the reading on a later image in the lung window
+            drv.press_key("2")
+            wait_view(preset=PRESETS["2"])
             x, y = drv.viewport_center()
             page.mouse.move(x, y)
-            page.mouse.wheel(0, 100)
+            for _ in range(4):
+                page.mouse.wheel(0, 100)
+                page.wait_for_timeout(150)
             page.wait_for_timeout(300)
             flush()
+            left = view()
+            need(left["idx"] > 0, f"still on image 1: {left}")
+            lv = api.info(s0).get("last_view")
+            need(lv and lv["sop"] == left["sop"] and (lv["voi"]["wc"], lv["voi"]["ww"]) == (left["wc"], left["ww"]),
+                 f"server last_view {lv} vs displayed {left}")
             n_before = len(api.events(s0))
             drv.open(url)
             reattach(a.case)
             need(session() == s0, f"reload opened {session()} instead of resuming {s0}")
             tid("covmap-resumed").wait_for(timeout=3000)
             page.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
+            wait_view(sop=left["sop"], preset=(left["wc"], left["ww"]), timeout=10000)
+            back = view()
+            need(tid("covmap-window-lung").get_attribute("aria-pressed") == "true", "lung window not shown as active")
+            need(tid("covmap-first-use").count() == 0, "R6: first-use hint back after a reload")
+            # R3: the session's event total, not this page's
+            page.wait_for_function("() => window.__covmap.lastCoverage && window.__covmap.lastCoverage.session_info", timeout=10000)
+            flush()
+            page.wait_for_timeout(300)
+            total = cov()["session_info"]["events"]
+            shown = tid("covmap-events").inner_text().strip()
+            need(shown == f"{total} event{'' if total == 1 else 's'}", f"events counter {shown!r} vs session total {total}")
+            need(total > page.evaluate("() => window.__covmap.eventsSent") and total > n_before,
+                 f"total {total} not above this page's {page.evaluate('() => window.__covmap.eventsSent')}")
+            shot("r2-r3-resumed-last-view")
+            first_views = [e for e in api.events(s0)[n_before:] if e["kind"] == "view"]
+            need(first_views and first_views[0]["sop"] == left["sop"]
+                 and (first_views[0]["voi"]["wc"], first_views[0]["voi"]["ww"]) == (left["wc"], left["ww"]),
+                 f"first view after the reload {first_views[:1]} is not the restored one")
             x, y = drv.viewport_center()
             page.mouse.move(x, y)
             for _ in range(3):
@@ -1234,8 +1473,12 @@ def main() -> int:
             page.wait_for_function("s => window.__covmap.sessionId && window.__covmap.sessionId !== s", arg=s0, timeout=15000)
             page.wait_for_function("() => !document.querySelector('[data-testid=\"covmap-resumed\"]')", timeout=3000)
             return {"session": s0, "events_before_reload": n_before, "events_after": len(evs),
-                    "continued_from": evs[n_before]["seq"] if len(evs) > n_before else None, "new_after_quick": session()}
-        C.run("U10 reload resumes the case's session (seq/t continue); 'New reading' next to 'resumed'", resume)
+                    "continued_from": evs[n_before]["seq"] if len(evs) > n_before else None, "new_after_quick": session(),
+                    "r2": {"left": left, "server_last_view": lv, "after_reload": back,
+                           "first_view_after": {k: first_views[0][k] for k in ("seq", "sop", "voi")}},
+                    "r3": {"counter": shown, "session_total": total}}
+        C.run("U10/R2/R3 reload resumes the case's session (seq/t continue) at its last image and window; events "
+              "counter = session total; 'New reading' next to 'resumed'", resume)
 
         # ---- C12 one writer per session: two tabs on the same case ---------------------------
         def seen_now(s):
@@ -1541,6 +1784,7 @@ def main() -> int:
             page.set_viewport_size({"width": 1280, "height": 800})
             page.wait_for_timeout(1200)
             r = no_scroll("1280x800")
+            r.update(names_whole("1280x800"))
             shot("15-1280x800")
             return r
         C.run("no page scroll at 1280x800", small)
@@ -1577,7 +1821,17 @@ def main() -> int:
         # ---- U15 case picker ------------------------------------------------------------------
         def case_picker():
             s_here = session()
+            # R2: leave this case on a later image in the bone window
+            drv.press_key("3")
+            wait_view(preset=PRESETS["3"])
+            x, y = drv.viewport_center()
+            page.mouse.move(x, y)
+            for _ in range(3):
+                page.mouse.wheel(0, 100)
+                page.wait_for_timeout(150)
+            page.wait_for_timeout(300)
             flush()
+            left = view()
             cases = api.json("/api/cases")
             menu("covmap-open-case")
             tid("covmap-case-list").wait_for(timeout=5000)
@@ -1601,8 +1855,12 @@ def main() -> int:
             need(session() == s_here, f"returning opened {session()} instead of resuming {s_here}")
             tid("covmap-resumed").wait_for(timeout=3000)
             page.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
-            return {"cases": listed, "went_to": other["case"], "other_session": s_other, "resumed": s_here}
-        C.run("U15 case picker: lists cases, opens the other, returning resumes this case's reading", case_picker)
+            wait_view(sop=left["sop"], preset=(left["wc"], left["ww"]), timeout=10000)
+            shot("r2-case-switch-back")
+            return {"cases": listed, "went_to": other["case"], "other_session": s_other, "resumed": s_here,
+                    "r2": {"left": left, "back": view()}}
+        C.run("U15/R2 case picker: lists cases, opens the other, returning resumes this case's reading at its "
+              "last image and window", case_picker)
 
         def final_layout():
             out_ = {}
@@ -1610,6 +1868,7 @@ def main() -> int:
                 page.set_viewport_size({"width": w, "height": h})
                 page.wait_for_timeout(1500)
                 out_.update(no_scroll(f"{w}x{h} after all interactions"))
+                out_.update(names_whole(f"{w}x{h} names after all interactions"))
             shot("18-final-1440x900")
             return out_
         C.run("no page scroll after every interaction (1280x800, 1440x900)", final_layout)

@@ -72,6 +72,16 @@ export interface SessionInfo {
   last_seq: number | null;
   last_t_ms: number | null;
   rules?: Partial<Rules>;
+  /** the last stack image of the case series the reader was shown, restored on resume */
+  last_view?: StackView | null;
+}
+
+/** A displayed stack image of the case series: its SOP, case slice k and window. */
+export interface StackView {
+  sop: string;
+  k: number;
+  voi: { wc: number; ww: number };
+  window: WindowClass | null;
 }
 
 export interface Coverage {
@@ -138,7 +148,7 @@ export interface TimelineFrame {
   statuses: Record<string, Status>;
   coverage?: Record<string, number>;
   /** the image the reader was on at this time (last stack view of the case series) */
-  view?: { sop: string; k: number; voi: { wc: number; ww: number }; window: WindowClass | null } | null;
+  view?: StackView | null;
 }
 
 export interface ReaderLayer {

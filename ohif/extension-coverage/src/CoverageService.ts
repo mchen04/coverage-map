@@ -28,6 +28,7 @@ import type {
   Rules,
   Sample,
   SessionInfo,
+  StackView,
   TimelineFrame,
   Volume,
   WindowClass,
@@ -1075,6 +1076,10 @@ export default class CoverageService extends PubSubService {
     }
     this.state.reader = this.mergeReader(null);
     this.emit();
+    if (info?.last_view) {
+      // back where the reader left off (reload, or a case switch and back), not image 1 in Soft
+      await this.showLastView(info.last_view);
+    }
     if (!writer) {
       this.standBy(); // another tab records this reading
       return;
@@ -1083,6 +1088,49 @@ export default class CoverageService extends PubSubService {
       this.tracker.recaptureAll();
     }
     this.flush();
+  }
+
+  /**
+   * Resume: show the session's last displayed stack image in its window
+   * (`session_info.last_view`). Not recorded while it moves; the caller re-captures the
+   * restored display as the session's next view. Right after page load a scroll requested
+   * during the first image load can still be pending (Cornerstone defers scroll() 40 ms for
+   * an image not yet cached) and land on top of the restore, so the shown image is checked
+   * and the restore repeated (a few times at most).
+   */
+  private async showLastView(view: StackView): Promise<void> {
+    if (!view.voi || !this.caseViewports().length) {
+      return;
+    }
+    const voiRange = csUtils.windowLevel.toLowHighRange(view.voi.ww, view.voi.wc);
+    const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const astray = () =>
+      this.caseViewports().filter(
+        vp =>
+          isStack(vp) &&
+          sopOf(displayedImageId(vp)) !== view.sop &&
+          (vp.getImageIds() as string[]).some(id => sopOf(id) === view.sop)
+      );
+    const was = this.recording;
+    this.setRecording(false);
+    try {
+      let targets = this.caseViewports();
+      for (let attempt = 0; attempt < 4 && targets.length; attempt++) {
+        for (const vp of targets) {
+          // a superseded image load never settles: do not wait on it for long
+          await Promise.race([this.showSlice(vp, view.sop, view.k, voiRange), wait(1500)]);
+        }
+        await wait(100);
+        targets = astray();
+      }
+      if (targets.length) {
+        console.warn('covmap: the last view could not be restored on', targets.map(vp => vp.id));
+      }
+    } catch (e) {
+      console.warn('covmap: could not restore the last view', e);
+    } finally {
+      this.setRecording(was);
+    }
   }
 
   private async restartSession(label: string, sample?: Sample): Promise<string | null> {
@@ -1539,8 +1587,16 @@ export default class CoverageService extends PubSubService {
     this.emit();
   }
 
+  /**
+   * Record a finish decision and send it at once. Its t_ms is this moment; the POST that
+   * carries it (right after any request in flight) has a fresh now_ms. A confirmed finish
+   * closes every displayed view in the record at that t_ms (server), so what the screen showed
+   * at Confirm is what the finish list, the exports and a reload show. Un-finishing after a
+   * Confirm (Go back, Escape) records the display again, so reading on counts.
+   */
   public async finish(confirmed: boolean): Promise<void> {
     this.state.finishOpen = false;
+    const wasConfirmed = !!this.finished()?.confirmed;
     const ev = this.enqueue('finish', { confirmed, remaining: this.remaining() });
     if (!ev) {
       this.emit();
@@ -1549,6 +1605,9 @@ export default class CoverageService extends PubSubService {
     }
     // the last finish event decides (Go back after a Confirm un-finishes): shown at once
     this.localFinish = { confirmed, seq: ev.seq };
+    if (wasConfirmed && !confirmed) {
+      this.tracker.recaptureAll();
+    }
     this.emit();
     await this.flush();
   }

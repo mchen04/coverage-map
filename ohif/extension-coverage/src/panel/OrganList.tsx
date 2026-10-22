@@ -92,6 +92,11 @@ export default function OrganList({ service, rows, selected, hot, replaying, gap
   );
 }
 
+/** Which image numbers the detail uses: the viewer's bracketed "n/N" counter, not "I:". */
+function numberingTitle(n: number): string {
+  return `Image numbers as in the viewer's (n/${n}) counter at the bottom right of the image, not its I: instance number`;
+}
+
 function OrganRow({
   service,
   row,
@@ -174,8 +179,12 @@ function OrganRow({
         onClick={() => (replaying ? service.select(key) : service.jumpToOrgan(key))}
       >
         <StatusDot status={status} />
-        <span className="cm-name">{organ.name}</span>
-        {hint && <span className="cm-hint">{hint.short}</span>}
+        {/* name above the unseen hint: the hint never takes width from the name, and a name
+            that needs two lines hides the hint (still in the tooltip and the detail) */}
+        <span className="cm-label">
+          <span className="cm-name">{organ.name}</span>
+          {hint && <span className="cm-hint">{hint.short}</span>}
+        </span>
         <WindowBadge windows={organ.windows ?? ['soft']} />
         <span className="cm-bar">
           <i style={{ width: `${Math.round((row.coverage ?? 0) * 100)}%`, background: barColor }} />
@@ -254,14 +263,22 @@ function OrganRow({
           {layer.reader === 'done' && status !== 'reviewed' && 'Marked done by reader (attestation, not measured). '}
           {layer.reader === 'na' && 'Marked not applicable. '}
           {extent && extent.ranges.length > 0 && (
-            <span className="cm-muted" data-testid={`covmap-organ-${key}-extent`}>
-              On images {rangesText(extent.ranges, 2)} of {extent.n}.{' '}
+            <span className="cm-muted" data-testid={`covmap-organ-${key}-extent`} title={numberingTitle(extent.n)}>
+              On images {rangesText(extent.ranges, 2)} of {extent.n}{' '}
+              <span className="cm-numbering" data-testid={`covmap-organ-${key}-numbering`}>
+                (viewer n/{extent.n})
+              </span>
+              .{' '}
             </span>
           )}
           {todo && gap && (
-            <span data-testid={`covmap-organ-${key}-gap`} className="cm-todo">
+            <span
+              data-testid={`covmap-organ-${key}-gap`}
+              className="cm-todo"
+              title={todo.ranges.length ? numberingTitle(todo.n) : undefined}
+            >
               {gap.unseen_voxels > 0 && todo.ranges.length > 0
-                ? `Still to read: images ${rangesText(todo.ranges)}. `
+                ? `Still to read: images ${rangesText(todo.ranges)} of ${todo.n}. `
                 : gap.unseen_voxels > 0
                   ? 'Unseen parts are in view; window or dwell is missing. '
                   : 'Nothing left unseen. '}

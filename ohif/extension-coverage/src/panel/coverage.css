@@ -305,6 +305,37 @@ button.cm-chip {
   flex: none;
 }
 
+/* first-use hint (dismissed once per browser) */
+.cm-first-use {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 1px 2px 1px 6px;
+  border: 1px solid var(--cm-line);
+  border-radius: 4px;
+  color: var(--cm-muted);
+  font-size: 10.5px;
+  line-height: 14px;
+}
+.cm-first-use .cm-kbd {
+  margin-right: 1px;
+}
+.cm-first-use-x {
+  flex: none;
+  width: 16px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cm-muted);
+  font-size: 13px;
+  line-height: 14px;
+  cursor: pointer;
+}
+.cm-first-use-x:hover {
+  color: var(--cm-fg);
+}
+
 /* quick actions */
 .cm-actions {
   display: flex;
@@ -365,21 +396,37 @@ button.cm-chip {
 .cm-organ--na .cm-organ-line {
   opacity: 0.42;
 }
-.cm-name {
+/* Name over the unseen hint, in the row's full height: the hint never takes width from the
+   name. A name needing two lines pushes the hint out (it shrinks to nothing first); the name
+   is clamped only beyond two lines. */
+.cm-label {
   flex: 1 1 auto;
   min-width: 0;
+  height: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   overflow: hidden;
+}
+.cm-name {
+  flex: 0 0 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 13px;
+}
+.cm-numbering {
   white-space: nowrap;
-  text-overflow: ellipsis;
 }
 .cm-hint {
   flex: 0 1 auto;
-  min-width: 0;
-  max-width: 45%;
+  min-height: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 10px;
+  line-height: 11px;
   color: var(--cm-muted);
 }
 .cm-badge {

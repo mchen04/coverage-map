@@ -55,8 +55,10 @@ export default function FinishSheet({ service, rows }: Props) {
                 onClick={() => service.jumpToOrgan(row.organ.key)}
               >
                 <StatusDot status={row.status} />
-                <span className="cm-name">{row.organ.name}</span>
-                {hint && <span className="cm-hint">{hint.short}</span>}
+                <span className="cm-label">
+                  <span className="cm-name">{row.organ.name}</span>
+                  {hint && <span className="cm-hint">{hint.short}</span>}
+                </span>
                 <WindowBadge windows={row.organ.windows ?? ['soft']} />
                 <span className="cm-pct">{pct(row.coverage)}</span>
               </div>

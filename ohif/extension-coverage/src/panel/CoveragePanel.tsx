@@ -9,6 +9,17 @@ import SessionMenu, { isCustomRules, type MenuView } from './SessionMenu';
 import { buildRows, summarize, useCoverageState } from './model';
 import './coverage.css';
 
+/** localStorage key: the reader closed the first-use hint (kept across reloads and cases). */
+const FIRST_USE_KEY = 'covmap:first-use-hint';
+
+function firstUseDismissed(): boolean {
+  try {
+    return localStorage.getItem(FIRST_USE_KEY) === 'dismissed';
+  } catch {
+    return false; // storage unavailable: show it
+  }
+}
+
 const SHORTCUTS: Array<[string, string]> = [
   ['N', 'next gap'],
   ['D', 'done'],
@@ -28,6 +39,15 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
   const state = useCoverageState(service);
   const [menu, setMenu] = useState<MenuView | null>(null);
   const [hot, setHot] = useState<string | null>(null);
+  const [firstUse, setFirstUse] = useState(() => !firstUseDismissed());
+  const dismissFirstUse = useCallback(() => {
+    setFirstUse(false);
+    try {
+      localStorage.setItem(FIRST_USE_KEY, 'dismissed');
+    } catch {
+      // storage unavailable: hidden for this page only
+    }
+  }, []);
   const rows = useMemo(() => buildRows(service, state), [service, state]);
   const sum = summarize(rows, state);
   const finished = service.finished();
@@ -58,6 +78,15 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
       </span>
     );
   }
+
+  // the session's events on the server (all tabs, earlier page loads, sample events), not
+  // only this page's; this page's count until the first reply
+  const info = state.coverage?.session_info;
+  const nEvents = typeof info?.events === 'number' ? info.events : state.eventsSent;
+  const eventsTitle =
+    `Display and reader events recorded in this reading: ${nEvents}` +
+    (info?.sample_events ? `, ${info.sample_events} of them from the sample` : '') +
+    `. Sent from this page: ${state.eventsSent}.`;
 
   const countsTitle =
     `Organs by measured status: ${sum.reviewed} reviewed (● displayed enough to count), ` +
@@ -166,7 +195,9 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
             {sum.flagged ? `${sum.flagged} flagged` : ''}
           </span>
         )}
-        <span title="Display and reader events sent to the coverage server">{state.eventsSent} events</span>
+        <span data-testid="covmap-events" title={eventsTitle}>
+          {nEvents} {nEvents === 1 ? 'event' : 'events'}
+        </span>
       </div>
       {sample && (
         <div className="cm-sub" data-testid="covmap-origin">
@@ -174,6 +205,22 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
             sample events: {sourceText(sample.source)}
             {typeof sample.events === 'number' ? ` · ${sample.events}` : ''}
           </span>
+        </div>
+      )}
+      {firstUse && state.caseId && (
+        <div className="cm-first-use" data-testid="covmap-first-use" role="note">
+          <span className="cm-grow">
+            Scroll the CT; organs turn green once shown in their window · <span className="cm-kbd">N</span> next gap
+          </span>
+          <button
+            className="cm-first-use-x"
+            data-testid="covmap-first-use-dismiss"
+            title="Hide this hint (remembered in this browser)"
+            aria-label="Hide the first-use hint"
+            onClick={dismissFirstUse}
+          >
+            ×
+          </button>
         </div>
       )}
       {menu && <SessionMenu key={menu} service={service} state={state} initial={menu} onClose={closeMenu} />}
