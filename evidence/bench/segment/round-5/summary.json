@@ -1,0 +1,103 @@
+{
+  "5": {
+    "round": "5",
+    "production_hashes": {
+      "lidc-0001": {
+        "totalseg.nii.gz": "b411f6906c23b6c543dbe63a6e69359e32974f6aaaa12dc875a476dcc4994135",
+        "labels.npy": "8dd60d1d60fe0fd37d07a53d754a99a3afce8ab194353d3feaa25e1330690b05",
+        "organs.json": "88f4ff75e51d407ec62a450051d868952266b5ff8d406ed6f412fddce31cd237",
+        "meshes.bin": "ca4041a3dfaaad41ddb440ce96b27af2847e0609751fda2e8ddaec80268c45d3",
+        "meshes.json": "40e9f0f3025f8849746a96b26307008017d81a335129dbb868bdf8671709df08"
+      },
+      "pancreas-0051": {
+        "totalseg.nii.gz": "1104913c5659a16faf6cb527073f2f9cdc3bca8e09d1c3c2b78dcfaa236f88df",
+        "labels.npy": "6e37df447e080e30f84efffc2329de17269aa93f66c0f916076ccd19c97bbcbd",
+        "organs.json": "9027e5ef001ac32f4ff881e5d30d3e58b245e4aa1f1d29bf1b66366d69a7dc9b",
+        "meshes.bin": "5b3886a79afb04e9deb54ce7322c9a2536aa544251b01e92bdcba9426744211a",
+        "meshes.json": "51ffb1aa80d661d1fc8c3171c445a5d5f8aaa41ba522bc431beeb5829c9a878d"
+      }
+    },
+    "rows": {
+      "lidc-0001/mps-fast": {
+        "wall_s": [
+          18.02
+        ],
+        "ts_s": [
+          8.28
+        ],
+        "pass": [
+          false
+        ],
+        "dice_min": [
+          0.7342
+        ],
+        "dice_mean": [
+          0.8847
+        ],
+        "labels_identical": [
+          false
+        ],
+        "totalseg_identical": [
+          false
+        ],
+        "load1": [
+          1.56
+        ],
+        "files": [
+          "lidc-0001-mps-fast-r1.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d_t",
+          "device": "mps",
+          "budget_mb": 256,
+          "source": "environment"
+        },
+        "torch_threads": 4,
+        "rss_gb": 5.24,
+        "n": 1,
+        "median_wall_s": 18.02,
+        "median_ts_s": 8.28
+      },
+      "pancreas-0051/mps-fast": {
+        "wall_s": [
+          14.03
+        ],
+        "ts_s": [
+          8.07
+        ],
+        "pass": [
+          false
+        ],
+        "dice_min": [
+          0.6723
+        ],
+        "dice_mean": [
+          0.873
+        ],
+        "labels_identical": [
+          false
+        ],
+        "totalseg_identical": [
+          false
+        ],
+        "load1": [
+          1.91
+        ],
+        "files": [
+          "pancreas-0051-mps-fast-r1.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d_t",
+          "device": "mps",
+          "budget_mb": 256,
+          "source": "environment"
+        },
+        "torch_threads": 4,
+        "rss_gb": 5.03,
+        "n": 1,
+        "median_wall_s": 14.03,
+        "median_ts_s": 8.07
+      }
+    }
+  }
+}

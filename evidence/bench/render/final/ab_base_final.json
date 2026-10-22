@@ -1,0 +1,516 @@
+{
+ "variants": {
+  "base": "/Users/michaelchen/coverage-map-work/scratch-c/base:/Users/michaelchen/coverage-map-work/scratch-c/dist-base",
+  "final": "/Users/michaelchen/coverage-map-work/repo:/Users/michaelchen/coverage-map-work/scratch-c/dist-final"
+ },
+ "runs": 6,
+ "cases": [
+  "pancreas-0051",
+  "lidc-0001"
+ ],
+ "loadavg_1min": [
+  11.42,
+  11.42,
+  10.9,
+  10.9,
+  11.95,
+  11.95,
+  11.31
+ ],
+ "summary": {
+  "base": {
+   "pancreas-0051": {
+    "wall_ms_median": 869.0,
+    "wall_ms_runs": [
+     859.7,
+     865.9,
+     867.8,
+     870.2,
+     870.4,
+     993.2
+    ],
+    "sha256": [
+     "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33"
+    ]
+   },
+   "lidc-0001": {
+    "wall_ms_median": 950.5,
+    "wall_ms_runs": [
+     925.8,
+     926.9,
+     928.6,
+     972.4,
+     976.7,
+     1068.0
+    ],
+    "sha256": [
+     "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e"
+    ]
+   }
+  },
+  "final": {
+   "pancreas-0051": {
+    "wall_ms_median": 529.3,
+    "wall_ms_runs": [
+     506.8,
+     509.5,
+     523.4,
+     535.2,
+     556.1,
+     573.5
+    ],
+    "sha256": [
+     "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33"
+    ]
+   },
+   "lidc-0001": {
+    "wall_ms_median": 556.0,
+    "wall_ms_runs": [
+     552.0,
+     554.4,
+     554.8,
+     557.3,
+     559.6,
+     562.5
+    ],
+    "sha256": [
+     "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e"
+    ]
+   }
+  }
+ },
+ "raw": {
+  "base": {
+   "pancreas-0051": [
+    {
+     "wall_ms": 993.2,
+     "timings_ms": {
+      "server_start": 232.5,
+      "browser_start": 53.0,
+      "page_load": 34.7,
+      "meshes": 114.5,
+      "render": 1.5,
+      "screenshot": 110.6,
+      "total": 926.1
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 865.9,
+     "timings_ms": {
+      "server_start": 121.6,
+      "browser_start": 53.1,
+      "page_load": 35.2,
+      "meshes": 119.7,
+      "render": 1.3,
+      "screenshot": 104.7,
+      "total": 803.1
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 870.4,
+     "timings_ms": {
+      "server_start": 121.9,
+      "browser_start": 54.5,
+      "page_load": 36.1,
+      "meshes": 116.4,
+      "render": 1.3,
+      "screenshot": 102.0,
+      "total": 805.2
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 870.2,
+     "timings_ms": {
+      "server_start": 118.2,
+      "browser_start": 54.9,
+      "page_load": 35.7,
+      "meshes": 120.2,
+      "render": 1.3,
+      "screenshot": 102.3,
+      "total": 805.7
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 867.8,
+     "timings_ms": {
+      "server_start": 121.7,
+      "browser_start": 51.5,
+      "page_load": 33.9,
+      "meshes": 116.1,
+      "render": 1.3,
+      "screenshot": 104.8,
+      "total": 798.6
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 859.7,
+     "timings_ms": {
+      "server_start": 121.1,
+      "browser_start": 49.0,
+      "page_load": 33.6,
+      "meshes": 113.3,
+      "render": 1.4,
+      "screenshot": 109.9,
+      "total": 793.6
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.31
+    }
+   ],
+   "lidc-0001": [
+    {
+     "wall_ms": 926.9,
+     "timings_ms": {
+      "server_start": 121.6,
+      "browser_start": 51.1,
+      "page_load": 35.3,
+      "meshes": 123.8,
+      "render": 1.3,
+      "screenshot": 110.5,
+      "total": 862.2
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 976.7,
+     "timings_ms": {
+      "server_start": 121.5,
+      "browser_start": 56.4,
+      "page_load": 37.0,
+      "meshes": 127.3,
+      "render": 1.4,
+      "screenshot": 123.4,
+      "total": 912.5
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 925.8,
+     "timings_ms": {
+      "server_start": 122.1,
+      "browser_start": 51.3,
+      "page_load": 34.8,
+      "meshes": 123.3,
+      "render": 1.5,
+      "screenshot": 110.8,
+      "total": 861.6
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 1068.0,
+     "timings_ms": {
+      "server_start": 222.3,
+      "browser_start": 50.8,
+      "page_load": 35.6,
+      "meshes": 127.2,
+      "render": 1.6,
+      "screenshot": 123.3,
+      "total": 995.5
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 928.6,
+     "timings_ms": {
+      "server_start": 121.3,
+      "browser_start": 52.9,
+      "page_load": 34.8,
+      "meshes": 122.5,
+      "render": 1.3,
+      "screenshot": 111.6,
+      "total": 863.4
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 972.4,
+     "timings_ms": {
+      "server_start": 121.8,
+      "browser_start": 55.2,
+      "page_load": 36.3,
+      "meshes": 122.7,
+      "render": 1.3,
+      "screenshot": 118.6,
+      "total": 908.7
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.31
+    }
+   ]
+  },
+  "final": {
+   "pancreas-0051": [
+    {
+     "wall_ms": 535.2,
+     "timings_ms": {
+      "import": 20.8,
+      "server_start": 6.2,
+      "playwright_start": 133.9,
+      "browser_start": 51.0,
+      "page_load": 35.0,
+      "page_ready_wait": 73.2,
+      "meshes": 47.3,
+      "render": 44.5,
+      "screenshot": 96.2,
+      "browser_close": 14.4,
+      "playwright_stop": 3.2,
+      "server_stop": 10.8,
+      "check": 16.0,
+      "total": 492.0
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 509.5,
+     "timings_ms": {
+      "import": 20.6,
+      "server_start": 6.4,
+      "playwright_start": 134.7,
+      "browser_start": 50.3,
+      "page_load": 34.0,
+      "page_ready_wait": 72.8,
+      "meshes": 47.1,
+      "render": 44.2,
+      "screenshot": 81.2,
+      "browser_close": 15.2,
+      "playwright_stop": 3.4,
+      "server_stop": 1.8,
+      "check": 15.6,
+      "total": 468.5
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 573.5,
+     "timings_ms": {
+      "import": 20.8,
+      "server_start": 7.9,
+      "playwright_start": 146.3,
+      "browser_start": 56.0,
+      "page_load": 35.5,
+      "page_ready_wait": 75.2,
+      "meshes": 48.8,
+      "render": 45.5,
+      "screenshot": 99.3,
+      "browser_close": 15.5,
+      "playwright_stop": 3.3,
+      "server_stop": 21.8,
+      "check": 16.0,
+      "total": 532.7
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 523.4,
+     "timings_ms": {
+      "import": 22.5,
+      "server_start": 3.7,
+      "playwright_start": 141.6,
+      "browser_start": 51.5,
+      "page_load": 35.8,
+      "page_ready_wait": 73.9,
+      "meshes": 44.6,
+      "render": 47.9,
+      "screenshot": 83.1,
+      "browser_close": 12.6,
+      "playwright_stop": 3.6,
+      "server_stop": 2.8,
+      "check": 16.0,
+      "total": 480.3
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 506.8,
+     "timings_ms": {
+      "import": 20.8,
+      "server_start": 5.9,
+      "playwright_start": 131.7,
+      "browser_start": 51.4,
+      "page_load": 34.4,
+      "page_ready_wait": 71.8,
+      "meshes": 46.2,
+      "render": 43.8,
+      "screenshot": 80.9,
+      "browser_close": 15.4,
+      "playwright_stop": 3.3,
+      "server_stop": 2.2,
+      "check": 16.0,
+      "total": 465.6
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 556.1,
+     "timings_ms": {
+      "import": 22.1,
+      "server_start": 5.4,
+      "playwright_start": 135.4,
+      "browser_start": 57.6,
+      "page_load": 39.8,
+      "page_ready_wait": 81.0,
+      "meshes": 51.9,
+      "render": 51.1,
+      "screenshot": 86.8,
+      "browser_close": 14.6,
+      "playwright_stop": 3.6,
+      "server_stop": 10.5,
+      "check": 16.3,
+      "total": 515.3
+     },
+     "sha256": "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33",
+     "load1": 11.31
+    }
+   ],
+   "lidc-0001": [
+    {
+     "wall_ms": 554.8,
+     "timings_ms": {
+      "import": 21.0,
+      "server_start": 5.5,
+      "playwright_start": 139.3,
+      "browser_start": 56.5,
+      "page_load": 38.6,
+      "page_ready_wait": 78.8,
+      "meshes": 49.5,
+      "render": 48.8,
+      "screenshot": 90.3,
+      "browser_close": 12.3,
+      "playwright_stop": 3.5,
+      "server_stop": 10.7,
+      "check": 17.6,
+      "total": 512.4
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.42
+    },
+    {
+     "wall_ms": 562.5,
+     "timings_ms": {
+      "import": 21.0,
+      "server_start": 5.7,
+      "playwright_start": 135.7,
+      "browser_start": 53.2,
+      "page_load": 34.7,
+      "page_ready_wait": 77.0,
+      "meshes": 48.6,
+      "render": 47.4,
+      "screenshot": 110.3,
+      "browser_close": 15.4,
+      "playwright_stop": 3.3,
+      "server_stop": 12.4,
+      "check": 17.7,
+      "total": 520.1
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 554.4,
+     "timings_ms": {
+      "import": 20.6,
+      "server_start": 6.3,
+      "playwright_start": 142.6,
+      "browser_start": 57.7,
+      "page_load": 34.7,
+      "page_ready_wait": 77.7,
+      "meshes": 48.5,
+      "render": 47.8,
+      "screenshot": 91.0,
+      "browser_close": 14.8,
+      "playwright_stop": 4.0,
+      "server_stop": 7.1,
+      "check": 20.5,
+      "total": 510.7
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 10.9
+    },
+    {
+     "wall_ms": 559.6,
+     "timings_ms": {
+      "import": 21.2,
+      "server_start": 5.3,
+      "playwright_start": 132.1,
+      "browser_start": 51.0,
+      "page_load": 34.5,
+      "page_ready_wait": 79.6,
+      "meshes": 49.1,
+      "render": 49.4,
+      "screenshot": 110.4,
+      "browser_close": 15.5,
+      "playwright_stop": 3.4,
+      "server_stop": 9.6,
+      "check": 19.8,
+      "total": 515.0
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 557.3,
+     "timings_ms": {
+      "import": 20.2,
+      "server_start": 5.6,
+      "playwright_start": 135.6,
+      "browser_start": 52.3,
+      "page_load": 34.8,
+      "page_ready_wait": 77.6,
+      "meshes": 48.1,
+      "render": 48.2,
+      "screenshot": 107.0,
+      "browser_close": 11.9,
+      "playwright_stop": 3.1,
+      "server_stop": 17.0,
+      "check": 17.1,
+      "total": 516.0
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.95
+    },
+    {
+     "wall_ms": 552.0,
+     "timings_ms": {
+      "import": 20.1,
+      "server_start": 5.2,
+      "playwright_start": 133.4,
+      "browser_start": 50.8,
+      "page_load": 33.1,
+      "page_ready_wait": 76.9,
+      "meshes": 47.3,
+      "render": 47.6,
+      "screenshot": 108.5,
+      "browser_close": 14.6,
+      "playwright_stop": 3.3,
+      "server_stop": 15.5,
+      "check": 17.8,
+      "total": 510.7
+     },
+     "sha256": "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e",
+     "load1": 11.31
+    }
+   ]
+  }
+ }
+}

@@ -14,3 +14,4 @@ evidence/raw/
 evidence/screenshots/*.webm
 .DS_Store
 .forge/
+.launch-tunnel.pid

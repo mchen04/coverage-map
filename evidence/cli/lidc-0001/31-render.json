@@ -1,0 +1,55 @@
+{
+ "argv": [
+  "python",
+  "-m",
+  "covmap",
+  "render",
+  "--case",
+  "lidc-0001",
+  "--coverage",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/lidc-0001/work/window_skip_lung.coverage.json",
+  "--out",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/lidc-0001/map-window_skip_lung.png"
+ ],
+ "exit": 0,
+ "wall_s": 0.803,
+ "stdout_is_one_json_object": true,
+ "stdout": {
+  "case": "lidc-0001",
+  "out": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/lidc-0001/map-window_skip_lung.png",
+  "sha256": "119b1f807186c13e6642b4a141be0ac33ad26244354a59e44a97bc4a56220ab0",
+  "width": 800,
+  "height": 800,
+  "organs_drawn": 25,
+  "organs_listed": 25,
+  "triangles": 221510,
+  "status_counts": {
+   "skipped": 2,
+   "reviewed": 23
+  },
+  "coverage_applied": true,
+  "foreground_fraction": 0.6666,
+  "webgl_renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+  "console_errors": [],
+  "timings_ms": {
+   "import": 20.0,
+   "server_start": 4.3,
+   "playwright_start": 133.1,
+   "browser_start": 176.9,
+   "page_load": 57.2,
+   "page_ready_wait": 100.3,
+   "meshes": 70.2,
+   "render": 61.0,
+   "screenshot": 102.7,
+   "browser_close": 19.7,
+   "playwright_stop": 3.1,
+   "server_stop": 15.5,
+   "check": 20.6,
+   "total": 760.6
+  },
+  "ok": true,
+  "cmd": "render",
+  "elapsed_s": 0.773
+ },
+ "stderr_tail": ""
+}

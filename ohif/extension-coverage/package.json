@@ -1,0 +1,23 @@
+{
+  "name": "@covmap/extension-coverage",
+  "version": "0.1.0",
+  "description": "Coverage Map: Cornerstone3D reading instrumentation, coverage panel and vtk.js organ map (research use only, not a medical device)",
+  "license": "MIT",
+  "private": true,
+  "main": "src/index.tsx",
+  "module": "src/index.tsx",
+  "keywords": [
+    "ohif-extension"
+  ],
+  "peerDependencies": {
+    "@ohif/core": "workspace:*",
+    "@ohif/extension-cornerstone": "workspace:*",
+    "@ohif/extension-default": "workspace:*",
+    "react": "18.3.1"
+  },
+  "dependencies": {
+    "@babel/runtime": "7.29.7",
+    "@cornerstonejs/core": "5.6.8",
+    "@covmap/organ-map": "workspace:*"
+  }
+}

@@ -1,0 +1,7 @@
+# scratch/shot_first.py (C, S2), 17:55, pancreas-0051 800x800, render page served in-process, mini load ~8
+# fresh page per sample (load, wait ready, time ONE screenshot); variants interleaved per repetition; ms
+locator          median  110.0  runs [94, 106, 110, 117, 146]  sha ['ed002210']
+clip             median   71.0  runs [70, 71, 71, 81, 93]  sha ['ed002210']
+cdp_clip         median   77.2  runs [60, 73, 77, 82, 90]  sha ['ed002210']
+cdp_fast         median   36.8  runs [25, 28, 37, 38, 40]  sha ['4890b364']   (optimizeForSpeed: same pixels, different/larger PNG bytes; not used)
+wait_frame+clip  median   76.8  runs [76, 76, 77, 78, 85]  sha ['ed002210']

@@ -1,0 +1,521 @@
+{
+ "argv": [
+  "python",
+  "-m",
+  "covmap",
+  "replay",
+  "--case",
+  "pancreas-0051",
+  "--events",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/dwell_skip_lung.jsonl",
+  "--out",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/dwell_skip_lung.coverage.json"
+ ],
+ "exit": 0,
+ "wall_s": 0.151,
+ "stdout_is_one_json_object": true,
+ "stdout": {
+  "case": "pancreas-0051",
+  "session": "sim-dwell_skip_lung-0",
+  "provisional": false,
+  "t_ms": 59275.0,
+  "params": {
+   "min_dwell_ms": 80.0,
+   "reviewed_threshold": 0.9,
+   "skipped_threshold": 0.05
+  },
+  "organs": [
+   {
+    "id": 1,
+    "key": "lung_left",
+    "name": "Left lung",
+    "windows": [
+     "lung"
+    ],
+    "coverage": 0.0,
+    "status": "skipped",
+    "seen_voxels": 0,
+    "voxels": 1312315,
+    "unseen": {
+     "short_dwell": 1.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 2,
+    "key": "lung_right",
+    "name": "Right lung",
+    "windows": [
+     "lung"
+    ],
+    "coverage": 0.0,
+    "status": "skipped",
+    "seen_voxels": 0,
+    "voxels": 1163084,
+    "unseen": {
+     "short_dwell": 1.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 4,
+    "key": "heart",
+    "name": "Heart",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 74173,
+    "voxels": 74173,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 5,
+    "key": "aorta",
+    "name": "Aorta",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 61287,
+    "voxels": 61287,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 6,
+    "key": "inferior_vena_cava",
+    "name": "Inferior vena cava",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 184133,
+    "voxels": 184133,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 7,
+    "key": "esophagus",
+    "name": "Esophagus",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 5209,
+    "voxels": 5209,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 9,
+    "key": "liver",
+    "name": "Liver",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 3128284,
+    "voxels": 3128284,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 10,
+    "key": "spleen",
+    "name": "Spleen",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 470777,
+    "voxels": 470777,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 11,
+    "key": "pancreas",
+    "name": "Pancreas",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 97803,
+    "voxels": 97803,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 12,
+    "key": "gallbladder",
+    "name": "Gallbladder",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 33116,
+    "voxels": 33116,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 13,
+    "key": "stomach",
+    "name": "Stomach",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 964795,
+    "voxels": 964795,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 14,
+    "key": "kidney_left",
+    "name": "Left kidney",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 347642,
+    "voxels": 347642,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 15,
+    "key": "kidney_right",
+    "name": "Right kidney",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 334337,
+    "voxels": 334337,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 16,
+    "key": "duodenum",
+    "name": "Duodenum",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 47184,
+    "voxels": 47184,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 17,
+    "key": "small_bowel",
+    "name": "Small bowel",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 346475,
+    "voxels": 346475,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 18,
+    "key": "colon",
+    "name": "Colon",
+    "windows": [
+     "soft"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 572148,
+    "voxels": 572148,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 21,
+    "key": "thoracic_spine",
+    "name": "Thoracic spine",
+    "windows": [
+     "bone"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 249768,
+    "voxels": 249768,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 22,
+    "key": "lumbar_spine",
+    "name": "Lumbar spine",
+    "windows": [
+     "bone"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 322281,
+    "voxels": 322281,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 24,
+    "key": "ribs_left",
+    "name": "Left ribs",
+    "windows": [
+     "bone"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 99110,
+    "voxels": 99110,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 25,
+    "key": "ribs_right",
+    "name": "Right ribs",
+    "windows": [
+     "bone"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 95315,
+    "voxels": 95315,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   },
+   {
+    "id": 26,
+    "key": "sternum",
+    "name": "Sternum and costal cartilages",
+    "windows": [
+     "bone"
+    ],
+    "coverage": 1.0,
+    "status": "reviewed",
+    "seen_voxels": 108384,
+    "voxels": 108384,
+    "unseen": {
+     "short_dwell": 0.0,
+     "wrong_window": 0.0,
+     "out_of_region": 0.0,
+     "never_displayed": 0.0
+    },
+    "reader": null,
+    "flagged": false,
+    "note": null
+   }
+  ],
+  "summary": {
+   "reviewed": 19,
+   "partial": 0,
+   "skipped": 2,
+   "organs": 21,
+   "voxel_coverage": 0.752895,
+   "attested": 0,
+   "not_applicable": 0,
+   "flagged": 0,
+   "remaining": [
+    "lung_left",
+    "lung_right"
+   ],
+   "finished": null
+  },
+  "baseline": {
+   "model": "per-image-viewed",
+   "images": 185,
+   "viewed": 185,
+   "unviewed_ranges": [],
+   "complete": true
+  },
+  "events": {
+   "total": 556,
+   "views": 555,
+   "ignored": {
+    "oblique": 0,
+    "unknown_image": 0,
+    "other": 0,
+    "conflict": 0
+   },
+   "sources": {
+    "simulated": 556
+   },
+   "states": 555,
+   "open": 0
+  },
+  "timing_ms": {
+   "score": 84.695,
+   "load": 12.349,
+   "parse": 3.878,
+   "replay": 84.76,
+   "total": 100.988
+  },
+  "events_path": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/dwell_skip_lung.jsonl",
+  "out": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/dwell_skip_lung.coverage.json",
+  "ok": true,
+  "cmd": "replay",
+  "elapsed_s": 0.127
+ },
+ "stderr_tail": ""
+}

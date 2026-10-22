@@ -1,0 +1,591 @@
+{
+ "cases": {
+  "lidc-0001": {
+   "scenarios": {
+    "full_read": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "window_skip_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "window_skip_bone": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "region_skip_left_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "dwell_skip_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "slice_skip_caudal": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "partial_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "organ_skip_spleen": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "organ_skip_kidney_left": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    }
+   },
+   "segment": {
+    "device": "mps",
+    "totalsegmentator_wall_s": 107.15493458299898,
+    "labels_identical_to_production": true,
+    "organs_identical_to_production": true
+   },
+   "render": {
+    "scenario": "window_skip_lung",
+    "exit": 0
+   }
+  },
+  "pancreas-0051": {
+   "scenarios": {
+    "full_read": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "window_skip_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "window_skip_bone": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "region_skip_left_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "dwell_skip_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "slice_skip_caudal": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "partial_lung": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "organ_skip_spleen": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    },
+    "organ_skip_kidney_left": {
+     "exact_match": true,
+     "false_skips": [],
+     "missed_skips": []
+    }
+   },
+   "segment": {
+    "device": "mps",
+    "totalsegmentator_wall_s": 62.800991374999285,
+    "labels_identical_to_production": true,
+    "organs_identical_to_production": true
+   },
+   "render": {
+    "scenario": "window_skip_lung",
+    "exit": 0
+   }
+  }
+ },
+ "commands": 65,
+ "all_exit_0": true,
+ "all_stdout_one_json_object": true,
+ "usage_error": {
+  "exit": 2,
+  "error": "usage: covmap replay: the following arguments are required: --events"
+ },
+ "all_scenarios_exact": true,
+ "no_false_skips": true,
+ "segment_matches_production": true,
+ "wall_s": 198.5,
+ "steps": [
+  {
+   "case": "lidc-0001",
+   "step": "fetch",
+   "exit": 0,
+   "wall_s": 0.437,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "orthanc-load",
+   "exit": 0,
+   "wall_s": 0.171,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "segment",
+   "exit": 0,
+   "wall_s": 113.435,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "scenarios",
+   "exit": 0,
+   "wall_s": 0.723,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-full_read",
+   "exit": 0,
+   "wall_s": 0.158,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-full_read",
+   "exit": 0,
+   "wall_s": 0.132,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-full_read",
+   "exit": 0,
+   "wall_s": 0.065,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.167,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.106,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.056,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.152,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.118,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.057,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.406,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.128,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.06,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.157,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.115,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.057,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.178,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.125,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.062,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-partial_lung",
+   "exit": 0,
+   "wall_s": 0.154,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-partial_lung",
+   "exit": 0,
+   "wall_s": 0.113,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-partial_lung",
+   "exit": 0,
+   "wall_s": 0.056,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 0.342,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 0.118,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 0.055,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "simulate-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.348,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "replay-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.118,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "report-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.057,
+   "json": true
+  },
+  {
+   "case": "lidc-0001",
+   "step": "render",
+   "exit": 0,
+   "wall_s": 0.803,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "fetch",
+   "exit": 0,
+   "wall_s": 0.492,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "orthanc-load",
+   "exit": 0,
+   "wall_s": 0.195,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "segment",
+   "exit": 0,
+   "wall_s": 69.286,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "scenarios",
+   "exit": 0,
+   "wall_s": 2.333,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-full_read",
+   "exit": 0,
+   "wall_s": 0.198,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-full_read",
+   "exit": 0,
+   "wall_s": 0.167,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-full_read",
+   "exit": 0,
+   "wall_s": 0.061,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.189,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.136,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-window_skip_lung",
+   "exit": 0,
+   "wall_s": 0.061,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.19,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.134,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-window_skip_bone",
+   "exit": 0,
+   "wall_s": 0.059,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.388,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.16,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-region_skip_left_lung",
+   "exit": 0,
+   "wall_s": 0.061,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.192,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.151,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-dwell_skip_lung",
+   "exit": 0,
+   "wall_s": 0.062,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.209,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.144,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-slice_skip_caudal",
+   "exit": 0,
+   "wall_s": 0.06,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-partial_lung",
+   "exit": 0,
+   "wall_s": 0.193,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-partial_lung",
+   "exit": 0,
+   "wall_s": 0.154,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-partial_lung",
+   "exit": 0,
+   "wall_s": 0.063,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 1.872,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 0.352,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-organ_skip_spleen",
+   "exit": 0,
+   "wall_s": 0.061,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "simulate-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.611,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "replay-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.18,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "report-organ_skip_kidney_left",
+   "exit": 0,
+   "wall_s": 0.06,
+   "json": true
+  },
+  {
+   "case": "pancreas-0051",
+   "step": "render",
+   "exit": 0,
+   "wall_s": 0.766,
+   "json": true
+  },
+  {
+   "case": "cli",
+   "step": "usage-error",
+   "exit": 2,
+   "wall_s": 0.019,
+   "json": true
+  }
+ ],
+ "ok": true
+}

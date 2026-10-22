@@ -1,0 +1,244 @@
+{
+ "A": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r0",
+ "B": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r8",
+ "iters": 5,
+ "reps": 5,
+ "live_posts": 200,
+ "order": "ABAB.. / BABA.. alternating per iteration",
+ "loadavg_per_iteration": [
+  [
+   9.46,
+   8.91,
+   10.37
+  ],
+  [
+   9.68,
+   9.04,
+   10.26
+  ],
+  [
+   5.31,
+   7.65,
+   9.6
+  ],
+  [
+   10.55,
+   8.5,
+   9.7
+  ],
+  [
+   13.52,
+   10.91,
+   10.56
+  ],
+  [
+   13.72,
+   11.62,
+   10.86
+  ]
+ ],
+ "modules": {
+  "A": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r0/covmap/scoring.py",
+  "B": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r8/covmap/scoring.py"
+ },
+ "summary_median_over_scenarios": {
+  "lidc-0001": {
+   "cold_s": {
+    "A": 0.3786,
+    "B": 0.1499
+   },
+   "warm_ms": {
+    "A": 127.4384,
+    "B": 62.3034
+   },
+   "live_ms": {
+    "A": 36.2356,
+    "B": 1.4406
+   },
+   "live_p95_ms": {
+    "A": 47.5534,
+    "B": 2.9338
+   }
+  },
+  "pancreas-0051": {
+   "cold_s": {
+    "A": 0.5878,
+    "B": 0.2066
+   },
+   "warm_ms": {
+    "A": 214.1017,
+    "B": 101.9335
+   },
+   "live_ms": {
+    "A": 58.7488,
+    "B": 1.7234
+   },
+   "live_p95_ms": {
+    "A": 77.3619,
+    "B": 3.5848
+   }
+  }
+ },
+ "per_scenario": {
+  "lidc-0001/full_read": {
+   "cold_s": {
+    "A": 0.3395,
+    "B": 0.1342
+   },
+   "warm_ms": {
+    "A": 131.9508,
+    "B": 54.0845
+   },
+   "live_ms": {
+    "A": 36.0291,
+    "B": 1.2734
+   },
+   "live_p95_ms": {
+    "A": 46.0813,
+    "B": 2.6934
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "lidc-0001/window_skip_lung": {
+   "cold_s": {
+    "A": 0.2979,
+    "B": 0.1213
+   },
+   "warm_ms": {
+    "A": 105.0802,
+    "B": 50.303
+   },
+   "live_ms": {
+    "A": 35.9058,
+    "B": 1.6495
+   },
+   "live_p95_ms": {
+    "A": 46.6975,
+    "B": 3.4388
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "lidc-0001/region_skip_left_lung": {
+   "cold_s": {
+    "A": 0.4176,
+    "B": 0.1655
+   },
+   "warm_ms": {
+    "A": 122.9261,
+    "B": 80.2915
+   },
+   "live_ms": {
+    "A": 36.4422,
+    "B": 1.5117
+   },
+   "live_p95_ms": {
+    "A": 48.4093,
+    "B": 2.7821
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "lidc-0001/organ_skip_spleen": {
+   "cold_s": {
+    "A": 0.419,
+    "B": 0.2256
+   },
+   "warm_ms": {
+    "A": 157.6309,
+    "B": 70.5223
+   },
+   "live_ms": {
+    "A": 38.431,
+    "B": 1.3696
+   },
+   "live_p95_ms": {
+    "A": 54.4145,
+    "B": 3.0856
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "pancreas-0051/full_read": {
+   "cold_s": {
+    "A": 0.6304,
+    "B": 0.2049
+   },
+   "warm_ms": {
+    "A": 207.6265,
+    "B": 99.1439
+   },
+   "live_ms": {
+    "A": 59.6005,
+    "B": 1.6883
+   },
+   "live_p95_ms": {
+    "A": 78.9632,
+    "B": 4.6467
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "pancreas-0051/window_skip_lung": {
+   "cold_s": {
+    "A": 0.5089,
+    "B": 0.1901
+   },
+   "warm_ms": {
+    "A": 151.3408,
+    "B": 77.0597
+   },
+   "live_ms": {
+    "A": 58.965,
+    "B": 2.0698
+   },
+   "live_p95_ms": {
+    "A": 77.8438,
+    "B": 3.1407
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "pancreas-0051/region_skip_left_lung": {
+   "cold_s": {
+    "A": 0.5453,
+    "B": 0.2082
+   },
+   "warm_ms": {
+    "A": 220.577,
+    "B": 104.7231
+   },
+   "live_ms": {
+    "A": 58.5325,
+    "B": 1.7586
+   },
+   "live_p95_ms": {
+    "A": 76.88,
+    "B": 4.029
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  },
+  "pancreas-0051/organ_skip_spleen": {
+   "cold_s": {
+    "A": 0.9347,
+    "B": 0.4537
+   },
+   "warm_ms": {
+    "A": 720.3085,
+    "B": 363.0305
+   },
+   "live_ms": {
+    "A": 53.244,
+    "B": 0.3999
+   },
+   "live_p95_ms": {
+    "A": 70.6139,
+    "B": 1.2213
+   },
+   "fingerprint_identical": true,
+   "live_fingerprint_identical": true
+  }
+ }
+}

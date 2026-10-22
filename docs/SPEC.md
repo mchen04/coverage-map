@@ -7,8 +7,8 @@ changing an interface.
 
 ## Hosts and locations
 
-- Code is edited on mbp-main in this checkout. Everything executes on the Mac mini in
-  `$MINI_WORK=/Users/michaelchen/coverage-map-work` (task-owned):
+- Code is edited in this checkout on a workstation, where nothing heavy runs. Everything
+  executes on a Mac mini (Apple M4) in `$MINI_WORK=/Users/michaelchen/coverage-map-work`:
   `venv/` (Python 3.12, `requirements-mini.txt`), `deps/node` (Node 24 + pnpm 12),
   `deps/orthanc` (Orthanc 1.13 + DicomWeb plugin), `ohif/` (OHIF v3.13.13 checkout),
   `ohif-dist/` (built viewer), `data/` (`$COVMAP_DATA`), `totalseg/` (weights).
@@ -48,8 +48,8 @@ changing an interface.
 ```
 
 Slice index `k` orders slices by position along `slice_dir` ascending (ImagePositionPatient
-projected on the normal). Arrays are indexed `[k, r, c]`. `world = origin + c*col_mm*row_dir...`
-— precisely: `world = origin + c * pixel_spacing[1] * row_dir + r * pixel_spacing[0] * col_dir + k * slice_spacing * slice_dir`
+projected on the normal). Arrays are indexed `[k, r, c]`.
+`world = origin + c * pixel_spacing[1] * row_dir + r * pixel_spacing[0] * col_dir + k * slice_spacing * slice_dir`
 (DICOM: the first IOP triple is the direction along a row, i.e. increasing column).
 
 ### `seg/organs.json`
@@ -87,7 +87,9 @@ A displayed VOI `(wc, ww)` in HU classifies to at most one class:
 | `bone` | 1000–4500 | 150 to 1000 | Bone 2500/480 |
 | `soft` | 100–700 | −50 to 150 | Soft tissue 400/40, Liver 150/90, Mediastinum 350/50 |
 
-Anything else (e.g. Brain 80/40, full-range) is `other` and qualifies no organ.
+Anything else (e.g. Brain 80/40, full-range) is `other` and qualifies no organ. Coverage Map
+targets body CT: head organs (`brain`, `skull`) exist only in the catalog, neither shipped case
+contains them, and the Brain preset is deliberately neutral, so head CT is not supported.
 Organ `windows` lists the classes that qualify it: lungs `["lung"]`, bones `["bone"]`,
 soft organs `["soft"]`, trachea `["lung","soft"]`.
 
@@ -102,7 +104,7 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
  "normal": [nx, ny, nz],
  "voi": {"wc": 40, "ww": 400},
  "canvas_px": [w, h],
- "source": "ohif" | "simulated" | "browser-scripted"}
+ "source": "ohif" | "simulated"}
 ```
 
 - `kind: "view"` starts a display state for that viewport; it lasts until the next event
@@ -110,13 +112,34 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   tab hidden), or `kind: "end"` (session end). Dwell = elapsed `t_ms`.
 - `t_ms` is monotonic milliseconds since session start (`performance.now()` based).
 - `corners_lps` are the four canvas corners (TL, TR, BR, BL) mapped to patient LPS mm via
-  `viewport.canvasToWorld`. The scorer maps them to continuous voxel coordinates; the axis
+  `viewport.canvasToWorld` (each coordinate within ±1e6 mm). The scorer maps them to continuous voxel coordinates; the axis
   with (near) zero extent is the slice axis, the other two give the visible rectangle,
   clipped to the volume. Axial, coronal and sagittal planes are scored; oblique planes
   (normal not within 5° of a volume axis) are counted under `ignored.oblique`.
 - For stack viewports `sop` is the displayed instance and fixes `k` (authoritative over
   corners for the slice axis). Unknown `sop`/`series` → `ignored.unknown_image`.
+- A volume viewport (MPR) whose volume is still streaming in shows partly loaded planes: the
+  viewer sends one `hidden` for it and no `view` until every frame of the volume has loaded
+  (a frame that failed to load keeps its planes unrecorded).
 - `voi` is in modality units (HU after rescale).
+- Reader actions are events in the same log (so replay reproduces them):
+  `{"kind": "annotation", "organ": "<key>", "action": "done" | "na" | "flag" | "clear", "note": "..."}`
+  (`done` = the reader attests review of an organ the measurement does not show as reviewed;
+  `na` = not applicable, e.g. absent/out of scope; `flag` = suspicious segmentation/outline;
+  `clear` removes that organ's annotations; a `note` replaces the organ's note, `""` removes it
+  and no `note` keeps it) and
+  `{"kind": "finish", "confirmed": true|false, "remaining": ["<key>", ...]}`.
+  A confirmed `finish` also ends every open display state at its `t_ms`, exactly like
+  `{"kind": "hidden", "viewport": "*"}`: the image on screen when the reader confirms is
+  credited, so replaying a finished session's log equals what the reader saw at the
+  confirm. View events after it start new states as usual; `confirmed: false` ends nothing.
+  Coverage keeps what a confirmed finish confirmed in `finished.at_finish` (`reviewed`,
+  `partial`, `skipped`, `voxel_coverage`, per-organ `statuses` at its `t_ms`), so reading on
+  after the confirm never rewrites it. Rules are part of the scoring, not of the reading: a rules
+  change re-scores the whole log, `at_finish` included (what the confirm showed under the new
+  rules, as `covmap replay` of the log with those rules gives). A confirmed finish stays: a
+  later `confirmed: false` (the reader backed out of the Finish sheet) is logged but leaves
+  `finished` as it was; only another confirmed finish replaces it.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -124,11 +147,43 @@ POST body to `/api/sessions/{id}/events`: `{"events": [...], "now_ms": 2345.6}`.
 lets live scoring credit the still-open state of each viewport up to now (provisional,
 not committed).
 
+`seq` identifies an event within its session. An event whose `seq` was already applied is
+not applied again: an identical resend (equal apart from the `session` / `from_sample`
+stamps) counts under `events.ignored.other` in a replayed file (live POSTs drop it before
+logging, so it is neither scored nor logged twice), a different event with a used `seq` (e.g.
+two tabs numbering from the same `seq`) under `events.ignored.conflict` (replay of a file, CLI;
+live POSTs refuse it, below). The first event applied with a `seq` wins.
+
+Live POST guards (HTTP only; `covmap replay`, `timeline` and the CLI score logs without
+them). A batch failing a guard is refused whole and nothing is applied:
+- 400: every event's `session`, when present, must be the session in the URL;
+- 409 seq conflict: an event reuses a `seq` already accepted in the session, or used earlier
+  in the same batch, for a different event (compared as above, in the log numbering after
+  the sample shift). Body `{"ok": false, "error", "conflicts": [seq, ...], "last_seq",
+  "last_t_ms"}`, all in the client's numbering (`last_*` as in session info), so the client
+  can renumber after `last_seq` and resend. Identical resends are accepted (and dropped);
+- 400 clock: the scorer never runs time backwards, so events from an earlier client clock
+  would freeze it. All times are checked in the client's clock (as POSTed, before the
+  sample shift, so sample-started sessions post from `t_ms` 0). `elapsed` = server time
+  since the session was created (monotonic within a server process, so a wall-clock step
+  does not move it); the first accepted POST carrying `now_ms` pins the
+  client's lead `max(0, now_ms - elapsed)` (the OHIF client may start its clock while the
+  viewer loads, before the session exists; kept as `clock_lead_ms` in the session meta,
+  0 until pinned). Refused: an event with `t_ms > min(elapsed + lead, now_ms) + tolerance`,
+  or `now_ms > elapsed + lead + tolerance`. Tolerance 5000 ms; `COVMAP_CLOCK_TOLERANCE_MS`
+  sets it, `off` disables the clock check (the session check stays).
+- `from_sample` on posted events is dropped (only the server marks sample events).
+
+A batch whose new events are older than events already applied (two POSTs in flight, an
+unload beacon overtaking a tick) is scored in log order, by re-scoring the session as replay
+and a restart do, so live coverage always equals the record. A batch the scorer fails on for
+any other reason (HTTP 500) is not applied either: the session rebuilds from its log.
+
 ## Scoring (`covmap/scoring.py`)
 
 Per organ voxel the scorer accumulates qualifying dwell: the sum over display states whose
 plane contains the voxel, whose visible rectangle contains it, and whose window class is in
-the organ's `windows`. A voxel is **seen** when qualifying dwell ≥ `min_dwell_ms`.
+the organ's `windows`. A voxel is **seen** when it had a qualifying display and qualifying dwell ≥ `min_dwell_ms`.
 
 `coverage = seen voxels / organ voxels`. Status: `reviewed` (green) if coverage ≥
 `reviewed_threshold`; `skipped` (gray) if coverage < `skipped_threshold`; else `partial`
@@ -152,15 +207,32 @@ displayed but the voxel was never inside the visible rectangle), `never_displaye
  "summary": {"reviewed": 0, "partial": 0, "skipped": 0, "organs": 0, "voxel_coverage": 0.0},
  "baseline": {"model": "per-image-viewed", "images": 133, "viewed": 120,
               "unviewed_ranges": [[a, b]], "complete": false},
- "events": {"total": 0, "views": 0, "ignored": {"oblique": 0, "unknown_image": 0, "other": 0},
+ "events": {"total": 0, "views": 0, "ignored": {"oblique": 0, "unknown_image": 0, "other": 0, "conflict": 0},
             "sources": {"ohif": 0}},
  "timing_ms": {"score": 0.0}}
 ```
 
-`unseen` values are fractions of organ voxels. `baseline` is the per-image viewed/unviewed
-model (`covmap/baseline.py`): an image counts as viewed when it was displayed in any
-viewport for any duration under any window and zoom (≥ 1 view event naming it, or a volume
-viewport state whose plane is that acquisition slice). This models the described
+API responses (`POST …/events`, `GET …/coverage`, `POST …/rules`) and the JSON export add
+`"session_info"`, the object of `GET /api/sessions/{id}` (HTTP API); `covmap replay` output
+does not have it.
+
+`GET …/coverage` and the `json`/`csv` exports report the session as the reader last saw it:
+while display states are open (no `end`, `hidden "*"` or confirmed `finish` since), the
+coverage provisional at the latest POST's `now_ms`, equal to that POST's response
+(`"provisional": true`, `"t_ms"` = that `now_ms` in log time, i.e. plus `t_offset_ms`);
+otherwise, or when that POST carried no `now_ms` (or none came since the server started),
+the committed coverage. Replaying the log (`covmap replay`) credits closed display states
+only, so it equals the export once the session is closed (e.g. after a confirmed finish).
+
+`unseen` values are fractions of organ voxels. Each organ also carries the reader layer
+`"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
+`status` never changes because of annotations. `summary` adds `attested` (reader done on a
+non-reviewed organ), `not_applicable`, `flagged`, and `remaining` (keys of organs that are not
+reviewed and not marked done/na — the finish list), plus `finished` (the latest confirmed finish
+with its `at_finish`; before any, the last finish event or null). `baseline` is the per-image
+viewed/unviewed model (`covmap/baseline.py`): an image counts as viewed when it was displayed
+in any viewport for any duration under any window and zoom (≥ 1 view event naming it, or a
+volume viewport state whose plane is that acquisition slice). This models the described
 Synapse/eRAD per-image behaviour; it is not the proprietary product.
 
 ## HTTP API (`covmap serve`, aiohttp, default `127.0.0.1:8765`)
@@ -173,31 +245,71 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/organs` | `seg/organs.json` |
 | `GET /api/cases/{case}/volume` | `volume.json` |
 | `GET /api/cases/{case}/meshes.json`, `/meshes.bin` | mesh files (bin as `application/octet-stream`) |
-| `POST /api/sessions` `{case, label?}` | `{session, case}` |
-| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) |
-| `GET /api/sessions/{id}/coverage` | committed coverage JSON |
+| `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
+| `GET /api/sessions?case=<id>[&limit=10]` | `{case, sessions: [{session, label, from_sample, created, events, last_t_ms, finished}]}`: the case's latest readings, newest first (limit 1–50; read from meta and logs, no scoring); 400 without `case` |
+| `GET /api/sessions/{id}` | session info (below), 404 if unknown |
+| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; nothing applied on 400 (invalid events, foreign `session`, clock guard) or 409 (a `seq` already used for a different event: `{error, conflicts: [seq…], last_seq, last_t_ms}`, client numbering) — see "Reading events" |
+| `GET /api/sessions/{id}/coverage` | coverage JSON as last shown (provisional at the latest POST's `now_ms` while views are open, else committed; "Coverage JSON") + `session_info` |
+| `GET /api/sessions/{id}/gap?organ=<key>[&now_ms=]` | where the organ is still unseen (below); 400 without `organ`, 404 unknown organ |
 | `GET /api/sessions/{id}/events.jsonl` | the session's event log |
-| `GET /dicom-web/*`, `/wado*` | reverse proxy to Orthanc (`http://127.0.0.1:8042`) |
+| `POST /api/sessions/{id}/rules` `{min_dwell_ms?, reviewed_threshold?, skipped_threshold?}` | re-score the whole session under these research rules; returns coverage JSON |
+| `GET /api/sessions/{id}/timeline?frames=40` | `{frames: [{t_ms, summary, statuses: {key: status}, coverage: {key: x}, view}]}` coverage snapshots for replay; `view` = the last stack image of the case's series displayed at or before `t_ms`, `{sop, k, voi: {wc, ww}, window}` (`window` = class of the voi), `null` before the first; volume views, hidden/end, unknown images and resent `seq` do not change it |
+| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log `<id>.jsonl`, coverage JSON `<id>.coverage.json` (with `session_info`; the same coverage as `GET …/coverage`), per-organ CSV `<id>.csv` (the same coverage), or `<id>-from-sample.csv` for a session started from a sample (attachment) |
+| `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
+| `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
+| `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
+| `GET`/`HEAD` `/dicom-web/*`, `/wado` | read-only reverse proxy to Orthanc (`http://127.0.0.1:8042`); other methods 405, `.`/`..` segments 400; the server answers only loopback `Host` headers |
 | `GET /render.html`, `/render/*` | standalone vtk.js organ-map page used by `covmap render` |
 | `GET /*` | OHIF dist (`$COVMAP_OHIF_DIST`), SPA fallback to `index.html` |
 
 Session logs persist to `$COVMAP_DATA/sessions/<id>.jsonl`.
 
+Session info (`GET /api/sessions/{id}`, and `session_info` in coverage responses):
+`{"session", "case", "label", "from_sample": name|null, "sample_events": n, "created",
+"finished": bool, "events": n, "last_seq": int|null, "last_t_ms": float|null,
+"last_now_ms": float|null, "rules": {...},
+"t_offset_ms": x, "seq_offset": n, "last_view": {sop, k, voi: {wc, ww}, window} | null}`.
+`events` counts the whole log, `sample_events` the
+prefilled sample events among them; `last_seq`/`last_t_ms` are the highest live (non-sample)
+`seq`/`t_ms` in the client's own numbering (as POSTed, before the sample shift; null before
+any), so a client can continue its numbering; `last_now_ms` is the highest `now_ms` POSTed,
+in the same numbering (null before any, or since a server restart);
+`t_offset_ms`/`seq_offset` are that shift
+(0 unless started from a sample). `finished` = a `finish` was confirmed;
+`rules` = the session's rule overrides (`{}` = defaults; effective values are coverage
+`params`). `created` is the server's local time stamp. `last_view` = the latest displayed
+stack image of the case's series in the session (as timeline `view`; null before any), so a
+resumed client can restore the slice and window.
+
+Gap target (`GET /api/sessions/{id}/gap?organ=<key>`): `{"organ": key, "k": int|null,
+"sop": str|null, "window": "soft"|"lung"|"bone", "unseen_voxels": n, "ranges": [[k0, k1], ...]}`
+from the current state: committed, plus the open display states credited up to `now_ms`
+(the query `now_ms`, client clock, shifted like POSTs; default the latest POST's `now_ms`
+since the server started; committed if neither, or if that POST carried none). `unseen_voxels` = the organ's unseen voxels; `k` = the slice
+holding most of them (ties: nearest to the organ's `center_k`, then the lower `k`), `sop`
+its instance, both null when nothing is unseen. `ranges` = maximal runs of consecutive
+slices (inclusive) whose unseen count is ≥ max(1, 2% of the organ's voxels on that slice);
+slices under that (edge noise) are left out of the ranges but still count in
+`unseen_voxels`, so `ranges` can be `[]` while `k` is set. `window` = the organ's first
+qualifying window class (`windows[0]`).
+
 ## CLI (`python -m covmap <cmd>`; every command prints one JSON object to stdout)
 
 | Command | Does |
 |---|---|
-| `fetch --case <id> [--series UID --collection C]` | download from TCIA NBIA v1, write source/, provenance, volume.json, ct.nii.gz |
-| `orthanc-load --case <id>` | upload `source/` into Orthanc |
-| `segment --case <id> [--fast] [--device cpu|mps] [--roi-subset]` | TotalSegmentator → labels.npy, organs.json, meshes |
-| `simulate --case <id> --scenario <name> [--out events.jsonl]` | scripted reading events (`source: simulated`) + truth |
-| `replay --case <id> --events <file>` | coverage JSON (+ baseline) |
-| `report --case <id> --coverage <file> [--truth <file>]` | summary + truth comparison (TP/FP/FN per organ, baseline catches) |
-| `render --case <id> [--coverage <file>] --out <png>` | 3D organ map PNG via the same vtk.js module in headless Chromium |
-| `serve [--port 8765]` | app server |
-| `gauntlet ...`, `bench ...` | evaluation drivers |
+| `fetch --case <id> [--series UID --collection C] [--force]` | download from TCIA NBIA v1, write source/, provenance, volume.json, ct.nii.gz |
+| `orthanc-load --case <id> [--orthanc URL]` | upload `source/` into Orthanc |
+| `segment --case <id> [--fast] [--device auto\|cpu\|mps] [--roi-subset] [--threads N] [--reuse] [--out-name seg]` | TotalSegmentator → labels.npy, organs.json, meshes |
+| `scenarios --case <id>` | scripted reading scenarios available for the case |
+| `simulate --case <id> --scenario <name> --out events.jsonl [--seed N]` | scripted reading events (`source: simulated`) + truth (`<out>.truth.json`) |
+| `replay --case <id> --events <file> [--out cov.json] [--min-dwell-ms] [--reviewed-threshold] [--skipped-threshold]` | coverage JSON (+ baseline) |
+| `report --case <id> --coverage <file> [--truth <file>] [--out <file>]` | summary + truth comparison (TP/FP/FN per organ, baseline catches) |
+| `render --case <id> [--coverage <file>] --out <png> [--width] [--height] [--server URL]` | 3D organ map PNG via the same vtk.js module in headless Chromium |
+| `serve [--host] [--port 8765] [--orthanc URL]` | app server |
 
-Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout.
+Evaluation drivers are scripts, not subcommands: `e2e/gauntlet.py`, `e2e/run_reading.py`, `bench/bench_*.py`.
+
+Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout. Exit 2: a usage error (`cmd` null, error starting `usage:`) or a refusal by the command (`simulate` with an unknown scenario or one the case cannot run: `applicable: false`; a coverage, truth or event file of another case, a malformed event log, `segment --reuse` of files it cannot vouch for: no `trace`). Exit 1: an unexpected error (with `trace`). `serve` prints its JSON line once it is listening (exit 0 when stopped), or only the error (e.g. the port is taken). `--help` prints argparse's plain-text help, the one non-JSON output.
 
 ### Scenario truth (`simulate` output, `<out>.truth.json`)
 
@@ -211,3 +323,96 @@ Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout.
 
 `expected` gives the intended status per organ key; `"*"` covers every other organ in the
 case. A scenario passes when every organ's status equals its expected status.
+
+## Demo and sample sessions
+
+- The default demo case is `pancreas-0051` (configurable `COVMAP_DEMO_CASE`); `GET /` opens
+  `/coverage?StudyInstanceUIDs=<its study>` directly, so a visitor needs no import step.
+- Sample sessions live in `$COVMAP_DATA/samples/<case>/<name>.jsonl` with `<name>.json`
+  metadata `{label, source, description, created}`. They are real recordings of the OHIF
+  instrumentation driven by the scripted browser reader (metadata `source: browser-scripted`)
+  or labeled simulated logs (`source: simulated`); the UI shows the label and source. An event's
+  own `source` names the instrument that recorded it, so recorded sample events say `ohif`; the
+  server stamps every event copied from a sample with `from_sample: <name>` (clients cannot set
+  it), and `session_info` carries `from_sample` and `sample_events`.
+
+## UI contract (coverage mode, one page)
+
+The page never scrolls; only the organ list (and dialogs' lists) scroll. Right panel, top to
+bottom: summary line (reviewed/partial/skipped/remaining counts, overall %, session menu:
+new reading, start from sample, open another case, replay, rules, export), the vtk.js 3D map
+(front/back/right/left views, "Hide reviewed" toggle, legend with N/A), quick actions (Next gap,
+Soft/Lung/Bone windows, Finish), the live organ list (status dot, floored %, window badge,
+reader state; row actions done / N/A / flag; the selected organ's detail shows "On images a–b
+of N", "Still to read: images …" in the viewer's numbering and "% unseen · reason" hints), and
+a one-line research-use note.
+
+- Jumps. Clicking a gray/yellow organ in the map, its list row, a finish-list entry or Next
+  gap goes to the server's gap target (`GET /api/sessions/{id}/gap`, see "Gap target"): the
+  organ's slice with the most unseen voxels, in the organ's window preset. If the reader's pan
+  or zoom leaves part of the organ on that slice outside the canvas (its outline from
+  `GET /api/cases/{case}/outline`, else `bbox_rc`), the stack viewport pans to centre the organ
+  and zooms out only as far as needed to fit it with an 8% margin; an organ already fully in
+  view leaves pan and zoom unchanged. The camera moves in the image plane only, so the
+  radiological flip and the window stay.
+- Display. The viewer opens in Soft (the active preset is highlighted, with a window hint).
+  Axial stacks are shown radiologically (anterior up, patient right on screen left) whatever the
+  acquisition order; recorded corners stay in true patient coordinates, so scoring does not
+  depend on the flip. OHIF's Reset View resets pan and zoom (the flip is re-applied) and keeps
+  the window if it was one of the presets 1–5 (otherwise the image's own window returns). The
+  panel names the window class with the same rules as the S/L/B badges: a window in no class
+  shows "Brain window: counts for no organ — press 1 soft, 2 lung, 3 bone" ("Custom window: …"
+  when it is no preset); a non-preset window in a class shows "Custom window W 2400 / L 176:
+  counts as bone (B)".
+- Sessions. A live session is labeled "live reading (OHIF)". "Start from sample" creates a new
+  session "Your reading, started from sample: <label>" holding the sample's events first; the
+  sample itself is never modified. `localStorage` key `covmap:session:<caseId>` stores
+  `{session, label, sample, saved}`; a reload resumes through `GET /api/sessions/{id}`,
+  continuing at `last_seq + 1` and 1 ms after the later of `last_t_ms` and `last_now_ms`,
+  and shows "Resumed · Start new reading…".
+  "New reading" asks before ending the current reading. Session ▾ › "Recent readings for this
+  case" lists the case's other readings (`GET /api/sessions?case=`, newest first: label, start
+  time, events, "✓ finished"); choosing one ends the current session as a switch does and
+  continues the chosen one as after a reload (localStorage, `last_view`, `last_seq + 1`).
+  On a session switch, recording pauses, the old session's `end` is flushed and the event queue
+  is cleared before the new session's clock starts at its first event. A mark or Finish during
+  the switch is refused with "The reading is changing. Try again in a moment." A hidden tab records no
+  `view` (also while a reading resumes or switches); shown again, it re-captures the display.
+  At `pagehide` recording stops, so `end` is the page's last event: the beacon carries the
+  events of a POST still in flight (unless it was sent with keepalive, which outlives the
+  page), then the queue, then `end`; the server drops identical resends, so each event is
+  scored and logged once.
+- One recording tab per session. A tab records only while it holds the Web Lock
+  `covmap-session-<id>`; another tab on the same session shows "This reading is open in another
+  tab — not recording here until that tab closes", follows the session's coverage, and keeps a
+  queued request for the lock: when the recording tab closes or leaves the session, it takes
+  over by itself (400 ms later, so the closing tab's beacon lands first) and continues as after
+  a reload (`last_seq + 1`, clock after `last_t_ms` / `last_now_ms`). Record here takes over at
+  once (steals the lock; the other tab then waits in turn, sending nothing more). A takeover
+  first logs `hidden '*'`, so what the other tab showed counts until its last `now_ms`. Without
+  Web Locks (non-secure origins) the server's 409 on a reused `seq` makes the client renumber
+  its queue and resend once.
+- Finished state: a confirmed finish shows "✓ Finished" at once and stays, in the panel and on
+  the server; opening Finish again and backing out (Go back, Escape) keeps it, and Confirm again
+  replaces it. Reading on after a confirmed finish is recorded; once the summary differs from
+  `summary.finished.at_finish` the chip reads "✓ Finished at a%" followed by "reading continued
+  (now b%)" (voxel share, with decimals when needed to tell them apart).
+- Replay plays a session's timeline frames, moving the viewer to each frame's `view` and showing
+  that frame's statuses, counts and done / N/A / flag marks; it sends `hidden '*'` when it starts,
+  records nothing (also after a takeover while it opens) and disables the rules form until it
+  closes, then restores the view.
+- Finish opens a compact list of remaining gray/yellow organs with per-organ decisions
+  (done / N/A / flag), Go back and Confirm finish; the research note stays visible. The
+  decisions keep their full height (up to a third of the sheet, then they scroll); the list of
+  remaining organs gives way.
+- Test hooks: `window.__covmap` exposes `sessionId`, `flush()`, `newReading(): Promise<string|null>`
+  (no confirm; resolves once the new session is attached) and `setRadiological(on)`.
+
+Keyboard: `N` next gap, `D` mark selected organ done, `A` mark selected organ not applicable,
+`G` flag selected organ's segmentation, `O` toggle selected organ outline on the image,
+`F` finish, `1` soft, `2` lung, `3` bone, `4` liver, `5` brain (coverage mode only; stock
+modes keep stock hotkeys). Every claim in the UI stays research-only: coverage measures what
+was displayed (slice, region, window, dwell), not what was perceived or diagnosed.
+
+Known limitation: magnification is not scored. A slice region counts as displayed at any zoom,
+so an organ shown very small (for example at 0.25× zoom) still accrues coverage.

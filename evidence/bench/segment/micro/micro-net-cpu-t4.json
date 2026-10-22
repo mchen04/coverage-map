@@ -1,0 +1,208 @@
+{
+ "script": "net_forward_bench.py",
+ "case": "lidc-0001",
+ "patch": "center 128^3 at 1.5 mm, task 291 normalization",
+ "torch": "2.14.1",
+ "results": [
+  {
+   "config": "sum2d:256",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.824,
+    3.777
+   ],
+   "median_s": 3.8005,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    9.13,
+    8.54,
+    9.47
+   ],
+   "max_rss_gb": 5.44,
+   "bitwise_equal_logits": true,
+   "max_abs_diff_logits": 0.0,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "sum2d_t:256",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.622,
+    4.109
+   ],
+   "median_s": 3.8655,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    8.8,
+    8.51,
+    9.45
+   ],
+   "max_rss_gb": 5.98,
+   "bitwise_equal_logits": true,
+   "max_abs_diff_logits": 0.0,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "sum2d_t:64",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.703,
+    3.858
+   ],
+   "median_s": 3.7805,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    8.15,
+    8.38,
+    9.39
+   ],
+   "max_rss_gb": 6.07,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.00011444091796875,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "sum2d_t:1024",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    4.094,
+    3.914
+   ],
+   "median_s": 4.0040000000000004,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    7.5,
+    8.23,
+    9.32
+   ],
+   "max_rss_gb": 6.07,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.0001220703125,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "fold2d:256",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.693,
+    3.812
+   ],
+   "median_s": 3.7525,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    7.35,
+    8.17,
+    9.28
+   ],
+   "max_rss_gb": 6.07,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.000156402587890625,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "fold2d:1024",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.834,
+    3.853
+   ],
+   "median_s": 3.8435,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    6.76,
+    8.02,
+    9.22
+   ],
+   "max_rss_gb": 7.02,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.000202178955078125,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "chunk3d:256",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    4.0,
+    3.622
+   ],
+   "median_s": 3.811,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    6.86,
+    7.97,
+    9.18
+   ],
+   "max_rss_gb": 7.02,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.0001354217529296875,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  },
+  {
+   "config": "chunk3d:1024",
+   "device": "cpu",
+   "threads": 4,
+   "times_s": [
+    3.474,
+    3.523
+   ],
+   "median_s": 3.4985,
+   "warmup_excluded": 1,
+   "calls": {
+    "decomposed": 69,
+    "native": 0
+   },
+   "loadavg": [
+    6.59,
+    7.87,
+    9.13
+   ],
+   "max_rss_gb": 7.21,
+   "bitwise_equal_logits": false,
+   "max_abs_diff_logits": 0.0001354217529296875,
+   "argmax_disagree_voxels": 0,
+   "argmax_voxels": 2097152
+  }
+ ]
+}

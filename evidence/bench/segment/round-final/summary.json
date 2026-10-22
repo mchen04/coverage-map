@@ -1,0 +1,222 @@
+{
+  "final": {
+    "round": "final",
+    "production_hashes": {
+      "lidc-0001": {
+        "totalseg.nii.gz": "b411f6906c23b6c543dbe63a6e69359e32974f6aaaa12dc875a476dcc4994135",
+        "labels.npy": "8dd60d1d60fe0fd37d07a53d754a99a3afce8ab194353d3feaa25e1330690b05",
+        "organs.json": "88f4ff75e51d407ec62a450051d868952266b5ff8d406ed6f412fddce31cd237",
+        "meshes.bin": "ca4041a3dfaaad41ddb440ce96b27af2847e0609751fda2e8ddaec80268c45d3",
+        "meshes.json": "40e9f0f3025f8849746a96b26307008017d81a335129dbb868bdf8671709df08"
+      },
+      "pancreas-0051": {
+        "totalseg.nii.gz": "1104913c5659a16faf6cb527073f2f9cdc3bca8e09d1c3c2b78dcfaa236f88df",
+        "labels.npy": "6e37df447e080e30f84efffc2329de17269aa93f66c0f916076ccd19c97bbcbd",
+        "organs.json": "9027e5ef001ac32f4ff881e5d30d3e58b245e4aa1f1d29bf1b66366d69a7dc9b",
+        "meshes.bin": "5b3886a79afb04e9deb54ce7322c9a2536aa544251b01e92bdcba9426744211a",
+        "meshes.json": "51ffb1aa80d661d1fc8c3171c445a5d5f8aaa41ba522bc431beeb5829c9a878d"
+      }
+    },
+    "rows": {
+      "lidc-0001/adopted": {
+        "wall_s": [
+          112.13,
+          110.12
+        ],
+        "ts_s": [
+          106.28,
+          104.11
+        ],
+        "pass": [
+          true,
+          true
+        ],
+        "dice_min": [
+          1.0,
+          1.0
+        ],
+        "dice_mean": [
+          1.0,
+          1.0
+        ],
+        "labels_identical": [
+          false,
+          false
+        ],
+        "totalseg_identical": [
+          false,
+          false
+        ],
+        "load1": [
+          4.8,
+          10.4
+        ],
+        "files": [
+          "lidc-0001-adopted-r1.json",
+          "lidc-0001-adopted-r2.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d_t",
+          "device": "mps",
+          "budget_mb": 256,
+          "source": "default"
+        },
+        "torch_threads": 4,
+        "rss_gb": 5.61,
+        "n": 2,
+        "median_wall_s": 111.125,
+        "median_ts_s": 105.195,
+        "mps_driver_gb": 1.12
+      },
+      "lidc-0001/baseline": {
+        "wall_s": [
+          381.51,
+          384.37
+        ],
+        "ts_s": [
+          375.64,
+          378.67
+        ],
+        "pass": [
+          true,
+          true
+        ],
+        "dice_min": [
+          1.0,
+          1.0
+        ],
+        "dice_mean": [
+          1.0,
+          1.0
+        ],
+        "labels_identical": [
+          true,
+          true
+        ],
+        "totalseg_identical": [
+          true,
+          true
+        ],
+        "load1": [
+          2.07,
+          2.46
+        ],
+        "files": [
+          "lidc-0001-baseline-r1.json",
+          "lidc-0001-baseline-r2.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d",
+          "device": "cpu",
+          "budget_mb": 256,
+          "source": "environment"
+        },
+        "torch_threads": 8,
+        "rss_gb": 7.58,
+        "n": 2,
+        "median_wall_s": 382.94,
+        "median_ts_s": 377.155
+      },
+      "pancreas-0051/adopted": {
+        "wall_s": [
+          66.6,
+          66.65
+        ],
+        "ts_s": [
+          60.3,
+          60.32
+        ],
+        "pass": [
+          true,
+          true
+        ],
+        "dice_min": [
+          1.0,
+          1.0
+        ],
+        "dice_mean": [
+          1.0,
+          1.0
+        ],
+        "labels_identical": [
+          false,
+          false
+        ],
+        "totalseg_identical": [
+          false,
+          false
+        ],
+        "load1": [
+          6.4,
+          5.74
+        ],
+        "files": [
+          "pancreas-0051-adopted-r1.json",
+          "pancreas-0051-adopted-r2.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d_t",
+          "device": "mps",
+          "budget_mb": 256,
+          "source": "default"
+        },
+        "torch_threads": 4,
+        "rss_gb": 4.6,
+        "n": 2,
+        "median_wall_s": 66.625,
+        "median_ts_s": 60.31,
+        "mps_driver_gb": 1.12
+      },
+      "pancreas-0051/baseline": {
+        "wall_s": [
+          195.72,
+          195.37
+        ],
+        "ts_s": [
+          189.39,
+          189.16
+        ],
+        "pass": [
+          true,
+          true
+        ],
+        "dice_min": [
+          1.0,
+          1.0
+        ],
+        "dice_mean": [
+          1.0,
+          1.0
+        ],
+        "labels_identical": [
+          true,
+          true
+        ],
+        "totalseg_identical": [
+          true,
+          true
+        ],
+        "load1": [
+          4.35,
+          2.47
+        ],
+        "files": [
+          "pancreas-0051-baseline-r1.json",
+          "pancreas-0051-baseline-r2.json"
+        ],
+        "conv3d": {
+          "mode": "sum2d",
+          "device": "cpu",
+          "budget_mb": 256,
+          "source": "environment"
+        },
+        "torch_threads": 8,
+        "rss_gb": 6.87,
+        "n": 2,
+        "median_wall_s": 195.54500000000002,
+        "median_ts_s": 189.27499999999998
+      }
+    },
+    "note": "rss_gb (main-process peak RSS, max of the runs) and mps_driver_gb (MPS driver allocation read after the run, a lower bound) recomputed from the run files with tools/summarize.py; the other fields are as summarized after the round, against the production (pre-S2) hashes of that time"
+  }
+}

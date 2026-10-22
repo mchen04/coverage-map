@@ -1,0 +1,17 @@
+19:48:54 start baseline lidc-0001 r1
+19:55:17 done baseline lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/lidc-0001-baseline-r1.json", "wall_s": 381.51, "totalsegmentator_s": 375.6360485829937, "correctness_pass": true, "dice_min": 1.0}
+19:55:17 start adopted lidc-0001 r1
+19:58:11 done adopted lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/lidc-0001-adopted-r1.json", "wall_s": 112.13, "totalsegmentator_s": 106.2754554579733, "correctness_pass": true, "dice_min": 1.0}
+19:58:11 start baseline lidc-0001 r2
+20:04:37 done baseline lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/lidc-0001-baseline-r2.json", "wall_s": 384.37, "totalsegmentator_s": 378.6743220000062, "correctness_pass": true, "dice_min": 1.0}
+20:04:37 start adopted lidc-0001 r2
+20:06:29 done adopted lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/lidc-0001-adopted-r2.json", "wall_s": 110.12, "totalsegmentator_s": 104.10699087497778, "correctness_pass": true, "dice_min": 1.0}
+20:06:29 start baseline pancreas-0051 r1
+20:09:46 done baseline pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/pancreas-0051-baseline-r1.json", "wall_s": 195.72, "totalsegmentator_s": 189.3918637500028, "correctness_pass": true, "dice_min": 1.0}
+20:09:46 start adopted pancreas-0051 r1
+20:10:54 done adopted pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/pancreas-0051-adopted-r1.json", "wall_s": 66.6, "totalsegmentator_s": 60.298598583001876, "correctness_pass": true, "dice_min": 1.0}
+20:10:55 start baseline pancreas-0051 r2
+20:14:12 done baseline pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/pancreas-0051-baseline-r2.json", "wall_s": 195.37, "totalsegmentator_s": 189.15549079098855, "correctness_pass": true, "dice_min": 1.0}
+20:14:12 start adopted pancreas-0051 r2
+20:15:20 done adopted pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-final/pancreas-0051-adopted-r2.json", "wall_s": 66.65, "totalsegmentator_s": 60.322283333021915, "correctness_pass": true, "dice_min": 1.0}
+20:15:20 ROUND final COMPLETE

@@ -1,0 +1,48 @@
+{
+ "argv": [
+  "python",
+  "-m",
+  "covmap",
+  "simulate",
+  "--case",
+  "pancreas-0051",
+  "--scenario",
+  "window_skip_bone",
+  "--out",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/window_skip_bone.jsonl"
+ ],
+ "exit": 0,
+ "wall_s": 0.19,
+ "stdout_is_one_json_object": true,
+ "stdout": {
+  "case": "pancreas-0051",
+  "scenario": "window_skip_bone",
+  "source": "simulated",
+  "seed": 0,
+  "out": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/window_skip_bone.jsonl",
+  "truth": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/window_skip_bone.jsonl.truth.json",
+  "events": 371,
+  "duration_ms": 55500.0,
+  "intended_skips": [
+   "lumbar_spine",
+   "ribs_left",
+   "ribs_right",
+   "sternum",
+   "thoracic_spine"
+  ],
+  "expected": {
+   "thoracic_spine": "skipped",
+   "lumbar_spine": "skipped",
+   "ribs_left": "skipped",
+   "ribs_right": "skipped",
+   "sternum": "skipped",
+   "*": "reviewed"
+  },
+  "baseline_expected_complete": true,
+  "description": "Full stack in soft and lung windows only; the bone window is never used.",
+  "ok": true,
+  "cmd": "simulate",
+  "elapsed_s": 0.167
+ },
+ "stderr_tail": ""
+}

@@ -1,0 +1,16 @@
+17:56:57 start baseline lidc-0001 r1
+18:49:51 start chunk3d lidc-0001 r1
+18:55:46 done chunk3d lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/lidc-0001-chunk3d-r1.json", "wall_s": 353.03, "totalsegmentator_s": 346.89794325002003, "correctness_pass": true, "dice_min": 1.0}
+18:55:46 start baseline pancreas-0051 r1
+18:59:32 done baseline pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/pancreas-0051-baseline-r1.json", "wall_s": 224.91, "totalsegmentator_s": 218.42567558400333, "correctness_pass": true, "dice_min": 1.0}
+18:59:32 start chunk3d pancreas-0051 r1
+19:02:56 done chunk3d pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/pancreas-0051-chunk3d-r1.json", "wall_s": 202.15, "totalsegmentator_s": 195.3052468340029, "correctness_pass": true, "dice_min": 1.0}
+19:02:56 start chunk3d lidc-0001 r2
+19:08:57 done chunk3d lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/lidc-0001-chunk3d-r2.json", "wall_s": 359.23, "totalsegmentator_s": 353.0665218329814, "correctness_pass": true, "dice_min": 1.0}
+19:08:57 start baseline lidc-0001 r2
+19:15:13 done baseline lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/lidc-0001-baseline-r2.json", "wall_s": 374.27, "totalsegmentator_s": 368.4044210410211, "correctness_pass": true, "dice_min": 1.0}
+19:15:13 start chunk3d pancreas-0051 r2
+19:18:28 done chunk3d pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/pancreas-0051-chunk3d-r2.json", "wall_s": 194.25, "totalsegmentator_s": 187.23035916598747, "correctness_pass": true, "dice_min": 1.0}
+19:18:28 start baseline pancreas-0051 r2
+19:22:04 done baseline pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-2/pancreas-0051-baseline-r2.json", "wall_s": 213.38, "totalsegmentator_s": 206.81998899998143, "correctness_pass": true, "dice_min": 1.0}
+19:22:04 ROUND 2 COMPLETE

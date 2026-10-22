@@ -1,0 +1,115 @@
+{
+ "lidc-0001": {
+  "hash_equal": {
+   "totalseg.nii.gz": false,
+   "labels.npy": false,
+   "organs.json": false,
+   "meshes.bin": false,
+   "meshes.json": true
+  },
+  "old_hashes": {
+   "totalseg.nii.gz": "b411f6906c23b6c543dbe63a6e69359e32974f6aaaa12dc875a476dcc4994135",
+   "labels.npy": "8dd60d1d60fe0fd37d07a53d754a99a3afce8ab194353d3feaa25e1330690b05",
+   "organs.json": "88f4ff75e51d407ec62a450051d868952266b5ff8d406ed6f412fddce31cd237",
+   "meshes.bin": "ca4041a3dfaaad41ddb440ce96b27af2847e0609751fda2e8ddaec80268c45d3",
+   "meshes.json": "40e9f0f3025f8849746a96b26307008017d81a335129dbb868bdf8671709df08"
+  },
+  "new_hashes": {
+   "totalseg.nii.gz": "25562fda736945adb0ed5066458865173e2bec4f7b2117f046b5b5000ab7e855",
+   "labels.npy": "2fb07f8a57ceb258a367475f95dd2ef075233b83da4ef50b33f29e085ac058fa",
+   "organs.json": "1b85b1a2acee1d9deb135482d3610ad2956e015848b72e4467a89c779659f8e0",
+   "meshes.bin": "3226e074fc2b856c0ff7042ffeea588fd1ee62a65818b5a4e51b0ea0b3715ac6",
+   "meshes.json": "40e9f0f3025f8849746a96b26307008017d81a335129dbb868bdf8671709df08"
+  },
+  "diff_voxels": 4,
+  "organ_set_equal": true,
+  "label_source": [
+   "TotalSegmentator 2.18.0 total",
+   "TotalSegmentator 2.18.0 total"
+  ],
+  "dice_min": 0.9999924680645939,
+  "dice_below_1": {
+   "colon": 0.9999925
+  },
+  "organs_json_changed_fields": {
+   "colon": {
+    "voxels": [
+     265538,
+     265534
+    ],
+    "centroid_lps": [
+     [
+      37.576,
+      -41.094,
+      -299.859
+     ],
+     [
+      37.575,
+      -41.094,
+      -299.859
+     ]
+    ]
+   }
+  }
+ },
+ "pancreas-0051": {
+  "hash_equal": {
+   "totalseg.nii.gz": false,
+   "labels.npy": false,
+   "organs.json": false,
+   "meshes.bin": false,
+   "meshes.json": true
+  },
+  "old_hashes": {
+   "totalseg.nii.gz": "1104913c5659a16faf6cb527073f2f9cdc3bca8e09d1c3c2b78dcfaa236f88df",
+   "labels.npy": "6e37df447e080e30f84efffc2329de17269aa93f66c0f916076ccd19c97bbcbd",
+   "organs.json": "9027e5ef001ac32f4ff881e5d30d3e58b245e4aa1f1d29bf1b66366d69a7dc9b",
+   "meshes.bin": "5b3886a79afb04e9deb54ce7322c9a2536aa544251b01e92bdcba9426744211a",
+   "meshes.json": "51ffb1aa80d661d1fc8c3171c445a5d5f8aaa41ba522bc431beeb5829c9a878d"
+  },
+  "new_hashes": {
+   "totalseg.nii.gz": "3796686a480fe48c3478d39edcf6a7cfde3c32d85f86363503699500a38466dc",
+   "labels.npy": "cad74272722a5581450b080d2f67860b24615a3df432867f17504eb35f587e1a",
+   "organs.json": "7a11123aa8398a07ef0448bc73d80bc1c9c13f7f74374a179e6c2680d26b2a88",
+   "meshes.bin": "1087da2b301a889a410427428126b6ebfa541131829429f6d698ef0f8b95aa97",
+   "meshes.json": "51ffb1aa80d661d1fc8c3171c445a5d5f8aaa41ba522bc431beeb5829c9a878d"
+  },
+  "diff_voxels": 16,
+  "organ_set_equal": true,
+  "label_source": [
+   "TotalSegmentator 2.18.0 total",
+   "TotalSegmentator 2.18.0 total"
+  ],
+  "dice_min": 0.9999979270250633,
+  "dice_below_1": {
+   "liver": 0.9999981,
+   "stomach": 0.9999979
+  },
+  "organs_json_changed_fields": {
+   "liver": {
+    "voxels": [
+     3128296,
+     3128284
+    ],
+    "centroid_lps": [
+     [
+      123.877,
+      -225.324,
+      -74.964
+     ],
+     [
+      123.877,
+      -225.325,
+      -74.963
+     ]
+    ]
+   },
+   "stomach": {
+    "voxels": [
+     964799,
+     964795
+    ]
+   }
+  }
+ }
+}

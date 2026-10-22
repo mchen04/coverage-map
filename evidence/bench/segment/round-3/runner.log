@@ -1,0 +1,17 @@
+19:22:04 start mps lidc-0001 r1
+19:24:04 done mps lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/lidc-0001-mps-r1.json", "wall_s": 118.48, "totalsegmentator_s": 111.97733791699284, "correctness_pass": true, "dice_min": 1.0}
+19:24:04 start mps-t8 lidc-0001 r1
+19:26:57 done mps-t8 lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/lidc-0001-mps-t8-r1.json", "wall_s": 111.74, "totalsegmentator_s": 105.69338762501138, "correctness_pass": true, "dice_min": 1.0}
+19:26:57 start mps pancreas-0051 r1
+19:28:12 done mps pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/pancreas-0051-mps-r1.json", "wall_s": 72.74, "totalsegmentator_s": 66.01171791600063, "correctness_pass": true, "dice_min": 1.0}
+19:28:12 start mps-t8 pancreas-0051 r1
+19:29:25 done mps-t8 pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/pancreas-0051-mps-t8-r1.json", "wall_s": 71.7, "totalsegmentator_s": 65.11415649999981, "correctness_pass": true, "dice_min": 1.0}
+19:29:25 start mps-t8 lidc-0001 r2
+19:31:14 done mps-t8 lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/lidc-0001-mps-t8-r2.json", "wall_s": 107.54, "totalsegmentator_s": 101.8433649999788, "correctness_pass": true, "dice_min": 1.0}
+19:31:14 start mps lidc-0001 r2
+19:33:02 done mps lidc-0001 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/lidc-0001-mps-r2.json", "wall_s": 106.75, "totalsegmentator_s": 101.13452658298775, "correctness_pass": true, "dice_min": 1.0}
+19:33:02 start mps-t8 pancreas-0051 r2
+19:34:11 done mps-t8 pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/pancreas-0051-mps-t8-r2.json", "wall_s": 67.04, "totalsegmentator_s": 60.64080762499361, "correctness_pass": true, "dice_min": 1.0}
+19:34:11 start mps pancreas-0051 r2
+19:35:20 done mps pancreas-0051 r2 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-3/pancreas-0051-mps-r2.json", "wall_s": 67.46, "totalsegmentator_s": 60.6818278330029, "correctness_pass": true, "dice_min": 1.0}
+19:35:20 ROUND 3 COMPLETE

@@ -1,0 +1,16 @@
+{
+  "name": "@covmap/organ-map",
+  "version": "0.1.0",
+  "description": "Framework-free vtk.js organ coverage map shared by the OHIF panel and the render page (research use only)",
+  "license": "MIT",
+  "private": true,
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kitware/vtk.js": "36.4.1"
+  }
+}

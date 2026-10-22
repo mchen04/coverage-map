@@ -10,6 +10,8 @@ import sys
 import time
 import traceback
 
+from covmap.errors import Refusal
+
 
 def _emit(obj) -> None:
     json.dump(obj, sys.stdout, indent=1, default=str)
@@ -74,8 +76,20 @@ def cmd_scenarios(a):
     return list_scenarios(a.case)
 
 
+class UsageError(Exception):
+    pass
+
+
+class _Parser(argparse.ArgumentParser):
+    """Usage errors raise instead of printing to stderr, so main() can emit them as JSON
+    (subcommand parsers inherit this class)."""
+
+    def error(self, message):
+        raise UsageError(f"{self.prog}: {message}")
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="covmap", description=__doc__)
+    p = _Parser(prog="covmap", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("fetch", help="download a public TCIA CT series")
@@ -93,7 +107,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("segment", help="TotalSegmentator organ labels, catalog and meshes")
     s.add_argument("--case", required=True)
     s.add_argument("--fast", action="store_true")
-    s.add_argument("--device", default="cpu")
+    s.add_argument("--device", default="auto", choices=["auto", "cpu", "mps"],
+                   help="auto: MPS after a numerical self-test, else CPU")
     s.add_argument("--roi-subset", action="store_true",
                    help="only segment the TotalSegmentator classes the organ catalog uses")
     s.add_argument("--threads", type=int, default=None)
@@ -146,11 +161,33 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+RULES = ("min_dwell_ms", "reviewed_threshold", "skipped_threshold")
+
+
+def _check_rules(a) -> None:
+    """Rule values out of range are usage errors, refused before the command runs."""
+    if any(getattr(a, k, None) is not None for k in RULES):
+        from covmap.scoring import make_params
+
+        try:
+            make_params(**{k: getattr(a, k) for k in RULES})
+        except ValueError as e:
+            raise UsageError(f"covmap {a.cmd}: {e}") from None
+
+
 def main(argv=None) -> int:
-    a = build_parser().parse_args(argv)
+    try:
+        a = build_parser().parse_args(argv)
+        _check_rules(a)
+    except UsageError as e:
+        _emit({"ok": False, "cmd": None, "error": f"usage: {e}"})
+        return 2
     t0 = time.perf_counter()
     try:
         out = a.fn(a)
+    except Refusal as e:  # bad input, refused: exit 2 without a trace
+        _emit({"ok": False, "cmd": a.cmd, "error": f"{type(e).__name__}: {e}"})
+        return 2
     except Exception as e:  # noqa: BLE001 - the CLI contract is JSON on every exit path
         _emit({"ok": False, "cmd": a.cmd, "error": f"{type(e).__name__}: {e}",
                "trace": traceback.format_exc(limit=5)})

@@ -1,0 +1,149 @@
+{
+ "case": "pancreas-0051",
+ "cmd": "/Users/michaelchen/coverage-map-work/venv/bin/python -m covmap segment --case pancreas-0051 --device auto --out-name seg-bench-final",
+ "exit": 0,
+ "wall_s": 66.65,
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   5.74,
+   5.9,
+   5.77
+  ],
+  "time": "2026-10-21T20:14:12-0700"
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   2.93,
+   5.05,
+   5.46
+  ],
+  "time": "2026-10-21T20:15:19-0700"
+ },
+ "segment": {
+  "case": "pancreas-0051",
+  "out_dir": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final",
+  "device": "mps",
+  "reused_totalseg": false,
+  "n_organs": 21,
+  "organs": {
+   "lung_left": 1312315,
+   "lung_right": 1163084,
+   "heart": 74173,
+   "aorta": 61287,
+   "inferior_vena_cava": 184133,
+   "esophagus": 5209,
+   "liver": 3128284,
+   "spleen": 470777,
+   "pancreas": 97803,
+   "gallbladder": 33116,
+   "stomach": 964795,
+   "kidney_left": 347642,
+   "kidney_right": 334337,
+   "duodenum": 47184,
+   "small_bowel": 346475,
+   "colon": 572148,
+   "thoracic_spine": 249768,
+   "lumbar_spine": 322281,
+   "ribs_left": 99110,
+   "ribs_right": 95315,
+   "sternum": 108384
+  },
+  "organs_below_min_voxels": {},
+  "regrid": "permutation",
+  "mesh_triangles": 198906,
+  "weights_downloaded_now": [],
+  "timings_s": {
+   "weights_check_s": 0.468,
+   "totalsegmentator_s": 60.322,
+   "postprocess_s": 1.064,
+   "meshes_s": 1.66,
+   "total_s": 63.992
+  },
+  "totalsegmentator": {
+   "wall_s": 60.322283333021915,
+   "threads": null,
+   "torch_threads": 4,
+   "conv3d": {
+    "mode": "sum2d_t",
+    "description": "conv3d as a sum over kernel depth of batched conv2d on a depth-major input copy",
+    "device": "mps",
+    "budget_mb": 256,
+    "self_check_rel_err": 4.424605890562816e-07,
+    "calls": {
+     "decomposed": 1035,
+     "native": 0
+    },
+    "torch_threads_at_first_call": 4,
+    "source": "default"
+   },
+   "process_max_rss_gb": 4.6,
+   "mps_driver_allocated_gb": 1.12,
+   "loadavg_after": [
+    3.1,
+    5.12,
+    5.49
+   ]
+  },
+  "loadavg_start": [
+   5.74,
+   5.9,
+   5.77
+  ],
+  "hashes_sha256": {
+   "totalseg.nii.gz": "3796686a480fe48c3478d39edcf6a7cfde3c32d85f86363503699500a38466dc",
+   "labels.npy": "cad74272722a5581450b080d2f67860b24615a3df432867f17504eb35f587e1a",
+   "organs.json": "7a11123aa8398a07ef0448bc73d80bc1c9c13f7f74374a179e6c2680d26b2a88",
+   "meshes.bin": "1087da2b301a889a410427428126b6ebfa541131829429f6d698ef0f8b95aa97",
+   "meshes.json": "51ffb1aa80d661d1fc8c3171c445a5d5f8aaa41ba522bc431beeb5829c9a878d"
+  },
+  "paths": {
+   "labels": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final/labels.npy",
+   "organs": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final/organs.json",
+   "meshes_bin": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final/meshes.bin",
+   "meshes_json": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final/meshes.json",
+   "record": "/Users/michaelchen/coverage-map-work/data/cases/pancreas-0051/seg-bench-final/segment.json"
+  },
+  "ok": true,
+  "cmd": "segment",
+  "elapsed_s": 64.134
+ },
+ "correctness": {
+  "same_organ_set": true,
+  "missing": [],
+  "extra": [],
+  "dice": {
+   "lung_left": 1.0,
+   "lung_right": 1.0,
+   "heart": 1.0,
+   "aorta": 1.0,
+   "inferior_vena_cava": 1.0,
+   "esophagus": 1.0,
+   "liver": 1.0,
+   "spleen": 1.0,
+   "pancreas": 1.0,
+   "gallbladder": 1.0,
+   "stomach": 1.0,
+   "kidney_left": 1.0,
+   "kidney_right": 1.0,
+   "duodenum": 1.0,
+   "small_bowel": 1.0,
+   "colon": 1.0,
+   "thoracic_spine": 1.0,
+   "lumbar_spine": 1.0,
+   "ribs_left": 1.0,
+   "ribs_right": 1.0,
+   "sternum": 1.0
+  },
+  "dice_mean": 1.0,
+  "dice_min": 1.0,
+  "pass": true
+ }
+}

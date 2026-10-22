@@ -1,0 +1,292 @@
+{
+ "case": "lidc-0001",
+ "command": "python -m covmap segment --case lidc-0001 --reuse",
+ "options": {
+  "task": "total",
+  "fast": false,
+  "device": "cpu",
+  "roi_subset": false,
+  "threads": null,
+  "reuse": true,
+  "out_name": "seg",
+  "min_voxels": 2000
+ },
+ "device": "cpu",
+ "device_info": {
+  "device": "cpu",
+  "torch_threads": 4
+ },
+ "versions": {
+  "python": "3.12.13",
+  "covmap": "0.1.0",
+  "TotalSegmentator": "2.18.0",
+  "nnunetv2": "2.8.1",
+  "torch": "2.14.1",
+  "numpy": "2.5.4",
+  "nibabel": "5.4.2",
+  "scikit-image": "0.26.0",
+  "scipy": "1.18.1"
+ },
+ "weights": [
+  {
+   "task_id": 291,
+   "folder": "Dataset291_TotalSegmentator_part1_organs_1559subj",
+   "url": "https://github.com/wasserth/TotalSegmentator/releases/download/v2.0.0-weights/Dataset291_TotalSegmentator_part1_organs_1559subj.zip",
+   "downloaded_now": false,
+   "download_s": 0.0,
+   "checkpoints": [
+    {
+     "path": "Dataset291_TotalSegmentator_part1_organs_1559subj/nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+     "bytes": 251697787,
+     "sha256": "98c429f89fd9b3b08890fbb2b4c08c365ad4655fdcadb45efaa29380129fd890"
+    }
+   ]
+  },
+  {
+   "task_id": 292,
+   "folder": "Dataset292_TotalSegmentator_part2_vertebrae_1532subj",
+   "url": "https://github.com/wasserth/TotalSegmentator/releases/download/v2.0.0-weights/Dataset292_TotalSegmentator_part2_vertebrae_1532subj.zip",
+   "downloaded_now": false,
+   "download_s": 0.0,
+   "checkpoints": [
+    {
+     "path": "Dataset292_TotalSegmentator_part2_vertebrae_1532subj/nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+     "bytes": 251848251,
+     "sha256": "7022f71829ef00aa14d790a7667bc18eb1691f2fe5b0a38c475862abc84c2457"
+    }
+   ]
+  },
+  {
+   "task_id": 293,
+   "folder": "Dataset293_TotalSegmentator_part3_cardiac_1559subj",
+   "url": "https://github.com/wasserth/TotalSegmentator/releases/download/v2.0.0-weights/Dataset293_TotalSegmentator_part3_cardiac_1559subj.zip",
+   "downloaded_now": false,
+   "download_s": 0.0,
+   "checkpoints": [
+    {
+     "path": "Dataset293_TotalSegmentator_part3_cardiac_1559subj/nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+     "bytes": 251268859,
+     "sha256": "189010ac67fec3f1704df7547306d0067eabaaf620e0a46a1bdd183afa0800e4"
+    }
+   ]
+  },
+  {
+   "task_id": 294,
+   "folder": "Dataset294_TotalSegmentator_part4_muscles_1559subj",
+   "url": "https://github.com/wasserth/TotalSegmentator/releases/download/v2.0.0-weights/Dataset294_TotalSegmentator_part4_muscles_1559subj.zip",
+   "downloaded_now": false,
+   "download_s": 0.0,
+   "checkpoints": [
+    {
+     "path": "Dataset294_TotalSegmentator_part4_muscles_1559subj/nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+     "bytes": 251633339,
+     "sha256": "655eb40de03aa3de7348b69d7569a1cc3a2dc7969a11c0d60a7331e07df11c28"
+    }
+   ]
+  },
+  {
+   "task_id": 295,
+   "folder": "Dataset295_TotalSegmentator_part5_ribs_1559subj",
+   "url": "https://github.com/wasserth/TotalSegmentator/releases/download/v2.0.0-weights/Dataset295_TotalSegmentator_part5_ribs_1559subj.zip",
+   "downloaded_now": false,
+   "download_s": 0.0,
+   "checkpoints": [
+    {
+     "path": "Dataset295_TotalSegmentator_part5_ribs_1559subj/nnUNetTrainerNoMirroring__nnUNetPlans__3d_fullres/fold_0/checkpoint_final.pth",
+     "bytes": 251846011,
+     "sha256": "a674364c60b304fbd56feccdd95f8d0fe0c45a5bfa1ef25815516e4dde04d3fc"
+    }
+   ]
+  }
+ ],
+ "totalsegmentator": {
+  "reused": true,
+  "previous": {
+   "call": "totalsegmentator.python_api.totalsegmentator",
+   "kwargs": {
+    "ml": true,
+    "fast": false,
+    "device": "cpu",
+    "roi_subset": null,
+    "task": "total",
+    "quiet": false
+   },
+   "threads": null,
+   "cpu_conv3d": {
+    "mode": "conv3d as sum of conv2d over kernel depth (CPU, torch without MKLDNN)",
+    "self_check_rel_err": 5.056692202742852e-07,
+    "calls": {
+     "decomposed": 2070,
+     "native": 0
+    }
+   },
+   "wall_s": 451.5707545829937,
+   "process_max_rss_gb": 7.22,
+   "loadavg_after": [
+    12.39,
+    17.38,
+    17.6
+   ]
+  }
+ },
+ "input": {
+  "ct_nii": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/ct.nii.gz",
+  "ct_nii_sha256": "19ff851d8481505289af2922a292b35cb206a33e4f28fa21ddabc0542e6beb4f"
+ },
+ "grid": {
+  "totalseg_matches_ct_grid": true,
+  "label_map_source": "nifti extension header (checked against class_map['total'])",
+  "regrid": {
+   "mode": "permutation",
+   "axes": [
+    {
+     "src_axis": 0,
+     "dst_axis": "c",
+     "sign": 1,
+     "offset": 0
+    },
+    {
+     "src_axis": 1,
+     "dst_axis": "r",
+     "sign": 1,
+     "offset": 0
+    },
+    {
+     "src_axis": 2,
+     "dst_axis": "k",
+     "sign": 1,
+     "offset": 0
+    }
+   ]
+  }
+ },
+ "organs_found": {
+  "lung_left": 1409351,
+  "lung_right": 1581863,
+  "trachea": 19975,
+  "heart": 299523,
+  "aorta": 152203,
+  "inferior_vena_cava": 25372,
+  "esophagus": 21109,
+  "thyroid": 7875,
+  "liver": 823689,
+  "spleen": 100356,
+  "pancreas": 48166,
+  "stomach": 159688,
+  "kidney_left": 60313,
+  "kidney_right": 60629,
+  "duodenum": 29994,
+  "small_bowel": 16145,
+  "colon": 265538,
+  "cervical_spine": 14395,
+  "thoracic_spine": 245696,
+  "lumbar_spine": 104903,
+  "ribs_left": 108294,
+  "ribs_right": 113676,
+  "sternum": 134027,
+  "shoulder_left": 91277,
+  "shoulder_right": 128501
+ },
+ "organs_below_min_voxels": {},
+ "meshes": {
+  "attempts": [
+   {
+    "factors_krc": [
+     1,
+     2,
+     2
+    ],
+    "n_tris": 951932
+   },
+   {
+    "factors_krc": [
+     6,
+     11,
+     11
+    ],
+    "n_tris": 18374
+   },
+   {
+    "factors_krc": [
+     4,
+     8,
+     8
+    ],
+    "n_tris": 42748
+   },
+   {
+    "factors_krc": [
+     2,
+     7,
+     7
+    ],
+    "n_tris": 95868
+   },
+   {
+    "factors_krc": [
+     2,
+     4,
+     4
+    ],
+    "n_tris": 221510
+   },
+   {
+    "factors_krc": [
+     1,
+     4,
+     4
+    ],
+    "n_tris": 369428
+   },
+   {
+    "factors_krc": [
+     1,
+     5,
+     5
+    ],
+    "n_tris": 276334
+   }
+  ],
+  "factors_krc": [
+   2,
+   4,
+   4
+  ],
+  "n_tris_total": 221510,
+  "n_points_total": 110791,
+  "max_triangles": 250000
+ },
+ "timings_s": {
+  "postprocess_s": 0.879,
+  "meshes_s": 1.61,
+  "total_s": 2.489
+ },
+ "timing_note": "functional run on a shared host; not a benchmark",
+ "host_start": {
+  "hostname": "Mac.attlocal.net",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "loadavg": [
+   8.32,
+   14.19,
+   16.19
+  ]
+ },
+ "host_end": {
+  "hostname": "Mac.attlocal.net",
+  "machine": "arm64",
+  "cpu_count": 10,
+  "loadavg": [
+   8.32,
+   14.19,
+   16.19
+  ]
+ },
+ "hashes_sha256": {
+  "totalseg.nii.gz": "b411f6906c23b6c543dbe63a6e69359e32974f6aaaa12dc875a476dcc4994135",
+  "labels.npy": "8dd60d1d60fe0fd37d07a53d754a99a3afce8ab194353d3feaa25e1330690b05",
+  "organs.json": "88f4ff75e51d407ec62a450051d868952266b5ff8d406ed6f412fddce31cd237",
+  "meshes.bin": "ca4041a3dfaaad41ddb440ce96b27af2847e0609751fda2e8ddaec80268c45d3",
+  "meshes.json": "40e9f0f3025f8849746a96b26307008017d81a335129dbb868bdf8671709df08"
+ }
+}
