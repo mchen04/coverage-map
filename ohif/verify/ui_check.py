@@ -2071,6 +2071,60 @@ def main() -> int:
         C.run("S3 two tabs: the recording tab closes, the waiting tab records by itself (no click), continuing after "
               "the closed tab's last event; no conflicts", auto_takeover)
 
+        def takeover_in_replay():
+            """U1: Record here pressed with the replay open still ends the other tab's display at
+            once (hidden '*'); the replay records nothing; closing it records again."""
+            s = session()
+            neutral()
+            x = unread(seen_now(s))
+            pb, drv_b, _ = tab("tab B")
+            try:
+                drv_b.open(url)
+                pb.wait_for_function("() => window.__covmap && window.__covmap.ready && window.__covmap.sessionId",
+                                     timeout=90000)
+                pb.locator('[data-testid="covmap-other-tab"]').wait_for(timeout=10000)
+                pb.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
+                need(pb.evaluate("() => window.__covmap.sessionId") == s, "tab B opened another session")
+                page.evaluate("k => window.__covmap.jump(k)", x)  # A shows x and stays on it
+                page.wait_for_timeout(900)
+                flush()
+                pb.bring_to_front()
+                pb.locator('[data-testid="covmap-session-menu"]').click()
+                pb.locator('[data-testid="covmap-replay"]').click()
+                pb.wait_for_function("() => !!window.__covmap.state().replay", timeout=10000)
+                n0 = len(api.events(s))
+                pb.locator('[data-testid="covmap-record-here"]').click()
+                taken = time.monotonic()
+                pb.wait_for_function("() => window.__covmap.writer === true", timeout=10000)
+                page.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
+                pb.wait_for_timeout(2500)  # the replay stays open
+                pb.evaluate("() => window.__covmap.flush()")
+                pb.wait_for_timeout(300)
+                during = api.events(s)[n0:]
+                need(during and during[0]["kind"] == "hidden" and during[0].get("viewport") == "*",
+                     f"first event after Record here in the replay: {during[:1]}")
+                need(not any(e["kind"] == "view" for e in during), "a view recorded while the replay is open")
+                pb.locator('[data-testid="covmap-replay-close"]').click()
+                pb.wait_for_function("() => !window.__covmap.state().replay && window.__covmap.state().recording",
+                                     timeout=10000)
+                pb.wait_for_timeout(600)
+                pb.evaluate("() => window.__covmap.flush()")
+                pb.wait_for_timeout(300)
+                closed_at = time.monotonic()
+                evs = api.events(s)
+                after = evs[n0 + len(during):]
+                need(any(e["kind"] == "view" for e in after), "nothing recorded after the replay closed")
+                held = during[0]["t_ms"] - max(e["t_ms"] for e in evs[:n0])
+                need(held < (closed_at - taken) * 1000 - 1500,
+                     f"tab A's last view held {held:.0f} ms, past the takeover into the replay")
+            finally:
+                pb.close()
+            page.wait_for_function("() => window.__covmap.writer === true", timeout=15000)
+            return {"session": s, "shown_in_A": x, "first_after_record_here": {k: during[0][k] for k in ("seq", "kind", "viewport")},
+                    "events_during_replay": len(during), "views_after_close": sum(e["kind"] == "view" for e in after)}
+        C.run("U1 Record here with the replay open ends the other tab's display at once (hidden '*'), records nothing "
+              "until the replay closes", takeover_in_replay)
+
         # ---- U6 radiological display survives a camera reset --------------------------------
         def reset_keeps_orientation():
             s = session()
@@ -2318,11 +2372,37 @@ def main() -> int:
             normals = sorted({tuple(round(x) for x in e["normal"]) for e in vol_views})
             hidden_ = [e for e in evs if e["kind"] == "hidden"]
             shot("16-mpr")
+            # U2: OHIF Reset View keeps a preset window on volume viewports too (MPR syncs the window)
+            vois_js = """() => window.services.cornerstoneViewportService.getRenderingEngine().getViewports().map(v => {
+                const r = v.getProperties().voiRange; return {id: v.id, wc: (r.lower + r.upper + 1) / 2, ww: r.upper - r.lower + 1}; })"""
+            soft = PRESETS["1"]
+            all_soft = (f"() => ({vois_js})().every(v => Math.abs(v.wc - {soft[0]}) < 0.5 && Math.abs(v.ww - {soft[1]}) < 0.5)")
+            drv.press_key("1")
+            page.wait_for_function(all_soft, timeout=3000)
+            flush()
+            n1 = len(api.events(s))
+            page.locator('[data-cy="Reset-btn"]').click()
+            page.wait_for_timeout(1500)  # past the volume's default window, which CS3D sets late
+            page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+            for _ in range(3):
+                page.mouse.wheel(0, 100)
+                page.wait_for_timeout(150)
+            page.wait_for_timeout(500)
+            vois = page.evaluate(vois_js)
+            off = [v for v in vois if abs(v["wc"] - soft[0]) >= 0.5 or abs(v["ww"] - soft[1]) >= 0.5]
+            need(not off, f"Reset View changed the soft window: {off}")
+            flush()
+            page.wait_for_timeout(400)
+            reset_vois = sorted({(round(e["voi"]["wc"]), round(e["voi"]["ww"])) for e in api.events(s)[n1:]
+                                 if e["kind"] == "view"})
+            need(reset_vois in ([], [soft]), f"windows recorded after Reset View: {reset_vois}")
             page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
             page.wait_for_timeout(2000)
             return {"volume_views": len(vol_views), "normals": normals, "viewports": sorted({e["viewport"] for e in vol_views}),
-                    "hidden_on_disable": len(hidden_), "example": vol_views[0]}
-        C.run("MPR volume viewports are instrumented (vp_type volume, 3 normals)", mpr)
+                    "hidden_on_disable": len(hidden_), "example": vol_views[0],
+                    "reset_view": {"windows": vois, "recorded": reset_vois}}
+        C.run("MPR volume viewports are instrumented (vp_type volume, 3 normals); U2 Reset View keeps the soft preset",
+              mpr)
 
         # ---- U15 case picker ------------------------------------------------------------------
         def case_picker():

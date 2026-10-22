@@ -100,8 +100,22 @@ def start_server(cases: list[str], work: Path, port: int):
         os.symlink(paths.case_dir(c), data / "cases" / c)
     p = subprocess.Popen([sys.executable, "-m", "covmap", "serve", "--port", str(port)],
                          env=dict(os.environ, COVMAP_DATA=str(data)), stdout=subprocess.PIPE, text=True)
-    p.stdout.readline()  # startup JSON line
+    line = p.stdout.readline()  # printed once listening, or the failure (e.g. the port is taken)
+    try:
+        started = json.loads(line)
+    except ValueError:
+        started = {}
+    if not started.get("ok") or started.get("pid") != p.pid:
+        try:
+            p.wait(timeout=10)
+            rest = p.stdout.read()  # the failure object spans several lines
+        except subprocess.TimeoutExpired:
+            p.kill()
+            rest = ""
+        raise RuntimeError(f"server did not start: {' '.join((line + rest).split())[:300]}")
     for _ in range(100):
+        if p.poll() is not None:
+            raise RuntimeError(f"server exited with {p.returncode}")
         try:
             c = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
             c.request("GET", "/api/health")
@@ -192,10 +206,11 @@ def main() -> int:
             res["http"]["server_exit"] = srv.wait(30)
     res["context_end"] = host_context()
     write(Path(a.out), res)
-    print(json.dumps({"ok": True, "out": a.out, "summary": {
+    ok = res.get("http", {}).get("server_exit", 0) == 0  # a clean stop of the server the bench measured
+    print(json.dumps({"ok": ok, "out": a.out, "summary": {
         c: {s: [v["cli_cold_s"], v["warm_ms"]["median"], v["live_post_ms"]["p95"], v["fingerprint"]]
             for s, v in r.items()} for c, r in res["cases"].items()}}))
-    return 0
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

@@ -123,6 +123,20 @@ def _write_jsonl(path: Path, events: list[dict], mode="a") -> None:
             f.write(json.dumps(ev, separators=(",", ":")) + "\n")
 
 
+def _append_batch(path: Path, events: list[dict]) -> None:
+    """Append a batch to a session log, or nothing of it: a failed write (disk full, I/O) is cut
+    back to the previous end, so the log never holds a torn line or half a batch."""
+    size = path.stat().st_size if path.exists() else 0
+    try:
+        _write_jsonl(path, events)
+    except BaseException:
+        try:
+            os.truncate(path, size)
+        except OSError:
+            pass
+        raise
+
+
 @dataclass
 class Session:
     """A reading session. The object lives as long as the server; its scorer and event
@@ -414,6 +428,8 @@ class App:
                     s.scorer = scorer
                 else:
                     cov = await self.run(scorer.add, events, now, validated=True)
+                if events:  # the log is the record: a batch it does not hold is not applied
+                    await self.run(_append_batch, s.log, events)
             except EventError as e:
                 raise ApiError(400, str(e))
             except Exception:
@@ -421,7 +437,6 @@ class App:
                 self.live.pop(s.id, None)
                 raise
             if events:
-                await self.run(_write_jsonl, s.log, events)
                 s.events.extend(events)
                 s.tally(events)
             if lead is not None:
@@ -465,9 +480,9 @@ class App:
         for meta in metas[:limit]:
             s = await self.session(meta["session"])
             async with s.lock:
-                if s.events is not None:
+                if s.events is not None and s.scorer is not None:
                     st, fin = dict(s.stats), s.scorer.finished
-                else:
+                else:  # not loaded, or its scorer is dropped after a refused batch: the log is the record
                     events = await self.run(read_jsonl, s.log) if s.log.exists() else []
                     tmp = Session(s.id, s.case, s.case_dir, s.meta, s.log, s.meta_path)
                     tmp.tally(events)
@@ -507,9 +522,15 @@ class App:
             except (TypeError, ValueError) as e:
                 raise ApiError(400, str(e))
             await self._ready(s)
-            s.scorer = await self.run(self._rescore, s, rules)
+            scorer = await self.run(self._rescore, s, rules)
+            before = s.meta.get("rules")
             s.meta["rules"] = rules or None
-            s.save_meta()
+            try:
+                s.save_meta()  # stored first: live rules never differ from what a restart reads
+            except OSError:
+                s.meta["rules"] = before
+                raise
+            s.scorer = scorer
             cov = await self.run(s.scorer.coverage)
             cov["session_info"] = s.info()
             return cov
@@ -933,17 +954,16 @@ def make_app(cfg: Config | None = None, **overrides) -> web.Application:
 
 
 def serve(host: str = "127.0.0.1", port: int = 8765, orthanc: str = "http://127.0.0.1:8042") -> dict:
-    """Run the server until interrupted (prints one JSON line when listening)."""
+    """Run the server until interrupted (prints one JSON line once it is listening)."""
     app = make_app(orthanc=orthanc)
     cfg = app[APP_KEY].cfg
 
-    async def announce(_):
+    def announce(*_):  # run_app calls its print hook after the port is bound, never on a failed bind
         print(json.dumps({"ok": True, "cmd": "serve", "url": f"http://{host}:{port}/",
                           "data": str(cfg.data_dir), "ohif_dist": str(cfg.ohif_dist),
                           "ohif_dist_present": (cfg.ohif_dist / "index.html").exists(),
                           "orthanc": cfg.orthanc, "pid": os.getpid()}), flush=True)
 
-    app.on_startup.append(announce)
-    web.run_app(app, host=host, port=port, print=None, shutdown_timeout=5, access_log=None,
+    web.run_app(app, host=host, port=port, print=announce, shutdown_timeout=5, access_log=None,
                 handle_signals=True)
     return {"ok": True, "cmd": "serve", "stopped": True}

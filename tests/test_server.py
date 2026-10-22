@@ -865,6 +865,21 @@ def test_late_batch_scored_in_log_order(env):
     assert key(run_client(_cfg(env), restarted)) == key(late)
 
 
+def test_serve_on_a_busy_port_prints_only_the_failure(env):
+    """Nothing claims success before the port is bound: one JSON object, ok false, exit 1."""
+    repo = Path(__file__).resolve().parents[1]
+    with socket.socket() as busy:
+        busy.bind(("127.0.0.1", 0))
+        busy.listen()
+        p = subprocess.run(
+            [sys.executable, "-m", "covmap", "serve", "--port", str(busy.getsockname()[1]),
+             "--orthanc", "http://127.0.0.1:9"],
+            cwd=repo, capture_output=True, text=True, timeout=60,
+            env={**os.environ, "COVMAP_DATA": str(env.data), "COVMAP_OHIF_DIST": str(env.dist)})
+    out = json.loads(p.stdout)  # exactly one object
+    assert p.returncode == 1 and out["ok"] is False and "address already in use" in out["error"]
+
+
 def test_failed_batch_is_not_half_applied(env, monkeypatch):
     """An unexpected scorer error refuses the batch whole: the session is rebuilt from its log,
     so a retry neither double-counts nor logs a half-applied state."""
@@ -886,11 +901,41 @@ def test_failed_batch_is_not_half_applied(env, monkeypatch):
             m.setattr(Scorer, "feed", failing)
             r = await c.post(f"/api/sessions/{sid}/events", json={"events": batch})
             assert r.status == 500
+        listed = await _json(await c.get(f"/api/sessions?case={CASE}"))  # the reading list still answers
+        assert [x["events"] for x in listed["sessions"] if x["session"] == sid] == [1]
         cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
         assert cov["events"]["total"] == 1  # nothing of the refused batch
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
         assert cov["events"]["total"] == 4 and cov["events"]["ignored"].get("other", 0) == 0
     run_client(_cfg(env), fn)
+
+
+def test_failed_log_append_is_not_applied(env, monkeypatch):
+    """A batch the log cannot take (disk full) is not applied live either: the log is cut back
+    to its last whole batch, and the client's retry is applied and logged once."""
+    import covmap.server as server
+
+    vol = env.vol
+
+    def disk_full(path, events, mode="a"):
+        with open(path, mode) as f:
+            f.write('{"seq": 1, "tor')
+        raise OSError(28, "No space left on device")
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": _to(sid, read_pass(vol, [5], 0, 0))}))
+        batch = _to(sid, read_pass(vol, [6, 7, 8], 150, 1))
+        with monkeypatch.context() as m:
+            m.setattr(server, "_write_jsonl", disk_full)
+            assert (await c.post(f"/api/sessions/{sid}/events", json={"events": batch})).status == 500
+        assert (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["events"]["total"] == 1
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
+        return sid, cov
+
+    sid, cov = run_client(_cfg(env), fn)
+    log = [json.loads(x) for x in (env.data / "sessions" / f"{sid}.jsonl").read_text().splitlines()]
+    assert cov["events"]["total"] == 4 and [e["seq"] for e in log] == [0, 1, 2, 3]
 
 
 def test_recent_readings_of_a_case(env):

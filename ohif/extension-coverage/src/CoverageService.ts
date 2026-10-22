@@ -1,5 +1,5 @@
 import { PubSubService } from '@ohif/core';
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { Enums as csEnums, utilities as csUtils } from '@cornerstonejs/core';
 
 import { CovmapApi, type ApiError } from './api';
 import type { MeshesJson } from '@covmap/organ-map';
@@ -224,6 +224,8 @@ export default class CoverageService extends PubSubService {
    * stack it was checked on and the flips that show that stack radiologically (null: as is)
    */
   private oriented = new WeakMap<object, { key: string; flips: { h: boolean; v: boolean } | null }>();
+  /** volume viewports whose Reset View kept a preset, until the volume's late default window lands */
+  private keptAfterReset = new WeakMap<object, Preset>();
   private radiological = true;
   private gapSeen = new Map<string, number>();
   private gapReq = new Map<string, Promise<Gap | null>>();
@@ -430,7 +432,15 @@ export default class CoverageService extends PubSubService {
       this.firstImageAt = performance.now();
       performance.mark('covmap:first-image');
     }
-    if (s.vp_type === 'stack' && this.orient(s)) {
+    if (s.vp_type !== 'stack') {
+      const vp = getViewport(s.viewport);
+      if (vp) {
+        this.hookReset(vp); // MPR and reoriented viewports: Reset View keeps a preset window too
+        if (this.restoreKept(vp)) {
+          return; // the preset is back: the next render is the displayed state
+        }
+      }
+    } else if (this.orient(s)) {
       return; // flipped to radiological display: the next render is the displayed state
     }
     if (!this.state.caseId && s.series) {
@@ -511,7 +521,8 @@ export default class CoverageService extends PubSubService {
    * presentation, flips included, synchronously, so only a plain reset is flipped back.
    *
    * OHIF's Reset View also calls resetProperties, which puts the image's own window back
-   * (e.g. W2400/L176). That is wrapped too: a window that was one of the presets stays.
+   * (e.g. W2400/L176). That is wrapped too: a window that was one of the presets stays. Volume
+   * viewports (MPR, reoriented) get the same wraps; reorient leaves them alone (no flips).
    */
   private hookReset(vp: any): void {
     const original = vp.resetCamera;
@@ -532,12 +543,38 @@ export default class CoverageService extends PubSubService {
         if (keep) {
           // set, not only shown: the preset also stays on the next slices
           vp.setProperties({ voiRange: csUtils.windowLevel.toLowHighRange(keep.ww, keep.wc) });
+          if (!isStack(vp)) {
+            // until the reader changes the window (the late default window fires no event)
+            this.keptAfterReset.set(vp, keep);
+            vp.element?.addEventListener(
+              csEnums.Events.VOI_MODIFIED,
+              () => this.keptAfterReset.delete(vp),
+              { once: true }
+            );
+          }
         }
         return result;
       };
       (wrapped as any)[RESET_HOOK] = true;
       vp.resetProperties = wrapped;
     }
+  }
+
+  /**
+   * A volume viewport's reset sets its default window later (CS3D's setDefaultVolumeVOI awaits
+   * the range, then sets the transfer function without an event). Until the reader changes
+   * the window, a render that shows no preset after a kept reset shows that default: the
+   * preset goes back and that frame is not recorded. True when it put the preset back.
+   */
+  private restoreKept(vp: any): boolean {
+    const kept = this.keptAfterReset.get(vp);
+    if (!kept || this.presetShown(vp)) {
+      return false;
+    }
+    this.keptAfterReset.delete(vp);
+    vp.setProperties({ voiRange: csUtils.windowLevel.toLowHighRange(kept.ww, kept.wc) });
+    vp.render();
+    return true;
   }
 
   /** The preset a viewport's window shows exactly, if any. */
@@ -1009,10 +1046,13 @@ export default class CoverageService extends PubSubService {
     this.writer = true;
     this.state.otherTab = false;
     this.emit();
-    if (!this.state.replay) {
-      // the other tab sent nothing when it let go: its display ends where it last reported
-      this.setRecording(true);
-      this.enqueue('hidden', { viewport: '*' });
+    // the other tab sent nothing when it let go: its display ends where it last reported,
+    // also while the replay is open here (closing the replay resumes recording)
+    this.setRecording(true);
+    this.enqueue('hidden', { viewport: '*' });
+    if (this.state.replay) {
+      this.setRecording(false);
+    } else {
       this.resumeRecording();
     }
     await this.flush();
@@ -1184,6 +1224,8 @@ export default class CoverageService extends PubSubService {
       this.applyPreset(PRESETS.soft, vps);
     }
     const { session, info, rec, writer } = await sessionReq;
+    // before anything is awaited: a tab without the lock sends nothing, not even a heartbeat
+    this.writer = writer;
     if (info) {
       // Continue the stored session after its last event: events shown before it was found
       // (a few frames of this page load) are dropped and the current state re-captured.

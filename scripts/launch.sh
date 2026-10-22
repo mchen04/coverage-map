@@ -20,15 +20,18 @@ case "${1:-start}" in
     curl -sf http://127.0.0.1:8765/api/health >/dev/null && echo "tunnel ok"
     echo
     echo "Coverage Map (research use only):"
+    echo "  demo reading     http://127.0.0.1:8765/"
     "$here/scripts/mini.sh" -- python -c '
 import json, pathlib
 from covmap import paths
 for d in sorted((paths.data_dir() / "cases").glob("*/volume.json")):
     v = json.loads(d.read_text())
     print(f"  {v[\"case\"]:15s} http://127.0.0.1:8765/coverage?StudyInstanceUIDs={v[\"study_uid\"]}")
+print("Stock OHIF (baseline build, unmodified):")
+for d in sorted((paths.data_dir() / "cases").glob("*/volume.json")):
+    v = json.loads(d.read_text())
+    print(f"  {v[\"case\"]:15s} http://127.0.0.1:8766/viewer?StudyInstanceUIDs={v[\"study_uid\"]}")
 '
-    echo "  study list       http://127.0.0.1:8765/"
-    echo "  stock OHIF       http://127.0.0.1:8766/ (baseline build, unmodified)"
     ;;
   stop)
     if [[ -f $tunnel_pid ]]; then kill "$(cat "$tunnel_pid")" 2>/dev/null || true; rm -f "$tunnel_pid"; echo "tunnel closed"; fi

@@ -302,7 +302,7 @@ qualifying window class (`windows[0]`).
 
 Evaluation drivers are scripts, not subcommands: `e2e/gauntlet.py`, `e2e/run_reading.py`, `bench/bench_*.py`.
 
-Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout (usage errors: exit 2, error starting `usage:`). `--help` prints argparse's plain-text help, the one non-JSON output.
+Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout. Exit 2: a usage error (`cmd` null, error starting `usage:`) or a refusal by the command (`simulate` with an unknown scenario or one the case cannot run: `applicable: false`). Exit 1: an unexpected error (with `trace`). `serve` prints its JSON line once it is listening (exit 0 when stopped), or only the error (e.g. the port is taken). `--help` prints argparse's plain-text help, the one non-JSON output.
 
 ### Scenario truth (`simulate` output, `<out>.truth.json`)
 

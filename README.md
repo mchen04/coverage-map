@@ -90,8 +90,9 @@ scripts/mini.sh -- bash -c 'source scripts/mini_env.sh && python -m pytest -q'
   left unread. The per-image model implements the behaviour described for Synapse/eRAD; it is
   not the vendor product and was not tested against it.
 - **Performance** ([docs/PERFORMANCE.md](docs/PERFORMANCE.md)): segmentation 377 → 105 s and
-  189 → 60 s, live scoring 36–59 → 1.4–1.7 ms per update, render 869–951 → 529–556 ms, with
-  identical results.
+  189 → 60 s, live scoring 36–59 → 1.4–1.7 ms per update, render 869–951 → 529–556 ms. Scoring
+  and render outputs are identical; the faster segmentation changes 4 / 16 voxels (per-organ
+  Dice ≥ 0.99999).
 - [evidence/INDEX.md](evidence/INDEX.md) lists every evaluation run with its command, exit
   status and result, including the review and hands-on use rounds.
 
