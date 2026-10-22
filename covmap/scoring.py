@@ -36,7 +36,7 @@ import numpy as np
 
 from covmap.baseline import PerImageBaseline
 from covmap.casedata import Case, load_case
-from covmap.events import EventError, Segmenter, read_jsonl, sort_events, validate_events
+from covmap.events import ALL_VIEWPORTS, EventError, Segmenter, read_jsonl, sort_events, validate_events
 from covmap.windows import CLASSES, OTHER, classify
 
 DEFAULTS = {"min_dwell_ms": 80.0, "reviewed_threshold": 0.90, "skipped_threshold": 0.05}
@@ -211,6 +211,7 @@ class Scorer:
         self.last_t: float | None = None
         self.reader = {k: {"reader": None, "flagged": False, "note": None} for k in c.organ_keys}
         self.finished: dict | None = None
+        self.last_view: dict | None = None  # latest displayed stack image, see stack_view_of
 
     # ---- events -------------------------------------------------------------------
     def add(self, events, now_ms: float | None = None, *, validated: bool = False) -> dict:
@@ -248,9 +249,11 @@ class Scorer:
             ev = {**ev, "t_ms": self.last_t}  # late batch: never run time backwards
         self.last_t = ev["t_ms"]
         kind = ev["kind"]
-        payload = None
+        payload, seg_ev = None, ev
         if kind == "view":
             self.n_views += 1
+            if ev["vp_type"] == "stack" and (sv := self.stack_view_of(ev)) is not None:
+                self.last_view = sv
             plane = resolve_view(self.case, ev, _pts)
             if isinstance(plane, str):
                 self.ignored[plane] += 1
@@ -263,10 +266,23 @@ class Scorer:
         elif kind == "finish":
             self.finished = {"t_ms": ev["t_ms"], "confirmed": ev["confirmed"],
                              "remaining": list(ev.get("remaining", []))}
-        for iv in self.segmenter.feed(ev, payload):
+            if ev["confirmed"]:  # the reader confirmed what is on screen: close every open view
+                seg_ev = {"kind": "hidden", "viewport": ALL_VIEWPORTS, "t_ms": ev["t_ms"]}
+        for iv in self.segmenter.feed(seg_ev, payload):
             if iv.payload is not None:
                 self.pending[iv.payload] = self.pending.get(iv.payload, 0.0) + iv.dwell_ms
                 self.n_states += 1
+
+    def stack_view_of(self, ev: dict) -> dict | None:
+        """``{sop, k, voi: {wc, ww}, window}`` of a stack view event showing an image of this
+        case's series (None for unknown images), whatever its plane resolves to."""
+        c = self.case
+        k = c.sop_index.get(ev.get("sop"))
+        series = ev.get("series")
+        if k is None or (series is not None and c.series_uid and series != c.series_uid):
+            return None
+        wc, ww = ev["voi"]["wc"], ev["voi"]["ww"]
+        return {"sop": ev["sop"], "k": k, "voi": {"wc": wc, "ww": ww}, "window": classify(wc, ww)}
 
     def _annotate(self, ev: dict) -> None:
         r = self.reader.get(ev["organ"])
@@ -612,20 +628,12 @@ def timeline(case, events: list[dict], frames: int = 40, **params) -> dict:
         return {"frames": [], "timing_ms": {"timeline": 0.0}}
     t_first, t_last = evs[0]["t_ms"], evs[-1]["t_ms"]
     times = np.linspace(t_first, t_last, frames) if frames > 1 else np.array([t_last])
-    out, i, view = [], 0, None
-    c = sc.case
+    out, i = [], 0
     for t in times:
         while i < len(evs) and evs[i]["t_ms"] <= t:
-            ev = evs[i]
-            if ev["kind"] == "view" and ev["vp_type"] == "stack" and ev["seq"] not in sc.seqs:
-                k = c.sop_index.get(ev.get("sop"))
-                series = ev.get("series")
-                if k is not None and (series is None or not c.series_uid or series == c.series_uid):
-                    wc, ww = ev["voi"]["wc"], ev["voi"]["ww"]
-                    view = {"sop": ev["sop"], "k": k, "voi": {"wc": wc, "ww": ww}, "window": classify(wc, ww)}
-            sc.feed(ev)
+            sc.feed(evs[i])
             i += 1
-        out.append({**sc.snapshot(float(t)), "view": view})
+        out.append({**sc.snapshot(float(t)), "view": sc.last_view})
     return {"case": sc.case.case_id, "session": sc.session, "params": sc.params, "frames": out,
             "timing_ms": {"timeline": round((time.perf_counter() - t0) * 1000, 3)}}
 

@@ -192,7 +192,8 @@ class Session:
                 "created": m.get("created"), "finished": bool(fin and fin.get("confirmed")),
                 "events": st["events"], "last_seq": st["last_seq"], "last_t_ms": st["last_t_ms"],
                 "rules": dict(self.params), "t_offset_ms": m.get("t_offset_ms", 0.0),
-                "seq_offset": m.get("seq_offset", 0)}
+                "seq_offset": m.get("seq_offset", 0),
+                "last_view": self.scorer.last_view if self.scorer is not None else None}
 
 
 class App:
@@ -409,8 +410,13 @@ class App:
         return cov
 
     async def coverage(self, s: Session) -> dict:
+        """Coverage as the reader last saw it: while views are open (no end, hidden or
+        confirmed finish since), provisional at the latest POST's now_ms like that POST's
+        response; else (or before any now_ms since the server started) committed."""
         async with s.lock:
-            cov = await self.run((await self._ready(s)).coverage)
+            sc = await self._ready(s)
+            now = s.last_now if sc.segmenter.open else None
+            cov = await self.run(sc.coverage, now)
             cov["session_info"] = s.info()
             return cov
 

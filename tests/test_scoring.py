@@ -325,6 +325,37 @@ def test_reused_seq_counted_as_conflict_first_event_wins(case, vol, tmp_path):
     assert rep["organs"] == cov["organs"]
 
 
+def test_confirmed_finish_closes_open_views(case, vol):
+    """finish confirmed = hidden "*" at its t_ms: the image on screen when the reader
+    confirms is credited, so replaying the log equals what the reader saw; unconfirmed
+    finish changes nothing, and views after it open new states as usual."""
+    k = busiest_slice(case, "liver")
+    key = lambda cov: [(o["key"], o["seen_voxels"], o["unseen"], o["status"]) for o in cov["organs"]]  # noqa: E731
+    shown = [stack_view(vol, k, 0, 0), stack_view(vol, k + 1, 300, 1)]
+    seen_on_screen = Scorer(case).add(shown, now_ms=500)  # the panel at the confirm
+    sc = Scorer(case)
+    cov = sc.add(shown + [finish(vol, 500, 2)])
+    assert key(cov) == key(seen_on_screen) == key(Scorer(case).add(shown + [hidden(vol, 500, 2)]))
+    assert by_key(cov)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k:k + 2])
+    assert cov["events"]["open"] == 0 and cov["summary"]["finished"]["confirmed"]
+    open_ = Scorer(case).add(shown + [finish(vol, 500, 2, confirmed=False)])
+    assert open_["events"]["open"] == 1
+    assert by_key(open_)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k])
+    cov = sc.add([stack_view(vol, k + 2, 600, 3), end(vol, 700, 4)])
+    assert by_key(cov)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k:k + 3])
+
+
+def test_last_view_is_the_latest_displayed_stack_image(case, vol):
+    sc = Scorer(case)
+    assert sc.last_view is None
+    sc.add([hidden(vol, 0, 0), view_krc(vol, [(0, 10, 0), (0, 10, 50), (30, 10, 50), (30, 10, 0)], 10, 1)])
+    assert sc.last_view is None  # volume views do not count
+    sc.add([stack_view(vol, 4, 20, 2, "lung"), stack_view(vol, 6, 30, 3, "bone", sop="1.2.3.unknown"),
+            finish(vol, 40, 4), end(vol, 50, 5)])
+    assert sc.last_view == {"sop": vol["sop_uids"][4], "k": 4, "voi": {"wc": -600.0, "ww": 1500.0},
+                            "window": "lung"}
+
+
 def test_events_sorted_by_time_then_seq(case, vol):
     k = busiest_slice(case, "liver")
     evs = [end(vol, 100, 2), stack_view(vol, k, 0, 0), stack_view(vol, k + 1, 0, 1)]

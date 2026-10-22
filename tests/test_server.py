@@ -289,7 +289,7 @@ def test_session_info_everywhere_and_export_origin(env):
         assert isinstance(created, str) and created[:4].isdigit()
         assert info == {"session": sid, "case": CASE, "label": "info", "from_sample": None, "sample_events": 0,
                         "finished": False, "events": 0, "last_seq": None, "last_t_ms": None, "rules": {},
-                        "t_offset_ms": 0.0, "seq_offset": 0}
+                        "t_offset_ms": 0.0, "seq_offset": 0, "last_view": None}
         evs = _to(sid, read_pass(vol, range(10), 0, 0) + [finish(vol, 1600, 10, confirmed=False)])
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs, "now_ms": 1700}))
         info = await _json(await c.get(f"/api/sessions/{sid}"))
@@ -502,6 +502,67 @@ def test_reused_seq_with_other_content_is_409(env):
         await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1}))
         await conflict(c, sid, tab2[:1], [3])
     run_client(_cfg(env), rehydrate)
+
+
+def test_coverage_and_exports_as_the_reader_saw_them(env):
+    """While a view is open, GET coverage and both exports are the latest POST's response
+    (provisional at its now_ms); after a confirmed finish they are committed and equal a
+    replay of the exported log. session_info.last_view restores the slice and window."""
+    from covmap.scoring import replay_file
+
+    vol = env.vol
+    strip = lambda cov: {k: v for k, v in cov.items() if k != "timing_ms"}  # noqa: E731
+
+    def csv_rows(text):
+        return {r["organ"]: (r["status"], float(r["coverage"]), int(r["seen_voxels"]))
+                for r in csv.DictReader(io.StringIO(text))}
+
+    async def exports(c, sid):
+        j = json.loads(await (await c.get(f"/api/sessions/{sid}/export", params={"format": "json"})).text())
+        rows = csv_rows(await (await c.get(f"/api/sessions/{sid}/export", params={"format": "csv"})).text())
+        assert rows == {o["key"]: (o["status"], o["coverage"], o["seen_voxels"]) for o in j["organs"]}
+        return j
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        assert (await _json(await c.get(f"/api/sessions/{sid}")))["last_view"] is None
+        evs = _to(sid, read_pass(vol, range(5, 15), 0, 0))  # slice 14 still on screen
+        resp = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs, "now_ms": 2000}))
+        assert resp["provisional"] and resp["t_ms"] == 2000
+        cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
+        assert strip(cov) == strip(resp) and strip(await exports(c, sid)) == strip(resp)
+        assert cov["session_info"]["last_view"] == {"sop": vol["sop_uids"][14], "k": 14,
+                                                    "voi": {"wc": 40.0, "ww": 400.0}, "window": "soft"}
+        # confirmed finish closes the open view at its t_ms: committed == what was shown
+        fin = await _json(await c.post(f"/api/sessions/{sid}/events",
+                                       json={"events": _to(sid, [finish(vol, 2000, 10)]), "now_ms": 2100}))
+        assert [o["seen_voxels"] for o in fin["organs"]] == [o["seen_voxels"] for o in resp["organs"]]
+        cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
+        assert not cov["provisional"] and cov["organs"] == fin["organs"] and cov["events"]["open"] == 0
+        exported = await exports(c, sid)
+        log = env.root / f"{sid}.export.jsonl"
+        log.write_bytes(await (await c.get(f"/api/sessions/{sid}/export", params={"format": "jsonl"})).read())
+        rep = replay_file(env.cdir, log)
+        assert exported["organs"] == rep["organs"] and exported["summary"] == rep["summary"]
+        # a session left open
+        sid2 = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        await _json(await c.post(f"/api/sessions/{sid2}/events",
+                                 json={"events": _to(sid2, [stack_view(vol, 20, 0, 0)]), "now_ms": 900}))
+        assert (await _json(await c.get(f"/api/sessions/{sid2}/coverage")))["t_ms"] == 900
+        return sid2
+
+    sid2 = run_client(_cfg(env), fn)
+
+    async def restarted(c):  # no now_ms known after a server restart: committed
+        url = f"/api/sessions/{sid2}/coverage"
+        cov = await _json(await c.get(url))
+        assert not cov["provisional"] and cov["events"]["open"] == 1
+        assert cov["session_info"]["last_view"]["k"] == 20
+        await _json(await c.post(f"/api/sessions/{sid2}/events", json={"events": [], "now_ms": 1000}))
+        assert (await _json(await c.get(url)))["t_ms"] == 1000
+        await _json(await c.post(f"/api/sessions/{sid2}/events", json={"events": []}))  # no now_ms: committed
+        assert not (await _json(await c.get(url)))["provisional"]
+    run_client(_cfg(env), restarted)
 
 
 # ---- demo and static ------------------------------------------------------------------

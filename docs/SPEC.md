@@ -125,6 +125,10 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   `na` = not applicable, e.g. absent/out of scope; `flag` = suspicious segmentation/outline;
   `clear` removes that organ's annotations) and
   `{"kind": "finish", "confirmed": true|false, "remaining": ["<key>", ...]}`.
+  A confirmed `finish` also ends every open display state at its `t_ms`, exactly like
+  `{"kind": "hidden", "viewport": "*"}`: the image on screen when the reader confirms is
+  credited, so replaying a finished session's log equals what the reader saw at the
+  confirm. View events after it start new states as usual; `confirmed: false` ends nothing.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -194,6 +198,14 @@ API responses (`POST …/events`, `GET …/coverage`, `POST …/rules`) and the 
 `"session_info"`, the object of `GET /api/sessions/{id}` (HTTP API); `covmap replay` output
 does not have it.
 
+`GET …/coverage` and the `json`/`csv` exports report the session as the reader last saw it:
+while display states are open (no `end`, `hidden "*"` or confirmed `finish` since), the
+coverage provisional at the latest POST's `now_ms`, equal to that POST's response
+(`"provisional": true`, `"t_ms"` = that `now_ms`); otherwise, or when no `now_ms` is known
+(no POST with one since the server started), the committed coverage. Replaying the log
+(`covmap replay`) credits closed display states only, so it equals the export once the
+session is closed (e.g. after a confirmed finish).
+
 `unseen` values are fractions of organ voxels. Each organ also carries the reader layer
 `"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
 `status` never changes because of annotations. `summary` adds `attested` (reader done on a
@@ -217,12 +229,12 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
 | `GET /api/sessions/{id}` | session info (below), 404 if unknown |
 | `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; nothing applied on 400 (invalid events, foreign `session`, clock guard) or 409 (a `seq` already used for a different event: `{error, conflicts: [seq…], last_seq, last_t_ms}`, client numbering) — see "Reading events" |
-| `GET /api/sessions/{id}/coverage` | committed coverage JSON + `session_info` |
+| `GET /api/sessions/{id}/coverage` | coverage JSON as last shown (provisional at the latest POST's `now_ms` while views are open, else committed; "Coverage JSON") + `session_info` |
 | `GET /api/sessions/{id}/gap?organ=<key>[&now_ms=]` | where the organ is still unseen (below); 400 without `organ`, 404 unknown organ |
 | `GET /api/sessions/{id}/events.jsonl` | the session's event log |
 | `POST /api/sessions/{id}/rules` `{min_dwell_ms?, reviewed_threshold?, skipped_threshold?}` | re-score the whole session under these research rules; returns coverage JSON |
 | `GET /api/sessions/{id}/timeline?frames=40` | `{frames: [{t_ms, summary, statuses: {key: status}, coverage: {key: x}, view}]}` coverage snapshots for replay; `view` = the last stack image of the case's series displayed at or before `t_ms`, `{sop, k, voi: {wc, ww}, window}` (`window` = class of the voi), `null` before the first; volume views, hidden/end, unknown images and resent `seq` do not change it |
-| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log `<id>.jsonl`, coverage JSON `<id>.coverage.json` (with `session_info`), per-organ CSV `<id>.csv`, or `<id>-from-sample.csv` for a session started from a sample (attachment) |
+| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log `<id>.jsonl`, coverage JSON `<id>.coverage.json` (with `session_info`; the same coverage as `GET …/coverage`), per-organ CSV `<id>.csv` (the same coverage), or `<id>-from-sample.csv` for a session started from a sample (attachment) |
 | `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
 | `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
 | `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
@@ -235,13 +247,16 @@ Session logs persist to `$COVMAP_DATA/sessions/<id>.jsonl`.
 Session info (`GET /api/sessions/{id}`, and `session_info` in coverage responses):
 `{"session", "case", "label", "from_sample": name|null, "sample_events": n, "created",
 "finished": bool, "events": n, "last_seq": int|null, "last_t_ms": float|null, "rules": {...},
-"t_offset_ms": x, "seq_offset": n}`. `events` counts the whole log, `sample_events` the
+"t_offset_ms": x, "seq_offset": n, "last_view": {sop, k, voi: {wc, ww}, window} | null}`.
+`events` counts the whole log, `sample_events` the
 prefilled sample events among them; `last_seq`/`last_t_ms` are the highest live (non-sample)
 `seq`/`t_ms` in the client's own numbering (as POSTed, before the sample shift; null before
 any), so a client can continue its numbering; `t_offset_ms`/`seq_offset` are that shift
 (0 unless started from a sample). `finished` = the last `finish` event was confirmed;
 `rules` = the session's rule overrides (`{}` = defaults; effective values are coverage
-`params`). `created` is the server's local time stamp.
+`params`). `created` is the server's local time stamp. `last_view` = the latest displayed
+stack image of the case's series in the session (as timeline `view`; null before any), so a
+resumed client can restore the slice and window.
 
 Gap target (`GET /api/sessions/{id}/gap?organ=<key>`): `{"organ": key, "k": int|null,
 "sop": str|null, "window": "soft"|"lung"|"bone", "unseen_voxels": n, "ranges": [[k0, k1], ...]}`
