@@ -1,8 +1,0 @@
-mps lidc-0001 seg-bench-mps 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
-mps-t8 lidc-0001 seg-bench-mps-t8 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps --threads 8
-mps pancreas-0051 seg-bench-mps 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
-mps-t8 pancreas-0051 seg-bench-mps-t8 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps --threads 8
-mps-t8 lidc-0001 seg-bench-mps-t8 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps --threads 8
-mps lidc-0001 seg-bench-mps 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
-mps-t8 pancreas-0051 seg-bench-mps-t8 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps --threads 8
-mps pancreas-0051 seg-bench-mps 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps

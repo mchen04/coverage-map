@@ -1,50 +1,111 @@
 # Coverage Map
 
-Research-only CT reading-coverage map. While you read a CT in OHIF, Coverage Map records what
-the viewer actually displayed — slice, visible region, window preset and dwell — and scores
-each organ: **reviewed** (green), **partly reviewed** (yellow) or **skipped** (gray), live on a
-3D organ model.
+Coverage Map shows which organs a reader actually looked at while reading a CT scan. It runs
+inside the OHIF viewer, records what the screen displayed, and colors each organ on a live 3D
+model: **reviewed** (green), **partly reviewed** (yellow) or **skipped** (gray).
 
-> Research use only. Not a medical device. Coverage measures what was displayed, not what a
-> reader perceived or concluded; a green organ does not prove it was clinically reviewed.
+> **Research use only. Not a medical device.** Coverage measures what the viewer displayed, not
+> what a reader perceived or concluded. A green organ does not prove clinical review.
 
-## Try it
+![Coverage Map in OHIF: an abdominal CT with the 3D organ map and per-organ coverage list](docs/screenshot.png)
 
-```bash
-scripts/launch.sh            # starts the services on the Mac mini and tunnels them here
-open http://127.0.0.1:8765/  # opens the preloaded demo CT directly; no import needed
-scripts/launch.sh stop
-```
+## Features
 
-The demo opens a public, deidentified abdominal CT with a fresh reading session. Scroll
-(wheel), switch windows (`1` soft, `2` lung, `3` bone) and watch organs turn green. `N` jumps to
-the next gap with the right window, clicking a gray/yellow organ in the 3D map does the same,
-and **Finish** (`F`) lists what is still gray/yellow before you confirm. The session menu loads
-a recorded sample reading, replays a session, adjusts the research reading rules and exports
-the log/coverage.
+- Live per-organ coverage while you scroll, pan, zoom and switch window presets.
+- A 3D organ map. Click a gray or yellow organ to jump to its next gap.
+- **Next gap** (`N`) jumps to the next unreviewed region with the right window.
+- **Finish** (`F`) lists what is still gray or yellow before you confirm.
+- Session tools: load a sample reading, replay a session, adjust the reading rules, and export
+  the event log and coverage.
+- A JSON command-line interface to fetch cases, segment organs, simulate readings and score them
+  offline.
 
 ## How it works
 
-| Piece | Implementation |
+A voxel counts toward its organ when all three are true:
+
+1. It was inside the visible region of a displayed slice.
+2. The window suited the organ (lung, bone or soft tissue).
+3. It stayed on screen for at least the minimum dwell time.
+
+| Part | Built with |
 |---|---|
-| Viewer | OHIF v3.13.13 + Cornerstone3D 5, custom `coverage` mode and extension (`ohif/`) |
-| Instrumentation | Cornerstone render/camera/VOI events → one event per distinct displayed state (slice, canvas corners in patient mm, window, time); MPR planes only once their volume has loaded |
+| Viewer | OHIF 3.13.13 and Cornerstone3D 5, with a custom `coverage` mode and extension (`ohif/`) |
 | Images | Orthanc 1.13 with the DICOMweb plugin, behind the app server's same-origin proxy |
-| Organs | TotalSegmentator 2.18 (`total` task) → organ label map in the DICOM grid + surface meshes |
-| Scoring | Python (`covmap/scoring.py`): a voxel counts when it was inside the visible region of a displayed slice, under a window that suits its organ (lung / bone / soft tissue), for at least the minimum dwell |
-| 3D map | vtk.js, the same module in the OHIF panel and in `covmap render` |
+| Organs | TotalSegmentator 2.18 (`total` task): organ labels in the DICOM grid plus surface meshes |
+| Scoring | Python (`covmap/scoring.py`) |
+| 3D map | vtk.js, shared by the OHIF panel and `covmap render` |
 | API | aiohttp (`covmap serve`): sessions, live scoring, meshes, samples, export, DICOMweb proxy |
 
-The full contract is in [docs/SPEC.md](docs/SPEC.md).
+[docs/SPEC.md](docs/SPEC.md) defines every data file, API route and CLI command.
 
-## CLI
+## Requirements
+
+- A macOS host that runs the services, reachable over SSH. Full-resolution segmentation peaks
+  at about 7 GB of memory.
+- [uv](https://docs.astral.sh/uv/) on that host. The setup script installs Python 3.12, Node 24,
+  pnpm, Orthanc, OHIF and Playwright's Chromium into one task directory. Nothing is installed
+  system-wide.
+
+The scripts read these settings from the environment ([scripts/env.sh](scripts/env.sh)):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MINI_HOST` | `mini` | SSH host that runs the services |
+| `MINI_WORK` | `/Users/michaelchen/coverage-map-work` | Task directory on that host for tools, data and builds |
+| `CAPACITY_GATE` | `~/.claude/skills/supervise/scripts/fleetcapacity.py` | Capacity check that `--heavy` jobs wait on |
+
+`scripts/mini.sh -- <command>` syncs this checkout to the host and runs the command there.
+
+## Getting started
+
+1. Install the toolchain and build the viewer:
+
+   ```bash
+   scripts/mini.sh -- bash scripts/setup_mini.sh all
+   scripts/mini.sh --heavy -- bash scripts/build_ohif.sh
+   scripts/mini.sh --heavy -- bash scripts/stock_ohif.sh   # optional: unmodified OHIF for comparison
+   ```
+
+2. Prepare a case. Repeat for `lidc-0001`.
+
+   ```bash
+   scripts/mini.sh -- python -m covmap fetch --case pancreas-0051
+   scripts/mini.sh -- python -m covmap orthanc-load --case pancreas-0051
+   scripts/mini.sh --heavy=8 -- python -m covmap segment --case pancreas-0051
+   scripts/mini.sh -- python e2e/make_sample.py --case pancreas-0051   # optional: sample reading
+   ```
+
+3. Start the app and open it:
+
+   ```bash
+   scripts/launch.sh             # starts the services and tunnels port 8765 to this machine
+   open http://127.0.0.1:8765/
+   scripts/launch.sh stop
+   ```
+
+## Usage
+
+The start page opens the demo abdominal CT with a fresh reading session.
+
+| Action | Input |
+|---|---|
+| Scroll slices | Mouse wheel |
+| Soft-tissue, lung, bone window | `1`, `2`, `3` |
+| Jump to the next gap | `N`, or click a gray or yellow organ in the 3D map |
+| Finish the reading | `F` |
+
+The **Session** menu loads the sample reading, replays a session, changes the reading rules and
+exports the results.
+
+### Command line
 
 Every command prints one JSON object.
 
 ```bash
-python -m covmap fetch --case lidc-0001            # public TCIA download + provenance + hashes
+python -m covmap fetch --case lidc-0001            # public TCIA download, provenance and hashes
 python -m covmap orthanc-load --case lidc-0001
-python -m covmap segment --case lidc-0001          # TotalSegmentator → labels, organs, meshes
+python -m covmap segment --case lidc-0001          # TotalSegmentator: labels, organs, meshes
 python -m covmap scenarios --case lidc-0001
 python -m covmap simulate --case lidc-0001 --scenario window_skip_lung --out work/r.jsonl
 python -m covmap replay --case lidc-0001 --events work/r.jsonl --out work/cov.json
@@ -53,9 +114,26 @@ python -m covmap render --case lidc-0001 --coverage work/cov.json --out work/map
 python -m covmap serve --port 8765
 ```
 
-Commands run on the Mac mini (`scripts/mini.sh -- python -m covmap …`), where the toolchain
-and data live. Each `mini.sh` call re-syncs the checkout there and deletes other files, so
-outputs go under `work/` (kept, like `data/`).
+Run them on the host with `scripts/mini.sh -- python -m covmap …`. Each call re-syncs the
+checkout and deletes other files there, so write outputs under `work/`.
+
+## Testing
+
+```bash
+scripts/mini.sh --heavy -- python -m pytest -q
+```
+
+Tests marked `data` need a fetched and segmented case. Tests marked `browser` need the built
+viewer, Orthanc and Chromium.
+
+## Results
+
+In 18 scripted readings over both CTs with known skips, Coverage Map caught all 59 intended
+skips with no misses and no false alarms. OHIF's built-in viewed-image tracker and a per-image
+viewed/unviewed model each caught 28. They only see slices that were never displayed. They miss
+a wrong window, an off-screen region, a too-brief look, or one organ left unread.
+
+These readings are scripted, not clinical reads, on two public CTs.
 
 ## Data
 
@@ -64,45 +142,20 @@ outputs go under `work/` (kept, like `data/`).
 | `lidc-0001` | TCIA LIDC-IDRI, LIDC-IDRI-0001 (chest CT) | [10.7937/K9/TCIA.2015.LO9QL9SX](https://doi.org/10.7937/K9/TCIA.2015.LO9QL9SX) | CC BY 3.0 |
 | `pancreas-0051` | TCIA Pancreas-CT, PANCREAS_0051 (abdominal CT) | [10.7937/K9/TCIA.2016.tNB1kqBU](https://doi.org/10.7937/K9/TCIA.2016.tNB1kqBU) | CC BY 3.0 |
 
-Images shown in screenshots and the walkthrough come from these collections; cite the dataset
-DOIs above (and TCIA, doi:10.1007/s10278-013-9622-7) when reusing them.
+Both are public, deidentified datasets that download without credentials. Each case's
+`provenance.json` records its URLs, DOIs and file hashes. When you reuse the images, cite the
+dataset DOIs and TCIA ([doi:10.1007/s10278-013-9622-7](https://doi.org/10.1007/s10278-013-9622-7)).
 
-Both are public, deidentified research datasets downloaded without credentials; each case's
-`provenance.json` records URLs, DOIs and file hashes.
+## Project layout
 
-## Setup
-
-Everything runs in a task directory on the Mac mini (Playwright's Chromium and uv's Python go to
-their per-user caches; nothing is installed system-wide):
-
-```bash
-scripts/mini.sh -- bash scripts/setup_mini.sh all        # Python venv, Node, Orthanc, OHIF, Playwright Chromium
-scripts/mini.sh --heavy -- bash scripts/build_ohif.sh    # Coverage Map OHIF build -> $MINI_WORK/ohif-dist
-scripts/mini.sh --heavy -- bash scripts/stock_ohif.sh    # unmodified OHIF baseline -> $MINI_WORK/ohif-dist-stock
-scripts/mini.sh -- bash scripts/services.sh start         # Orthanc, Coverage Map (8765), stock OHIF (8766)
-scripts/mini.sh -- python -m covmap fetch --case pancreas-0051
-scripts/mini.sh -- python -m covmap orthanc-load --case pancreas-0051
-scripts/mini.sh --heavy=8 -- python -m covmap segment --case pancreas-0051   # ~7 GB peak
-scripts/mini.sh -- python e2e/make_sample.py --case pancreas-0051  # the sample reading, recorded in OHIF
-scripts/mini.sh --heavy -- python -m pytest -q
-```
-
-Repeat the case steps for `lidc-0001`.
-
-## Evaluation
-
-- **Scripted readings with known skips** ([gauntlet matrix](evidence/gauntlet/final/MATRIX.md)):
-  18 readings over both CTs, scored from the log and in a real browser driving OHIF. Coverage Map
-  flags exactly the intended skips in all 18 (59 caught, 0 missed, 0 false alarms). Stock OHIF's
-  built-in viewed-image tracker and a per-image viewed/unviewed model each catch 28: they see
-  slices never displayed, not a wrong window, a region off-screen, a too-brief look or one organ
-  left unread. The per-image model implements the behaviour described for Synapse/eRAD; it is
-  not the vendor product and was not tested against it.
-- **Performance** ([docs/PERFORMANCE.md](docs/PERFORMANCE.md)): segmentation 377 → 105 s and
-  189 → 60 s, live scoring 36–59 → 1.4–1.7 ms per update, render 869–951 → 529–556 ms. Scoring
-  and render outputs are identical; the faster segmentation changes 4 / 16 voxels (per-organ
-  Dice ≥ 0.99999).
-- [evidence/INDEX.md](evidence/INDEX.md) lists every evaluation run with its command, exit
-  status and result, including the review and hands-on use rounds.
-
-The readings are scripted (labelled `simulated`), not clinical reads, on two public CTs.
+| Path | Contents |
+|---|---|
+| `covmap/` | Python package: CLI, data fetch, segmentation, scoring, app server |
+| `ohif/` | OHIF `coverage` mode, extension and 3D organ map |
+| `web/render/` | Standalone 3D render page used by `covmap render` |
+| `e2e/` | Browser-driven readings and end-to-end runs |
+| `bench/` | Benchmarks for segmentation, replay, render and page load |
+| `tests/` | pytest suite |
+| `scripts/` | Host setup, sync and service scripts |
+| `config/` | OHIF and Orthanc configuration |
+| `docs/SPEC.md` | Interface contract |

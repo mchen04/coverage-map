@@ -1,5 +1,0 @@
-19:48:19 start mps-fast lidc-0001 r1
-19:48:38 done mps-fast lidc-0001 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-5/lidc-0001-mps-fast-r1.json", "wall_s": 18.02, "totalsegmentator_s": 8.284403208992444, "correctness_pass": false, "dice_min": 0.7342}
-19:48:38 start mps-fast pancreas-0051 r1
-19:48:54 done mps-fast pancreas-0051 r1 rc=0 {"ok": true, "out": "/Users/michaelchen/coverage-map-work/evidence/bench/segment/round-5/pancreas-0051-mps-fast-r1.json", "wall_s": 14.03, "totalsegmentator_s": 8.069002082978841, "correctness_pass": false, "dice_min": 0.6723}
-19:48:54 ROUND 5 COMPLETE

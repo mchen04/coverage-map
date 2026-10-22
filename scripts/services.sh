@@ -20,7 +20,7 @@ start_one() {  # name port dist
   for _ in $(seq 1 100); do curl -sf "http://127.0.0.1:$port/api/health" >/dev/null && break; sleep 0.2; done
   if ! kill -0 "$(cat "$pid")" 2>/dev/null; then echo "$name exited:" >&2; tail -3 "$MINI_WORK/logs/$name.log" >&2; return 1; fi
   echo "$name: $(curl -s "http://127.0.0.1:$port/api/health")"
-  [[ -f $dist/index.html ]] || echo "$name: no OHIF build at $dist; its viewer answers 503 (README Setup)" >&2
+  [[ -f $dist/index.html ]] || echo "$name: no OHIF build at $dist; its viewer answers 503 (README: Getting started)" >&2
 }
 
 stop_one() {

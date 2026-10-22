@@ -10,8 +10,7 @@ __pycache__/
 .pytest_cache/
 *.nii.gz
 *.dcm
-evidence/raw/
-evidence/screenshots/*.webm
+evidence/
 .DS_Store
 .forge/
 .launch-tunnel.pid
