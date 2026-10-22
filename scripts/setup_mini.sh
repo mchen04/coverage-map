@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Idempotent, offline-reproducible toolchain setup in the mini's task directory.
-# Everything lands under $MINI_WORK; nothing is installed globally.
+# Everything lands under $MINI_WORK except Playwright's Chromium and uv's Python, which go to
+# their per-user caches; nothing is installed system-wide.
 # Run on the mini:  bash scripts/setup_mini.sh [venv|node|orthanc|ohif|all]
 set -euo pipefail
 MINI_WORK="${MINI_WORK:-/Users/michaelchen/coverage-map-work}"

@@ -13,6 +13,8 @@ import math
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from covmap.errors import Refusal
+
 DISPLAY_KINDS = ("view", "hidden", "end")
 READER_KINDS = ("annotation", "finish")
 KINDS = DISPLAY_KINDS + READER_KINDS
@@ -22,7 +24,7 @@ ALL_VIEWPORTS = "*"
 COORD_LIMIT_MM = 1e6  # |corner| bound: finite but huge values overflow the voxel solve
 
 
-class EventError(ValueError):
+class EventError(Refusal):
     """A malformed event or request body."""
 
 

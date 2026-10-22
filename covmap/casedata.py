@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 
 from covmap import paths
+from covmap.errors import Refusal
 
 NO_ORGAN = 255
 
@@ -49,7 +50,7 @@ def check_case(case, named: str | None, what: str) -> None:
     """Refuse ``what`` (a file) naming another case than ``case`` (id or directory)."""
     want = read_json(resolve_case_dir(case) / "volume.json")["case"]
     if named not in (None, want):
-        raise ValueError(f"{what} is for case {named!r}, not {want!r}")
+        raise Refusal(f"{what} is for case {named!r}, not {want!r}")
 
 
 @dataclass(frozen=True)

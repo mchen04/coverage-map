@@ -65,7 +65,8 @@
         "rss_gb": 5.61,
         "n": 2,
         "median_wall_s": 111.125,
-        "median_ts_s": 105.195
+        "median_ts_s": 105.195,
+        "mps_driver_gb": 1.12
       },
       "lidc-0001/baseline": {
         "wall_s": [
@@ -111,7 +112,7 @@
           "source": "environment"
         },
         "torch_threads": 8,
-        "rss_gb": 7.32,
+        "rss_gb": 7.58,
         "n": 2,
         "median_wall_s": 382.94,
         "median_ts_s": 377.155
@@ -163,7 +164,8 @@
         "rss_gb": 4.6,
         "n": 2,
         "median_wall_s": 66.625,
-        "median_ts_s": 60.31
+        "median_ts_s": 60.31,
+        "mps_driver_gb": 1.12
       },
       "pancreas-0051/baseline": {
         "wall_s": [
@@ -214,6 +216,7 @@
         "median_wall_s": 195.54500000000002,
         "median_ts_s": 189.27499999999998
       }
-    }
+    },
+    "note": "rss_gb (main-process peak RSS, max of the runs) and mps_driver_gb (MPS driver allocation read after the run, a lower bound) recomputed from the run files with tools/summarize.py; the other fields are as summarized after the round, against the production (pre-S2) hashes of that time"
   }
 }

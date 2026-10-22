@@ -157,6 +157,7 @@ class Session:
                                                  "last_t_ms": None})
     last_now: float | None = None  # now_ms of the latest POST (server time base), for the gap target
     last_now_ms: float | None = None  # highest now_ms POSTed, client numbering (session_info)
+    clock_anchor: tuple[float, float] | None = None  # (time.monotonic(), s since created) at first use
 
     @property
     def params(self) -> dict:
@@ -182,6 +183,14 @@ class Session:
             except (KeyError, TypeError, ValueError):
                 t = 0.0
         return float(t)
+
+    def elapsed_ms(self) -> float:
+        """Server time since the session was created: read from the wall clock once per server
+        process, then monotonic, so a wall-clock step (NTP, a manual change) does not move it."""
+        if self.clock_anchor is None:
+            self.clock_anchor = (time.monotonic(), time.time() - self.created_epoch())
+        mono, since = self.clock_anchor
+        return (since + time.monotonic() - mono) * 1000.0
 
     def tally(self, events: list[dict], reset: bool = False) -> None:
         """Count logged events; ``last_seq`` / ``last_t_ms`` are the client's own numbering
@@ -292,7 +301,7 @@ class App:
             meta["t_offset_ms"] = max(e["t_ms"] for e in prefill) + 1.0
             meta["seq_offset"] = max(e["seq"] for e in prefill) + 1
         s = Session(sid, case, cdir, meta, self.cfg.sessions_dir / f"{sid}.jsonl",
-                    self.cfg.sessions_dir / f"{sid}.json")
+                    self.cfg.sessions_dir / f"{sid}.json", clock_anchor=(time.monotonic(), 0.0))
         async with s.lock:
             await self.run(_write_jsonl, s.log, prefill, "w")
             s.save_meta()
@@ -363,7 +372,7 @@ class App:
         tol = self.cfg.clock_tolerance_ms
         if tol is None or (not events and now is None):
             return None
-        elapsed = (time.time() - s.created_epoch()) * 1000.0
+        elapsed = s.elapsed_ms()
         pinned = s.meta.get("clock_lead_ms")
         lead = pinned if pinned is not None else (max(0.0, now - elapsed) if now is not None else 0.0)
         limit = elapsed + lead + tol

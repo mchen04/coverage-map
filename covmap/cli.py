@@ -10,6 +10,8 @@ import sys
 import time
 import traceback
 
+from covmap.errors import Refusal
+
 
 def _emit(obj) -> None:
     json.dump(obj, sys.stdout, indent=1, default=str)
@@ -183,6 +185,9 @@ def main(argv=None) -> int:
     t0 = time.perf_counter()
     try:
         out = a.fn(a)
+    except Refusal as e:  # bad input, refused: exit 2 without a trace
+        _emit({"ok": False, "cmd": a.cmd, "error": f"{type(e).__name__}: {e}"})
+        return 2
     except Exception as e:  # noqa: BLE001 - the CLI contract is JSON on every exit path
         _emit({"ok": False, "cmd": a.cmd, "error": f"{type(e).__name__}: {e}",
                "trace": traceback.format_exc(limit=5)})

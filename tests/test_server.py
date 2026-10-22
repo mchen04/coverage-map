@@ -972,6 +972,28 @@ def test_failed_clock_lead_write_keeps_the_applied_batch(env, monkeypatch):
     assert cov["session_info"]["last_now_ms"] == 400
 
 
+def test_clock_guard_survives_a_wall_clock_step(env, monkeypatch):
+    """The guard's time since the session was created is monotonic: the server's wall clock
+    stepping back 10 s (NTP) while a reader records does not refuse the reader's next batches."""
+    import covmap.server as server
+
+    vol = env.vol
+    wall = server.time.time
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        statuses = []
+        for i in range(4):
+            if i == 2:
+                monkeypatch.setattr(server.time, "time", lambda: wall() - 10.0)
+            r = await c.post(f"/api/sessions/{sid}/events",
+                             json={"events": _to(sid, [stack_view(vol, i, 100.0 * i, i)]), "now_ms": 100.0 * i + 50})
+            statuses.append(r.status)
+        return statuses
+
+    assert run_client(_cfg(env, clock_tolerance_ms=5000.0), fn) == [200] * 4
+
+
 def test_recent_readings_of_a_case(env):
     vol = env.vol
 

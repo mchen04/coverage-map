@@ -118,6 +118,9 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   (normal not within 5° of a volume axis) are counted under `ignored.oblique`.
 - For stack viewports `sop` is the displayed instance and fixes `k` (authoritative over
   corners for the slice axis). Unknown `sop`/`series` → `ignored.unknown_image`.
+- A volume viewport (MPR) whose volume is still streaming in shows partly loaded planes: the
+  viewer sends one `hidden` for it and no `view` until every frame of the volume has loaded
+  (a frame that failed to load keeps its planes unrecorded).
 - `voi` is in modality units (HU after rescale).
 - Reader actions are events in the same log (so replay reproduces them):
   `{"kind": "annotation", "organ": "<key>", "action": "done" | "na" | "flag" | "clear", "note": "..."}`
@@ -132,9 +135,11 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   confirm. View events after it start new states as usual; `confirmed: false` ends nothing.
   Coverage keeps what a confirmed finish confirmed in `finished.at_finish` (`reviewed`,
   `partial`, `skipped`, `voxel_coverage`, per-organ `statuses` at its `t_ms`), so reading on
-  after the confirm never rewrites it. A confirmed finish stays: a later `confirmed: false`
-  (the reader backed out of the Finish sheet) is logged but leaves `finished` as it was; only
-  another confirmed finish replaces it.
+  after the confirm never rewrites it. Rules are part of the scoring, not of the reading: a rules
+  change re-scores the whole log, `at_finish` included (what the confirm showed under the new
+  rules, as `covmap replay` of the log with those rules gives). A confirmed finish stays: a
+  later `confirmed: false` (the reader backed out of the Finish sheet) is logged but leaves
+  `finished` as it was; only another confirmed finish replaces it.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -160,7 +165,8 @@ them). A batch failing a guard is refused whole and nothing is applied:
 - 400 clock: the scorer never runs time backwards, so events from an earlier client clock
   would freeze it. All times are checked in the client's clock (as POSTed, before the
   sample shift, so sample-started sessions post from `t_ms` 0). `elapsed` = server time
-  since the session was created; the first accepted POST carrying `now_ms` pins the
+  since the session was created (monotonic within a server process, so a wall-clock step
+  does not move it); the first accepted POST carrying `now_ms` pins the
   client's lead `max(0, now_ms - elapsed)` (the OHIF client may start its clock while the
   viewer loads, before the session exists; kept as `clock_lead_ms` in the session meta,
   0 until pinned). Refused: an event with `t_ms > min(elapsed + lead, now_ms) + tolerance`,
@@ -213,7 +219,7 @@ does not have it.
 `GET …/coverage` and the `json`/`csv` exports report the session as the reader last saw it:
 while display states are open (no `end`, `hidden "*"` or confirmed `finish` since), the
 coverage provisional at the latest POST's `now_ms`, equal to that POST's response
-(`"provisional": true`, `"t_ms"` = that `now_ms`); otherwise, or when that POST carried no
+(`"provisional": true`, `"t_ms"` = that `now_ms` in log time, i.e. plus `t_offset_ms`); otherwise, or when that POST carried no
 `now_ms` (or none came since the server started), the committed coverage. Replaying the log
 (`covmap replay`) credits closed display states only, so it equals the export once the
 session is closed (e.g. after a confirmed finish).
@@ -303,7 +309,7 @@ qualifying window class (`windows[0]`).
 
 Evaluation drivers are scripts, not subcommands: `e2e/gauntlet.py`, `e2e/run_reading.py`, `bench/bench_*.py`.
 
-Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout. Exit 2: a usage error (`cmd` null, error starting `usage:`) or a refusal by the command (`simulate` with an unknown scenario or one the case cannot run: `applicable: false`). Exit 1: an unexpected error (with `trace`). `serve` prints its JSON line once it is listening (exit 0 when stopped), or only the error (e.g. the port is taken). `--help` prints argparse's plain-text help, the one non-JSON output.
+Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout. Exit 2: a usage error (`cmd` null, error starting `usage:`) or a refusal by the command (`simulate` with an unknown scenario or one the case cannot run: `applicable: false`; a coverage, truth or event file of another case, a malformed event log, `segment --reuse` of files it cannot vouch for: no `trace`). Exit 1: an unexpected error (with `trace`). `serve` prints its JSON line once it is listening (exit 0 when stopped), or only the error (e.g. the port is taken). `--help` prints argparse's plain-text help, the one non-JSON output.
 
 ### Scenario truth (`simulate` output, `<out>.truth.json`)
 

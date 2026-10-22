@@ -22,6 +22,7 @@ from unittest import mock
 import numpy as np
 
 from covmap import __version__, organs
+from covmap.errors import Refusal
 from covmap.paths import case_dir
 
 WEIGHTS_RELEASE_BASE = "https://github.com/wasserth/TotalSegmentator/releases/download"
@@ -545,7 +546,7 @@ def _ordered(organ: dict) -> dict:
     return {k: organ[k] for k in keys}
 
 
-class SegmentError(RuntimeError):
+class SegmentError(Refusal):
     """A segmentation request that cannot be honoured as asked (e.g. an unsafe ``--reuse``)."""
 
 

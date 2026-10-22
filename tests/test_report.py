@@ -119,6 +119,12 @@ def test_cli_roundtrip(tmp_path, monkeypatch, capsys):
     assert rc == 2 and bad["ok"] is False
     rc, err = run("replay", "--case", "missing-case", "--events", ev)
     assert rc == 1 and err["ok"] is False and "missing" in err["error"]
+    (tmp_path / "other.json").write_text(json.dumps({**cov, "case": "other"}))
+    (tmp_path / "bad.jsonl").write_text("{not json\n")
+    for argv, msg in ((["report", "--coverage", str(tmp_path / "other.json")], "Refusal: coverage is for case 'other'"),
+                      (["replay", "--events", str(tmp_path / "bad.jsonl")], "EventError: ")):
+        rc, ref = run(argv[0], "--case", "synth-cli", *argv[1:])  # refusals: exit 2, no trace
+        assert rc == 2 and ref["cmd"] == argv[0] and ref["error"].startswith(msg) and "trace" not in ref
     for argv in ([], ["replay", "--case", "synth-cli"], ["segment", "--case", "x", "--device", "cuda"], ["bogus"],
                  ["replay", "--case", "synth-cli", "--events", ev, "--reviewed-threshold", "1.5"],
                  ["replay", "--case", "synth-cli", "--events", ev, "--min-dwell-ms", "-1"]):

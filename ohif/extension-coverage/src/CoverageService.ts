@@ -281,7 +281,8 @@ export default class CoverageService extends PubSubService {
     this.tracker = new ViewTracker(
       s => this.onView(s),
       id => this.enqueue('hidden', { viewport: id }),
-      id => this.renderedListeners.forEach(cb => cb(id))
+      id => this.renderedListeners.forEach(cb => cb(id)),
+      vp => this.hookReset(vp) // no view while its volume loads: Reset View keeps a preset already
     );
     this.outlineOverlay = new OutlineOverlay(this);
   }

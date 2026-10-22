@@ -2474,6 +2474,48 @@ def main() -> int:
             page.set_viewport_size({"width": 1440, "height": 900})
             s = session()
             flush()
+            decache_js = """() => { const ids = window.services.cornerstoneViewportService.getRenderingEngine()
+                .getViewports()[0].getImageIds(); let n = 0;
+              ids.forEach(id => { try { window.cornerstone.cache.removeImageLoadObject(id, {force: true}); n++; } catch {} });
+              return n; }"""
+            vols_js = """() => window.services.cornerstoneViewportService.getRenderingEngine().getViewports()
+                .map(v => { try { const vol = window.cornerstone.cache.getVolume(v.getVolumeId());
+                                  return {id: vol.volumeId, loaded: !!vol.loadStatus.loaded, frames: vol.framesLoaded,
+                                          of: vol.totalNumFrames}; } catch { return null; } })"""
+            mpr_js = """() => { const vps = window.services.cornerstoneViewportService.getRenderingEngine().getViewports();
+                                return vps.length >= 3 && vps.every(v => v.type === 'orthographic'); }"""
+            toggle_js = "() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})"
+            # J6-1: six frames that never load (every request for them aborted) leave the volume
+            # "loaded" (CS3D counts a failed frame as processed) with slices missing: no plane is recorded
+            urls = []
+
+            def fail(route):
+                if route.request.url not in urls:
+                    urls.append(route.request.url)
+                if 40 <= urls.index(route.request.url) < 46:
+                    route.abort()
+                else:
+                    route.continue_()
+            page.route("**/frames/**", fail)
+            n_fail = len(api.events(s))
+            try:
+                page.evaluate(decache_js)
+                page.evaluate(toggle_js)
+                page.wait_for_function(mpr_js, timeout=60000)
+                page.wait_for_function(f"() => ({vols_js})().every(v => v && v.loaded)", timeout=60000)
+                page.wait_for_timeout(1500)
+                flush()
+                page.wait_for_timeout(400)
+                failed_vols = page.evaluate(vols_js)
+                failed_views = [e for e in api.events(s)[n_fail:] if e["kind"] == "view" and e["vp_type"] == "volume"]
+                page.evaluate(toggle_js)
+                page.wait_for_timeout(1500)
+            finally:
+                page.unroute("**/frames/**", fail)
+            page.evaluate("(ids) => ids.forEach(id => { try { window.cornerstone.cache.removeVolumeLoadObject(id); } catch {} })",
+                          sorted({v["id"] for v in failed_vols if v}))
+            need(all(v and v["frames"] < v["of"] for v in failed_vols), f"no frame failed: {failed_vols}")
+            need(not failed_views, f"{len(failed_views)} volume planes recorded with frames that failed to load")
             # J4-1: the series' images decached and all but the first 40 frames held back, so the MPR
             # volume renders part loaded (gray slices): no plane is recorded until its volume has loaded
             held, gate = [], {"open": False, "passed": 0}
@@ -2485,23 +2527,23 @@ def main() -> int:
                 else:
                     held.append(route)
             page.route("**/frames/**", hold)
-            decached = page.evaluate("""() => { const ids = window.services.cornerstoneViewportService.getRenderingEngine()
-                .getViewports()[0].getImageIds(); let n = 0;
-              ids.forEach(id => { try { window.cornerstone.cache.removeImageLoadObject(id, {force: true}); n++; } catch {} });
-              return n; }""")
+            decached = page.evaluate(decache_js)
             loaded_js = """() => window.services.cornerstoneViewportService.getRenderingEngine().getViewports()
                 .map(v => { try { return !!window.cornerstone.cache.getVolume(v.getVolumeId()).loadStatus.loaded; }
                             catch { return false; } })"""
             n0 = len(api.events(s))
             try:
-                page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
-                page.wait_for_function("""() => { const vps = window.services.cornerstoneViewportService.getRenderingEngine().getViewports();
-                                          return vps.length >= 3 && vps.every(v => v.type === 'orthographic'); }""", timeout=60000)
+                page.evaluate(toggle_js)
+                page.wait_for_function(mpr_js, timeout=60000)
                 page.wait_for_timeout(2500)
                 flush()
                 page.wait_for_timeout(400)
                 while_loading = page.evaluate(loaded_js)
                 early = [e for e in api.events(s)[n0:] if e["kind"] == "view" and e["vp_type"] == "volume"]
+                # J5-2: OHIF Reset View while the volume loads keeps the soft preset too
+                drv.press_key("1")
+                page.locator('[data-cy="Reset-btn"]').click()
+                page.wait_for_timeout(500)
             finally:
                 gate["open"] = True
                 dropped = 0
@@ -2525,13 +2567,15 @@ def main() -> int:
             evs = api.events(s)[n0:]
             vol_views = [e for e in evs if e["kind"] == "view" and e["vp_type"] == "volume"]
             need(vol_views, "no volume view events")
+            soft = PRESETS["1"]
+            load_vois = sorted({(round(e["voi"]["wc"]), round(e["voi"]["ww"])) for e in vol_views})
+            need(load_vois == [soft], f"windows recorded after a Reset View while the volume loads: {load_vois}")
             normals = sorted({tuple(round(x) for x in e["normal"]) for e in vol_views})
             hidden_ = [e for e in evs if e["kind"] == "hidden"]
             shot("16-mpr")
             # U2: OHIF Reset View keeps a preset window on volume viewports too (MPR syncs the window)
             vois_js = """() => window.services.cornerstoneViewportService.getRenderingEngine().getViewports().map(v => {
                 const r = v.getProperties().voiRange; return {id: v.id, wc: (r.lower + r.upper + 1) / 2, ww: r.upper - r.lower + 1}; })"""
-            soft = PRESETS["1"]
             all_soft = (f"() => ({vois_js})().every(v => Math.abs(v.wc - {soft[0]}) < 0.5 && Math.abs(v.ww - {soft[1]}) < 0.5)")
             drv.press_key("1")
             page.wait_for_function(all_soft, timeout=3000)
@@ -2554,13 +2598,15 @@ def main() -> int:
             need(reset_vois in ([], [soft]), f"windows recorded after Reset View: {reset_vois}")
             page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
             page.wait_for_timeout(2000)
-            return {"loading": {"decached": decached, "frames_held": len(held), "dropped": dropped, "loaded": while_loading,
-                                "views_while_loading": len(early)},
+            return {"failed_frames": {"volumes": failed_vols, "views": len(failed_views)},
+                    "loading": {"decached": decached, "frames_held": len(held), "dropped": dropped, "loaded": while_loading,
+                                "views_while_loading": len(early), "windows_after_reset_while_loading": load_vois},
                     "volume_views": len(vol_views), "normals": normals, "viewports": sorted({e["viewport"] for e in vol_views}),
                     "hidden_on_disable": len(hidden_), "example": vol_views[0],
                     "reset_view": {"windows": vois, "recorded": reset_vois}}
         C.run("MPR volume viewports are instrumented (vp_type volume, 3 normals), J4-1 not while their volume "
-              "loads; U2 Reset View keeps the soft preset", mpr)
+              "loads, J6-1 nor with frames that failed; U2 Reset View keeps the soft preset, J5-2 also while the "
+              "volume loads", mpr)
 
         # ---- U15 case picker ------------------------------------------------------------------
         def case_picker():

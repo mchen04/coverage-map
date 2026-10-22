@@ -28,7 +28,7 @@ the log/coverage.
 | Piece | Implementation |
 |---|---|
 | Viewer | OHIF v3.13.13 + Cornerstone3D 5, custom `coverage` mode and extension (`ohif/`) |
-| Instrumentation | Cornerstone render/camera/VOI events → one event per distinct displayed state (slice, canvas corners in patient mm, window, time) |
+| Instrumentation | Cornerstone render/camera/VOI events → one event per distinct displayed state (slice, canvas corners in patient mm, window, time); MPR planes only once their volume has loaded |
 | Images | Orthanc 1.13 with the DICOMweb plugin, behind the app server's same-origin proxy |
 | Organs | TotalSegmentator 2.18 (`total` task) → organ label map in the DICOM grid + surface meshes |
 | Scoring | Python (`covmap/scoring.py`): a voxel counts when it was inside the visible region of a displayed slice, under a window that suits its organ (lung / bone / soft tissue), for at least the minimum dwell |
@@ -72,14 +72,17 @@ Both are public, deidentified research datasets downloaded without credentials; 
 
 ## Setup
 
-Everything runs in a task directory on the Mac mini, nothing is installed globally:
+Everything runs in a task directory on the Mac mini (Playwright's Chromium and uv's Python go to
+their per-user caches; nothing is installed system-wide):
 
 ```bash
 scripts/mini.sh -- bash scripts/setup_mini.sh all        # Python venv, Node, Orthanc, OHIF, Playwright Chromium
 scripts/mini.sh --heavy -- bash scripts/build_ohif.sh    # Coverage Map OHIF build -> $MINI_WORK/ohif-dist
 scripts/mini.sh --heavy -- bash scripts/stock_ohif.sh    # unmodified OHIF baseline -> $MINI_WORK/ohif-dist-stock
 scripts/mini.sh -- bash scripts/services.sh start         # Orthanc, Coverage Map (8765), stock OHIF (8766)
-scripts/mini.sh -- python -m covmap fetch --case pancreas-0051   # then orthanc-load and segment as above
+scripts/mini.sh -- python -m covmap fetch --case pancreas-0051
+scripts/mini.sh -- python -m covmap orthanc-load --case pancreas-0051
+scripts/mini.sh --heavy -- python -m covmap segment --case pancreas-0051   # ~7 GB peak
 scripts/mini.sh -- python e2e/make_sample.py --case pancreas-0051  # the sample reading, recorded in OHIF
 scripts/mini.sh --heavy -- python -m pytest -q
 ```

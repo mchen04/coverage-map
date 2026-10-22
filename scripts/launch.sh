@@ -22,15 +22,14 @@ case "${1:-start}" in
     echo "Coverage Map (research use only):"
     echo "  demo reading     http://127.0.0.1:8765/"
     "$here/scripts/mini.sh" -- python -c '
-import json, pathlib
+import json
 from covmap import paths
-for d in sorted((paths.data_dir() / "cases").glob("*/volume.json")):
-    v = json.loads(d.read_text())
-    print(f"  {v[\"case\"]:15s} http://127.0.0.1:8765/coverage?StudyInstanceUIDs={v[\"study_uid\"]}")
+cases = [json.loads(d.read_text()) for d in sorted((paths.data_dir() / "cases").glob("*/volume.json"))]
+for v in cases:
+    print("  %-15s http://127.0.0.1:8765/coverage?StudyInstanceUIDs=%s" % (v["case"], v["study_uid"]))
 print("Stock OHIF (baseline build, unmodified):")
-for d in sorted((paths.data_dir() / "cases").glob("*/volume.json")):
-    v = json.loads(d.read_text())
-    print(f"  {v[\"case\"]:15s} http://127.0.0.1:8766/viewer?StudyInstanceUIDs={v[\"study_uid\"]}")
+for v in cases:
+    print("  %-15s http://127.0.0.1:8766/viewer?StudyInstanceUIDs=%s" % (v["case"], v["study_uid"]))
 '
     ;;
   stop)

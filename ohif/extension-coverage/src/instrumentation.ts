@@ -96,14 +96,21 @@ function firstImageId(vp: any): string | null {
   }
 }
 
-/** A planar volume viewport whose volume is not fully loaded: its planes show partial pixel data. */
+/**
+ * A planar volume viewport whose volume is not fully loaded: its planes show partial pixel data.
+ * CS3D 5.6.8 sets loadStatus.loaded once every frame was processed, a failed frame included, so
+ * every frame must also have loaded (framesLoaded counts each frame once, on success).
+ */
 export function volumeLoading(vp: any): boolean {
   if (!isPlanarVolume(vp)) {
     return false;
   }
   try {
     const vol: any = cache.getVolume(vp.getVolumeId());
-    return !vol || (vol.loadStatus != null && !vol.loadStatus.loaded);
+    if (!vol || (vol.loadStatus != null && !vol.loadStatus.loaded)) {
+      return true;
+    }
+    return typeof vol.framesLoaded === 'number' && vol.framesLoaded < (vol.totalNumFrames ?? 0);
   } catch {
     return true;
   }
@@ -194,7 +201,8 @@ export class ViewTracker {
   constructor(
     private readonly onView: (s: ViewState) => void,
     private readonly onDisabled: (viewportId: string) => void,
-    private readonly onRendered?: (viewportId: string) => void
+    private readonly onRendered?: (viewportId: string) => void,
+    private readonly onLoading?: (vp: any) => void
   ) {}
 
   start(): void {
@@ -205,6 +213,7 @@ export class ViewTracker {
     eventTarget.addEventListener(Enums.Events.ELEMENT_ENABLED, this.handleEnabled);
     eventTarget.addEventListener(Enums.Events.ELEMENT_DISABLED, this.handleDisabled);
     eventTarget.addEventListener(Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED, this.handleVolumeLoaded);
+    eventTarget.addEventListener(Enums.Events.IMAGE_VOLUME_MODIFIED, this.handleVolumeLoaded);
     allViewports().forEach(vp => this.attach(vp.element, vp.id));
   }
 
@@ -216,6 +225,7 @@ export class ViewTracker {
     eventTarget.removeEventListener(Enums.Events.ELEMENT_ENABLED, this.handleEnabled);
     eventTarget.removeEventListener(Enums.Events.ELEMENT_DISABLED, this.handleDisabled);
     eventTarget.removeEventListener(Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED, this.handleVolumeLoaded);
+    eventTarget.removeEventListener(Enums.Events.IMAGE_VOLUME_MODIFIED, this.handleVolumeLoaded);
     [...this.attached.keys()].forEach(id => this.detach(id));
     this.last.clear();
   }
@@ -243,6 +253,7 @@ export class ViewTracker {
     if (volumeLoading(vp)) {
       // no credit for planes of a volume still streaming in: close the viewport's previous
       // state once; the render after loading completes is captured
+      this.onLoading?.(vp);
       if (this.last.get(viewportId) !== LOADING) {
         this.last.set(viewportId, LOADING);
         this.onDisabled(viewportId);
@@ -300,8 +311,14 @@ export class ViewTracker {
     this.attach(element, viewportId);
   };
 
+  /** A frame arrived or loading completed: viewports waiting for their volume are captured
+   * once it has fully loaded (a frame retried after completion arrives as a modification). */
   private handleVolumeLoaded = () => {
-    this.attached.forEach((_, id) => this.capture(id));
+    this.attached.forEach((_, id) => {
+      if (this.last.get(id) === LOADING) {
+        this.capture(id);
+      }
+    });
   };
 
   private handleDisabled = (evt: Event) => {
