@@ -276,7 +276,7 @@ qualifying window class (`windows[0]`).
 |---|---|
 | `fetch --case <id> [--series UID --collection C]` | download from TCIA NBIA v1, write source/, provenance, volume.json, ct.nii.gz |
 | `orthanc-load --case <id>` | upload `source/` into Orthanc |
-| `segment --case <id> [--fast] [--device cpu|mps] [--roi-subset]` | TotalSegmentator → labels.npy, organs.json, meshes |
+| `segment --case <id> [--fast] [--device auto|cpu|mps] [--roi-subset] [--reuse]` | TotalSegmentator → labels.npy, organs.json, meshes |
 | `simulate --case <id> --scenario <name> [--out events.jsonl]` | scripted reading events (`source: simulated`) + truth |
 | `replay --case <id> --events <file>` | coverage JSON (+ baseline) |
 | `report --case <id> --coverage <file> [--truth <file>]` | summary + truth comparison (TP/FP/FN per organ, baseline catches) |

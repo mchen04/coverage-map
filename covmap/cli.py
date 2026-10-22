@@ -93,7 +93,8 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("segment", help="TotalSegmentator organ labels, catalog and meshes")
     s.add_argument("--case", required=True)
     s.add_argument("--fast", action="store_true")
-    s.add_argument("--device", default="cpu")
+    s.add_argument("--device", default="auto", choices=["auto", "cpu", "mps"],
+                   help="auto: MPS after a numerical self-test, else CPU")
     s.add_argument("--roi-subset", action="store_true",
                    help="only segment the TotalSegmentator classes the organ catalog uses")
     s.add_argument("--threads", type=int, default=None)
