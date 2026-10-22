@@ -334,6 +334,11 @@ def decomposed_conv3d(mode: str = CONV3D_DEFAULT, budget_mb: int = CONV3D_BUDGET
             if "torch_threads_at_first_call" not in record:  # threads in effect during inference
                 record["torch_threads_at_first_call"] = torch.get_num_threads()
             return fn(input, weight, bias, tuple(self.stride), tuple(self.padding), budget)
+        if input.device.type == "mps":  # native MPS Conv3d is numerically wrong (see above)
+            raise RuntimeError(
+                f"Conv3d (groups={self.groups}, dilation={tuple(self.dilation)}, padding={self.padding!r}, "
+                f"padding_mode={self.padding_mode!r}) cannot use the decomposed path on MPS; "
+                "rerun with --device cpu")
         calls["native"] += 1
         return original(self, input, weight, bias)
 

@@ -60,6 +60,15 @@ def test_lowmem_patch_is_scoped():
     assert torch.nn.Conv3d._conv_forward.__name__ == "_conv_forward"
 
 
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs Apple MPS")
+def test_mps_refuses_native_conv3d():
+    # native MPS Conv3d is numerically wrong, so a layer the decomposed path cannot take must fail
+    dil = torch.nn.Conv3d(2, 3, 3, padding=2, dilation=2).to("mps")
+    with torch.no_grad(), segment.decomposed_conv3d(segment.CONV3D_DEFAULTS["mps"], device="mps"):
+        with pytest.raises(RuntimeError, match="--device cpu"):
+            dil(torch.randn(1, 2, 6, 7, 8, device="mps"))
+
+
 def test_select_device_auto(monkeypatch):
     monkeypatch.delenv(segment.CONV3D_ENV, raising=False)
     if torch.backends.mps.is_available():

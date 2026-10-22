@@ -74,8 +74,20 @@ def cmd_scenarios(a):
     return list_scenarios(a.case)
 
 
+class UsageError(Exception):
+    pass
+
+
+class _Parser(argparse.ArgumentParser):
+    """Usage errors raise instead of printing to stderr, so main() can emit them as JSON
+    (subcommand parsers inherit this class)."""
+
+    def error(self, message):
+        raise UsageError(f"{self.prog}: {message}")
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="covmap", description=__doc__)
+    p = _Parser(prog="covmap", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("fetch", help="download a public TCIA CT series")
@@ -148,7 +160,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
-    a = build_parser().parse_args(argv)
+    try:
+        a = build_parser().parse_args(argv)
+    except UsageError as e:
+        _emit({"ok": False, "cmd": None, "error": f"usage: {e}"})
+        return 2
     t0 = time.perf_counter()
     try:
         out = a.fn(a)

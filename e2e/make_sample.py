@@ -3,8 +3,8 @@
 The sample is a deliberately incomplete reading so a visitor immediately sees all three
 states: a soft-tissue pass over the cranial three quarters of the slices, a lung-window pass
 over the cranial half, and no bone-window pass. The browser-scripted reader drives real OHIF; the coverage
-extension records what was displayed; the session's event log is saved as the sample
-(source: browser-scripted).
+extension records what was displayed (events carry source: ohif, the recording instrument); the
+session's event log is saved as the sample, whose metadata says source: browser-scripted.
 
     python e2e/make_sample.py --case pancreas-0051 --base http://127.0.0.1:8765
 """

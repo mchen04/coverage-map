@@ -111,3 +111,6 @@ def test_cli_roundtrip(tmp_path, monkeypatch, capsys):
     assert rc == 2 and bad["ok"] is False
     rc, err = run("replay", "--case", "missing-case", "--events", ev)
     assert rc == 1 and err["ok"] is False and "missing" in err["error"]
+    for argv in ([], ["replay", "--case", "synth-cli"], ["segment", "--case", "x", "--device", "cuda"], ["bogus"]):
+        rc, usage = run(*argv)  # argparse usage errors are JSON on stdout too
+        assert rc == 2 and usage["ok"] is False and usage["error"].startswith("usage: covmap")

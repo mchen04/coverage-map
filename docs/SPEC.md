@@ -104,7 +104,7 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
  "normal": [nx, ny, nz],
  "voi": {"wc": 40, "ww": 400},
  "canvas_px": [w, h],
- "source": "ohif" | "simulated" | "browser-scripted"}
+ "source": "ohif" | "simulated"}
 ```
 
 - `kind: "view"` starts a display state for that viewport; it lasts until the next event
@@ -305,8 +305,11 @@ case. A scenario passes when every organ's status equals its expected status.
   `/coverage?StudyInstanceUIDs=<its study>` directly, so a visitor needs no import step.
 - Sample sessions live in `$COVMAP_DATA/samples/<case>/<name>.jsonl` with `<name>.json`
   metadata `{label, source, description, created}`. They are real recordings of the OHIF
-  instrumentation driven by the scripted browser reader (`source: browser-scripted`) or
-  labeled simulated logs (`source: simulated`); the UI shows the label and source.
+  instrumentation driven by the scripted browser reader (metadata `source: browser-scripted`)
+  or labeled simulated logs (`source: simulated`); the UI shows the label and source. An event's
+  own `source` names the instrument that recorded it, so recorded sample events say `ohif`; the
+  server stamps every event copied from a sample with `from_sample: <name>` (clients cannot set
+  it), and `session_info` carries `from_sample` and `sample_events`.
 
 ## UI contract (coverage mode, one page)
 
