@@ -117,6 +117,15 @@ def read_series(paths, series_uid: str | None = None) -> tuple[dict, list[pydico
         raise SeriesError(
             f"{kind} between k={i} and k={i + 1}: step {steps[i]:.4f} mm vs mean "
             f"{spacing:.4f} mm (max deviation {max_dev:.4f} mm)")
+    # Small per-step errors can still add up: every slice must sit on the uniform grid
+    # origin + k * spacing that the affine assumes.
+    grid_dev = np.abs(proj - proj[0] - spacing * np.arange(len(proj)))
+    max_grid = float(grid_dev.max())
+    if max_grid > max(SPACING_ABS_TOL, SPACING_REL_TOL * spacing):
+        i = int(np.argmax(grid_dev))
+        raise SeriesError(
+            f"slice positions drift off the uniform grid: k={i} is {max_grid:.4f} mm from "
+            f"origin + k * {spacing:.4f} mm")
 
     # Every slice origin must lie on the line origin + t * normal (no gantry tilt),
     # otherwise the affine below would misplace voxels.
@@ -150,6 +159,7 @@ def read_series(paths, series_uid: str | None = None) -> tuple[dict, list[pydico
     }
     checks = {
         "max_spacing_deviation_mm": max_dev,
+        "max_grid_deviation_mm": max_grid,
         "max_inplane_offset_mm": max_inplane,
         "min_step_mm": float(steps.min()), "max_step_mm": float(steps.max()),
         "input_order_reversed": bool(order[0] > order[-1]),

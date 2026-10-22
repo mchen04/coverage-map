@@ -278,7 +278,8 @@ def fetch_case(case_id: str, series_uid: str | None = None, collection: str | No
     vol_sha = hashlib.sha256(vol_text.encode()).hexdigest()
     derived = prov.get("derived", {})
     t = time.perf_counter()
-    if (downloaded or not nii_path.exists() or derived.get("volume_json_sha256") != vol_sha
+    if (downloaded or not nii_path.exists() or not vol_path.exists()
+            or derived.get("volume_json_sha256") != vol_sha or sha256_file(vol_path) != vol_sha
             or sha256_file(nii_path) != derived.get("ct_nii_sha256")):
         vol_path.write_text(vol_text)
         tmp = nii_path.with_name("ct.tmp.nii.gz")

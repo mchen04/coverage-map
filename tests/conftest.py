@@ -18,13 +18,15 @@ def write_synthetic_series(directory: Path, *, rows: int = 24, cols: int = 20, n
                            row_dir=(1.0, 0.0, 0.0), col_dir=(0.0, 1.0, 0.0),
                            origin=(-10.0, -20.0, 30.0), descending: bool = True,
                            seed: int = 0, vary_rescale: bool = True, skip_k=(),
-                           duplicate_k: int | None = None, tilt_mm: float = 0.0) -> dict:
+                           duplicate_k: int | None = None, tilt_mm: float = 0.0,
+                           offsets=None) -> dict:
     """Write a CT series with pydicom and return its ground truth.
 
     Slice ``k`` sits at ``origin + k * slice_spacing * (row_dir x col_dir)``. Instance
     numbers run against ``k`` when ``descending`` and file names are shuffled, so a
     reader must sort by geometry. HU values encode ``(k, r, c)``; rescale slope and
-    intercept vary per slice when ``vary_rescale``.
+    intercept vary per slice when ``vary_rescale``. ``offsets`` overrides the position of
+    slice ``k`` along the normal (mm from the origin).
     """
     from pydicom.dataset import Dataset, FileMetaDataset
     from pydicom.uid import CTImageStorage, ExplicitVRLittleEndian, generate_uid
@@ -55,7 +57,8 @@ def write_synthetic_series(directory: Path, *, rows: int = 24, cols: int = 20, n
         slope, intercept = ((2.0, -1000.0) if k % 3 == 1 else (1.0, -1024.0 + 8 * (k % 2))) \
             if vary_rescale else (1.0, -1024.0)
         stored = ((hu[k].astype(np.float64) - intercept) / slope).astype(np.uint16)
-        pos = origin + k * slice_spacing * normal + k * tilt_mm * row
+        along = k * slice_spacing if offsets is None else offsets[k]
+        pos = origin + along * normal + k * tilt_mm * row
 
         meta = FileMetaDataset()
         meta.MediaStorageSOPClassUID = CTImageStorage

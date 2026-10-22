@@ -58,10 +58,13 @@ and data live.
 
 ## Data
 
-| Case | Source | License |
-|---|---|---|
-| `lidc-0001` | TCIA LIDC-IDRI, LIDC-IDRI-0001 (chest CT) | CC BY 3.0 |
-| `pancreas-0051` | TCIA Pancreas-CT, PANCREAS_0051 (abdominal CT) | CC BY 3.0 |
+| Case | Source | Dataset DOI | License |
+|---|---|---|---|
+| `lidc-0001` | TCIA LIDC-IDRI, LIDC-IDRI-0001 (chest CT) | [10.7937/K9/TCIA.2015.LO9QL9SX](https://doi.org/10.7937/K9/TCIA.2015.LO9QL9SX) | CC BY 3.0 |
+| `pancreas-0051` | TCIA Pancreas-CT, PANCREAS_0051 (abdominal CT) | [10.7937/K9/TCIA.2016.tNB1kqBU](https://doi.org/10.7937/K9/TCIA.2016.tNB1kqBU) | CC BY 3.0 |
+
+Images shown in screenshots and the walkthrough come from these collections; cite the dataset
+DOIs above (and TCIA, doi:10.1007/s10278-013-9622-7) when reusing them.
 
 Both are public, deidentified research datasets downloaded without credentials; each case's
 `provenance.json` records URLs, DOIs and file hashes.

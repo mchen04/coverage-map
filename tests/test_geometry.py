@@ -166,6 +166,47 @@ def test_rejects_duplicate_position(synthetic_series):
         dicom_io.read_series(s["paths"])
 
 
+def test_rejects_cumulative_drift(synthetic_series):
+    # every step is within 5% of the mean, but slice 6 sits 0.44 mm off the uniform grid
+    steps = [2.08] * 6 + [1.92] * 5
+    s = synthetic_series(n_slices=12, slice_spacing=2.0, offsets=np.concatenate([[0], np.cumsum(steps)]))
+    with pytest.raises(dicom_io.SeriesError, match="uniform grid"):
+        dicom_io.read_series(s["paths"])
+
+
+def test_fetch_rederives_missing_or_edited_volume_json(synthetic_series, tmp_path, monkeypatch):
+    import json
+    import shutil
+    import zipfile
+
+    from covmap.fetch import fetch_case, manifest_sha256, sha256_file
+
+    s = synthetic_series()
+    monkeypatch.setenv("COVMAP_DATA", str(tmp_path / "data"))
+    cdir = tmp_path / "data" / "cases" / "synth"
+    (cdir / "source").mkdir(parents=True)
+    with zipfile.ZipFile(cdir / "source.zip", "w") as z:
+        for p in s["paths"]:
+            z.write(p, p.name)
+            shutil.copy(p, cdir / "source" / p.name)
+    files = {p.name: sha256_file(p) for p in (cdir / "source").glob("*.dcm")}
+    (cdir / "provenance.json").write_text(json.dumps({
+        "series_uid": s["series_uid"], "files": files, "manifest_sha256": manifest_sha256(files),
+        "zip": {"file": "source.zip", "sha256": sha256_file(cdir / "source.zip")}}))
+
+    first = fetch_case("synth", series_uid=s["series_uid"])
+    assert first["download"].startswith("skipped") and first["derived_rebuilt"]
+    vol = cdir / "volume.json"
+    good = vol.read_text()
+    assert not fetch_case("synth", series_uid=s["series_uid"])["derived_rebuilt"]
+    for damage in (vol.unlink, lambda: vol.write_text(good.replace('"n_slices": 12', '"n_slices": 11'))):
+        damage()
+        assert fetch_case("synth", series_uid=s["series_uid"])["derived_rebuilt"]
+        assert vol.read_text() == good
+        prov = json.loads((cdir / "provenance.json").read_text())
+        assert prov["derived"]["volume_json_sha256"] == sha256_file(vol)
+
+
 def test_rejects_gantry_tilt(synthetic_series):
     s = synthetic_series(tilt_mm=0.5)
     with pytest.raises(dicom_io.SeriesError, match="tilt"):

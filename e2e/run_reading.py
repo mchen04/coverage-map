@@ -71,6 +71,11 @@ def run(case: str, scenario: str, base: str, mode: str, out: Path, headless: boo
         res["viewer_order_equals_case_order"] = viewer_sops == case_sops
         if mode == "coverage":
             page.wait_for_function("() => window.__covmap && window.__covmap.sessionId", timeout=60000)
+            # The coverage mode opens in a counting window; start the scored session only now
+            # that the neutral window is set, so nothing before the plan's first step counts.
+            if page.evaluate("() => typeof window.__covmap.newReading === 'function'"):
+                res["pre_plan_session"] = page.evaluate("() => window.__covmap.sessionId")
+                res["fresh_session"] = page.evaluate("() => window.__covmap.newReading()")
         res["run"] = drv.run_plan(plan, sop_to_index, case_sops, full_rect)
         page.screenshot(path=str(out / f"{case}.{scenario}.{mode}.png"))
 
