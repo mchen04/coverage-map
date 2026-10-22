@@ -393,12 +393,18 @@ class App:
             lead = self._check_clock(s, events, now)
             events = s.shift(events)
             self._check_seqs(s, scorer, events)
+            # identical resends (a retry, the unload beacon repeating a POST in flight) carry
+            # nothing new: neither scored nor logged again
+            fresh: dict[int, dict] = {}
+            for e in events:
+                if e["seq"] not in scorer.seqs:
+                    fresh.setdefault(e["seq"], e)
+            events = list(fresh.values())
             if now is not None:
                 now += s.meta.get("t_offset_ms", 0.0)
             # a batch with new events older than ones already applied (concurrent POSTs, an unload
             # beacon overtaking a tick) is scored in log order, as replay and restarts score it
-            late = scorer.last_t is not None and any(
-                e["t_ms"] < scorer.last_t and e["seq"] not in scorer.seqs for e in events)
+            late = scorer.last_t is not None and any(e["t_ms"] < scorer.last_t for e in events)
             try:
                 if late:
                     scorer = await self.run(self._rescore, s, s.params, s.events + events)

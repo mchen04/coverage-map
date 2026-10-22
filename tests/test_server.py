@@ -468,10 +468,12 @@ def test_reused_seq_with_other_content_is_409(env):
         sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
         tab1 = _to(sid, read_pass(vol, range(10, 15), 0, 0, "lung"))  # seq 0-4
         await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1}))
-        # a resend (e.g. after a lost response) of accepted events, with a new one: applied as before
+        # a resend (e.g. after a lost response, or the unload beacon) of accepted events, with a
+        # new one: only the new one is scored and logged
         more = _to(sid, [stack_view(vol, 15, 750, 5, "lung")])
-        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1[3:] + more}))
-        assert cov["events"]["ignored"]["other"] == 2 and cov["events"]["ignored"]["conflict"] == 0
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1[3:] + more + more}))
+        assert cov["events"]["total"] == 6 and cov["events"]["ignored"]["other"] == 0
+        assert cov["events"]["ignored"]["conflict"] == 0 and len(log(sid)) == 6
         state = lambda cov: ({k: v for k, v in cov.items() if k != "timing_ms"}, log(sid))  # noqa: E731
         before = state(await _json(await c.get(f"/api/sessions/{sid}/coverage")))
         # a second tab numbering from seq 3: refused whole, nothing applied

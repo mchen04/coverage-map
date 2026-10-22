@@ -141,8 +141,9 @@ not committed).
 
 `seq` identifies an event within its session. An event whose `seq` was already applied is
 not applied again: an identical resend (equal apart from the `session` / `from_sample`
-stamps) counts under `events.ignored.other`, a different event with a used `seq` (e.g. two
-tabs numbering from the same `seq`) under `events.ignored.conflict` (replay of a file, CLI;
+stamps) counts under `events.ignored.other` in a replayed file (live POSTs drop it before
+logging, so it is neither scored nor logged twice), a different event with a used `seq` (e.g.
+two tabs numbering from the same `seq`) under `events.ignored.conflict` (replay of a file, CLI;
 live POSTs refuse it, below). The first event applied with a `seq` wins.
 
 Live POST guards (HTTP only; `covmap replay`, `timeline` and the CLI score logs without
@@ -152,7 +153,7 @@ them). A batch failing a guard is refused whole and nothing is applied:
   in the same batch, for a different event (compared as above, in the log numbering after
   the sample shift). Body `{"ok": false, "error", "conflicts": [seq, ...], "last_seq",
   "last_t_ms"}`, all in the client's numbering (`last_*` as in session info), so the client
-  can renumber after `last_seq` and resend. Identical resends are accepted as before;
+  can renumber after `last_seq` and resend. Identical resends are accepted (and dropped);
 - 400 clock: the scorer never runs time backwards, so events from an earlier client clock
   would freeze it. All times are checked in the client's clock (as POSTed, before the
   sample shift, so sample-started sessions post from `t_ms` 0). `elapsed` = server time
