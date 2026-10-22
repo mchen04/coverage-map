@@ -1,0 +1,113 @@
+{
+ "case": "pancreas-0051",
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   7.09,
+   14.27,
+   13.66
+  ],
+  "time": "2026-10-21T18:06:31-0700"
+ },
+ "chromium_args": [
+  "--use-angle=metal",
+  "--enable-gpu"
+ ],
+ "coverage": {
+  "first_image_ms": {
+   "n": 3,
+   "median": 464.3,
+   "min": 455.9,
+   "max": 464.4,
+   "runs": [
+    455.9,
+    464.3,
+    464.4
+   ]
+  },
+  "map_ready_ms": {
+   "n": 3,
+   "median": 590.5,
+   "min": 587,
+   "max": 605.4,
+   "runs": [
+    587,
+    590.5,
+    605.4
+   ]
+  },
+  "session_ms": {
+   "n": 3,
+   "median": 480.3,
+   "min": 479,
+   "max": 495.4,
+   "runs": [
+    479,
+    480.3,
+    495.4
+   ]
+  },
+  "raw": [
+   {
+    "first_image_ms": 464.40000000596046,
+    "map_ready_ms": 587,
+    "session_ms": 479,
+    "marks": {
+     "covmap:first-image": 458,
+     "covmap:map-ready": 587
+    },
+    "navigation": {
+     "dcl": 212.30000001192093,
+     "load": 212.5,
+     "transfer_bytes": 5023
+    },
+    "resources": 80
+   },
+   {
+    "first_image_ms": 455.90000000596046,
+    "map_ready_ms": 605.4000000059605,
+    "session_ms": 495.40000000596046,
+    "marks": {
+     "covmap:first-image": 473.40000000596046,
+     "covmap:map-ready": 605.4000000059605
+    },
+    "navigation": {
+     "dcl": 214.09999999403954,
+     "load": 214.5,
+     "transfer_bytes": 5023
+    },
+    "resources": 90
+   },
+   {
+    "first_image_ms": 464.30000001192093,
+    "map_ready_ms": 590.5,
+    "session_ms": 480.30000001192093,
+    "marks": {
+     "covmap:first-image": 458,
+     "covmap:map-ready": 590.5
+    },
+    "navigation": {
+     "dcl": 213.40000000596046,
+     "load": 213.80000001192093,
+     "transfer_bytes": 5023
+    },
+    "resources": 85
+   }
+  ]
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   7.09,
+   14.27,
+   13.66
+  ],
+  "time": "2026-10-21T18:06:34-0700"
+ }
+}

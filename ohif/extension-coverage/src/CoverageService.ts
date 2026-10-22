@@ -2,6 +2,7 @@ import { PubSubService } from '@ohif/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { CovmapApi } from './api';
+import type { MeshesJson } from '@covmap/organ-map';
 import {
   ViewTracker,
   allViewports,
@@ -27,6 +28,8 @@ import type {
   Volume,
   WindowClass,
 } from './types';
+
+type MeshData = { meta: MeshesJson; buffer: ArrayBuffer };
 
 const POST_INTERVAL_MS = 400;
 const MAX_QUEUE = 20000;
@@ -122,6 +125,7 @@ export default class CoverageService extends PubSubService {
   private switching = false;
   private outlineOverlay: OutlineOverlay;
   private firstImageAt: number | null = null;
+  private meshCache = new Map<string, Promise<MeshData>>();
   private mapReadyAt: number | null = null;
   private renderedListeners = new Set<(viewportId: string) => void>();
 
@@ -388,7 +392,23 @@ export default class CoverageService extends PubSubService {
     }
   }
 
+  /** Organ meshes for the 3D map, fetched once per case. */
+  public meshes(caseId: string): Promise<MeshData> {
+    let p = this.meshCache.get(caseId);
+    if (!p) {
+      p = this.api.meshes(caseId);
+      p.catch(() => this.meshCache.delete(caseId));
+      this.meshCache.set(caseId, p);
+    }
+    return p;
+  }
+
   private async openCase(caseId: string): Promise<void> {
+    // Meshes, case data and the session load in parallel; the panel and map start as soon as
+    // the case data is in, before the session exists.
+    this.meshes(caseId).catch(() => {});
+    const sessionReq = this.api.createSession(caseId, 'live reading (OHIF)');
+    sessionReq.catch(() => {});
     const [organs, volume, samples] = await Promise.all([
       this.api.organs(caseId),
       this.api.volume(caseId),
@@ -403,8 +423,10 @@ export default class CoverageService extends PubSubService {
       organs: organs.organs ?? [],
       samples: Array.isArray(samples) ? samples : [],
       error: null,
+      phase: 'session',
     });
-    const { session } = await this.api.createSession(caseId, 'live reading (OHIF)');
+    this.emit();
+    const { session } = await sessionReq;
     Object.assign(this.state, {
       sessionId: session,
       sessionLabel: 'Live reading',
@@ -476,7 +498,8 @@ export default class CoverageService extends PubSubService {
     if (!sample) {
       return Promise.resolve();
     }
-    return this.restartSession(`Sample: ${sample.label}`, sample.source, sample);
+    const label = /^sample\b/i.test(sample.label) ? sample.label : `Sample: ${sample.label}`;
+    return this.restartSession(label, sample.source, sample);
   }
 
   public exportUrl(format: 'jsonl' | 'json' | 'csv'): string | null {

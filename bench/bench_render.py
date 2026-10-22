@@ -34,12 +34,17 @@ def main() -> int:
             p = subprocess.run([sys.executable, "-m", "covmap", "render", "--case", case, "--out", str(png)],
                                capture_output=True, text=True)
             walls.append(time.perf_counter() - t0)
-            r = json.loads(p.stdout)
+            try:
+                r = json.loads(p.stdout)
+            except json.JSONDecodeError:
+                r = {}
             if p.returncode != 0 or not r.get("ok"):
                 raise SystemExit(f"render failed: {p.stdout[-1500:]} {p.stderr[-1500:]}")
             inner.append(r.get("timings_ms", {}))
             shas.add(r.get("sha256"))
-        res["cases"][case] = {"wall_s": stats(walls), "timings_ms": inner, "distinct_png_sha256": sorted(shas),
+        stages = {k: stats([t[k] for t in inner if k in t]) for k in inner[0]}
+        res["cases"][case] = {"wall_s": stats(walls), "stages_ms": stages, "timings_ms": inner,
+                              "distinct_png_sha256": sorted(shas),
                               "webgl": r.get("webgl_renderer")}
     res["context_end"] = host_context()
     write(Path(a.out), res)

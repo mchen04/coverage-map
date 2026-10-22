@@ -1,0 +1,267 @@
+{
+ "case": "lidc-0001",
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   8.15,
+   8.0,
+   9.64
+  ],
+  "time": "2026-10-21T17:24:33-0700"
+ },
+ "chromium_args": [
+  "--use-angle=metal",
+  "--enable-gpu"
+ ],
+ "coverage": {
+  "first_image_ms": {
+   "n": 7,
+   "median": 519.4,
+   "min": 476.5,
+   "max": 557,
+   "runs": [
+    476.5,
+    510.1,
+    513.5,
+    519.4,
+    533,
+    534.1,
+    557
+   ]
+  },
+  "map_ready_ms": {
+   "n": 7,
+   "median": 684.5,
+   "min": 666.8,
+   "max": 732.6,
+   "runs": [
+    666.8,
+    668.9,
+    674.4,
+    684.5,
+    700.2,
+    719.7,
+    732.6
+   ]
+  },
+  "session_ms": {
+   "n": 7,
+   "median": 541.3,
+   "min": 530.4,
+   "max": 589.1,
+   "runs": [
+    530.4,
+    533.9,
+    537.3,
+    541.3,
+    556.9,
+    586.3,
+    589.1
+   ]
+  },
+  "raw": [
+   {
+    "first_image_ms": 476.5,
+    "map_ready_ms": 666.7999999821186,
+    "session_ms": 530.4000000059605,
+    "marks": {
+     "covmap:first-image": 489.40000000596046,
+     "covmap:map-ready": 666.7999999821186
+    },
+    "navigation": {
+     "dcl": 226.59999999403954,
+     "load": 227.09999999403954,
+     "transfer_bytes": 5023
+    },
+    "resources": 90
+   },
+   {
+    "first_image_ms": 557,
+    "map_ready_ms": 732.5999999940395,
+    "session_ms": 586.3000000119209,
+    "marks": {
+     "covmap:first-image": 548.4000000059605,
+     "covmap:map-ready": 732.5999999940395
+    },
+    "navigation": {
+     "dcl": 249.40000000596046,
+     "load": 249.80000001192093,
+     "transfer_bytes": 5023
+    },
+    "resources": 91
+   },
+   {
+    "first_image_ms": 534.1000000238419,
+    "map_ready_ms": 700.2000000178814,
+    "session_ms": 556.9000000059605,
+    "marks": {
+     "covmap:first-image": 518.8000000119209,
+     "covmap:map-ready": 700.2000000178814
+    },
+    "navigation": {
+     "dcl": 251.90000000596046,
+     "load": 252.30000001192093,
+     "transfer_bytes": 5023
+    },
+    "resources": 94
+   },
+   {
+    "first_image_ms": 533,
+    "map_ready_ms": 719.6999999880791,
+    "session_ms": 589.0999999940395,
+    "marks": {
+     "covmap:first-image": 546,
+     "covmap:map-ready": 719.6999999880791
+    },
+    "navigation": {
+     "dcl": 253.09999999403954,
+     "load": 253.5,
+     "transfer_bytes": 5023
+    },
+    "resources": 90
+   },
+   {
+    "first_image_ms": 510.09999999403954,
+    "map_ready_ms": 684.5,
+    "session_ms": 541.2999999821186,
+    "marks": {
+     "covmap:first-image": 523.2999999821186,
+     "covmap:map-ready": 684.5
+    },
+    "navigation": {
+     "dcl": 234.7999999821186,
+     "load": 235.19999998807907,
+     "transfer_bytes": 5023
+    },
+    "resources": 89
+   },
+   {
+    "first_image_ms": 519.4000000059605,
+    "map_ready_ms": 674.4000000059605,
+    "session_ms": 537.3000000119209,
+    "marks": {
+     "covmap:first-image": 511.40000000596046,
+     "covmap:map-ready": 674.4000000059605
+    },
+    "navigation": {
+     "dcl": 238.80000001192093,
+     "load": 239.19999998807907,
+     "transfer_bytes": 5023
+    },
+    "resources": 83
+   },
+   {
+    "first_image_ms": 513.5,
+    "map_ready_ms": 668.9000000059605,
+    "session_ms": 533.9000000059605,
+    "marks": {
+     "covmap:first-image": 512.2000000178814,
+     "covmap:map-ready": 669
+    },
+    "navigation": {
+     "dcl": 245.40000000596046,
+     "load": 245.90000000596046,
+     "transfer_bytes": 5023
+    },
+    "resources": 85
+   }
+  ]
+ },
+ "stock": {
+  "first_image_ms": {
+   "n": 7,
+   "median": 507.1,
+   "min": 475,
+   "max": 1227,
+   "runs": [
+    475,
+    496.7,
+    505.4,
+    507.1,
+    528.9,
+    653.8,
+    1227
+   ]
+  },
+  "raw": [
+   {
+    "first_image_ms": 1227,
+    "navigation": {
+     "dcl": 229.10000002384186,
+     "load": 229.7000000178814,
+     "transfer_bytes": 5023
+    },
+    "resources": 61
+   },
+   {
+    "first_image_ms": 653.8000000119209,
+    "navigation": {
+     "dcl": 244.80000001192093,
+     "load": 245.09999999403954,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   },
+   {
+    "first_image_ms": 507.09999999403954,
+    "navigation": {
+     "dcl": 236.5,
+     "load": 236.90000000596046,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   },
+   {
+    "first_image_ms": 475,
+    "navigation": {
+     "dcl": 220.09999999403954,
+     "load": 220.5,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   },
+   {
+    "first_image_ms": 505.39999997615814,
+    "navigation": {
+     "dcl": 224.89999997615814,
+     "load": 225.19999998807907,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   },
+   {
+    "first_image_ms": 528.9000000059605,
+    "navigation": {
+     "dcl": 232.5,
+     "load": 232.90000000596046,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   },
+   {
+    "first_image_ms": 496.69999998807907,
+    "navigation": {
+     "dcl": 235.89999997615814,
+     "load": 236.2999999821186,
+     "transfer_bytes": 5023
+    },
+    "resources": 60
+   }
+  ]
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   7.59,
+   7.88,
+   9.58
+  ],
+  "time": "2026-10-21T17:24:46-0700"
+ }
+}

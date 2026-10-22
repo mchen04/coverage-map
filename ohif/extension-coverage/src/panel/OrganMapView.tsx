@@ -4,24 +4,11 @@ import {
   NA_COLOR,
   STATUS_COLORS,
   createOrganMap,
-  fetchMeshes,
   type OrganMap,
   type OrganVisual,
 } from '@covmap/organ-map';
 import type CoverageService from '../CoverageService';
 import { pct, STATUS_WORD, type Row } from './model';
-
-const meshCache = new Map<string, ReturnType<typeof fetchMeshes>>();
-
-function meshesFor(base: string) {
-  let p = meshCache.get(base);
-  if (!p) {
-    p = fetchMeshes(base);
-    p.catch(() => meshCache.delete(base));
-    meshCache.set(base, p);
-  }
-  return p;
-}
 
 interface Props {
   service: CoverageService;
@@ -67,7 +54,8 @@ export default function OrganMapView({ service, caseId, rows, highlight, onHover
         service.jumpToOrgan(e.key);
       }
     });
-    meshesFor(service.api.meshBase(caseId))
+    service
+      .meshes(caseId)
       .then(data => (cancelled ? null : map.loadMeshes(data)))
       .then(res => {
         if (!res || cancelled) {

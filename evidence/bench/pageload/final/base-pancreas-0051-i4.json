@@ -1,0 +1,113 @@
+{
+ "case": "pancreas-0051",
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   10.14,
+   13.62,
+   13.44
+  ],
+  "time": "2026-10-21T18:07:28-0700"
+ },
+ "chromium_args": [
+  "--use-angle=metal",
+  "--enable-gpu"
+ ],
+ "coverage": {
+  "first_image_ms": {
+   "n": 3,
+   "median": 526.1,
+   "min": 489.9,
+   "max": 553.6,
+   "runs": [
+    489.9,
+    526.1,
+    553.6
+   ]
+  },
+  "map_ready_ms": {
+   "n": 3,
+   "median": 666.3,
+   "min": 641.6,
+   "max": 695,
+   "runs": [
+    641.6,
+    666.3,
+    695
+   ]
+  },
+  "session_ms": {
+   "n": 3,
+   "median": 542.8,
+   "min": 510.1,
+   "max": 571.8,
+   "runs": [
+    510.1,
+    542.8,
+    571.8
+   ]
+  },
+  "raw": [
+   {
+    "first_image_ms": 489.89999997615814,
+    "map_ready_ms": 641.5999999940395,
+    "session_ms": 510.09999999403954,
+    "marks": {
+     "covmap:first-image": 488.39999997615814,
+     "covmap:map-ready": 641.5999999940395
+    },
+    "navigation": {
+     "dcl": 227.7999999821186,
+     "load": 228.19999998807907,
+     "transfer_bytes": 5023
+    },
+    "resources": 88
+   },
+   {
+    "first_image_ms": 526.0999999940395,
+    "map_ready_ms": 666.2999999821186,
+    "session_ms": 542.7999999821186,
+    "marks": {
+     "covmap:first-image": 518.0999999940395,
+     "covmap:map-ready": 666.2999999821186
+    },
+    "navigation": {
+     "dcl": 229.59999999403954,
+     "load": 230,
+     "transfer_bytes": 5023
+    },
+    "resources": 84
+   },
+   {
+    "first_image_ms": 553.5999999940395,
+    "map_ready_ms": 695,
+    "session_ms": 571.7999999821186,
+    "marks": {
+     "covmap:first-image": 544.4000000059605,
+     "covmap:map-ready": 695
+    },
+    "navigation": {
+     "dcl": 238.2999999821186,
+     "load": 238.69999998807907,
+     "transfer_bytes": 5023
+    },
+    "resources": 85
+   }
+  ]
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   11.25,
+   13.79,
+   13.5
+  ],
+  "time": "2026-10-21T18:07:32-0700"
+ }
+}

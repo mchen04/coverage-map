@@ -1,0 +1,113 @@
+{
+ "case": "lidc-0001",
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   6.84,
+   14.09,
+   13.6
+  ],
+  "time": "2026-10-21T18:06:39-0700"
+ },
+ "chromium_args": [
+  "--use-angle=metal",
+  "--enable-gpu"
+ ],
+ "coverage": {
+  "first_image_ms": {
+   "n": 3,
+   "median": 468.8,
+   "min": 441.9,
+   "max": 469.8,
+   "runs": [
+    441.9,
+    468.8,
+    469.8
+   ]
+  },
+  "map_ready_ms": {
+   "n": 3,
+   "median": 605.9,
+   "min": 589.9,
+   "max": 613.2,
+   "runs": [
+    589.9,
+    605.9,
+    613.2
+   ]
+  },
+  "session_ms": {
+   "n": 3,
+   "median": 479.7,
+   "min": 478.9,
+   "max": 480.3,
+   "runs": [
+    478.9,
+    479.7,
+    480.3
+   ]
+  },
+  "raw": [
+   {
+    "first_image_ms": 441.90000000596046,
+    "map_ready_ms": 589.9000000059605,
+    "session_ms": 478.90000000596046,
+    "marks": {
+     "covmap:first-image": 455.40000000596046,
+     "covmap:map-ready": 589.9000000059605
+    },
+    "navigation": {
+     "dcl": 209.40000000596046,
+     "load": 209.7000000178814,
+     "transfer_bytes": 5023
+    },
+    "resources": 80
+   },
+   {
+    "first_image_ms": 468.80000001192093,
+    "map_ready_ms": 613.2000000178814,
+    "session_ms": 479.7000000178814,
+    "marks": {
+     "covmap:first-image": 462.5,
+     "covmap:map-ready": 613.2000000178814
+    },
+    "navigation": {
+     "dcl": 214.90000000596046,
+     "load": 215.30000001192093,
+     "transfer_bytes": 5023
+    },
+    "resources": 85
+   },
+   {
+    "first_image_ms": 469.80000001192093,
+    "map_ready_ms": 605.9000000059605,
+    "session_ms": 480.30000001192093,
+    "marks": {
+     "covmap:first-image": 463.5,
+     "covmap:map-ready": 605.9000000059605
+    },
+    "navigation": {
+     "dcl": 215.5,
+     "load": 215.90000000596046,
+     "transfer_bytes": 5023
+    },
+    "resources": 86
+   }
+  ]
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   6.46,
+   13.89,
+   13.54
+  ],
+  "time": "2026-10-21T18:06:42-0700"
+ }
+}

@@ -118,7 +118,7 @@ export interface ReplayState {
   playing: boolean;
 }
 
-export type Phase = 'idle' | 'waiting' | 'lookup' | 'ready' | 'no-case' | 'error';
+export type Phase = 'idle' | 'waiting' | 'lookup' | 'session' | 'ready' | 'no-case' | 'error';
 
 export interface CoverageState {
   phase: Phase;

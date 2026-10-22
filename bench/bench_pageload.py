@@ -26,8 +26,12 @@ FIRST_IMAGE = """() => {
   const s = window.services && window.services.cornerstoneViewportService;
   const g = window.services && window.services.viewportGridService;
   if (!s || !g) return false;
-  const v = s.getCornerstoneViewport(g.getActiveViewportId());
-  return !!(v && v.getCurrentImageId && v.getCurrentImageId() && v.getImageData && v.getImageData());
+  try {  // services exist before their implementations are registered: getState() throws until then
+    const v = s.getCornerstoneViewport(g.getActiveViewportId());
+    return !!(v && v.getCurrentImageId && v.getCurrentImageId() && v.getImageData && v.getImageData());
+  } catch (e) {
+    return false;
+  }
 }"""
 
 
@@ -42,7 +46,10 @@ def one(p, url: str, coverage: bool, timeout_ms: float = 120000) -> dict:
         page.wait_for_function("() => window.__covmap && window.__covmap.mapReadyAt", polling=10, timeout=timeout_ms)
         page.wait_for_function("() => window.__covmap && window.__covmap.sessionId", polling=10, timeout=timeout_ms)
         r["map_ready_ms"] = page.evaluate("() => window.__covmap.mapReadyAt")
-        r["session_ms"] = page.evaluate("() => performance.now()")
+        # when the POST /api/sessions response arrived (not when this poll noticed it, after map ready)
+        r["session_ms"] = page.evaluate("""() => {
+          const e = performance.getEntriesByType('resource').find(x => new URL(x.name).pathname === '/api/sessions');
+          return e ? e.responseEnd : performance.now(); }""")
         marks = page.evaluate("() => performance.getEntriesByType('mark').filter(m => m.name.startsWith('covmap:')).map(m => [m.name, m.startTime])")
         r["marks"] = dict(marks)
     nav = page.evaluate("() => { const n = performance.getEntriesByType('navigation')[0]; return n ? {dcl: n.domContentLoadedEventEnd, load: n.loadEventEnd, transfer_bytes: n.transferSize} : null; }")

@@ -1,3 +1,4 @@
+import { fetchMeshes } from '@covmap/organ-map';
 import type { Coverage, Organ, Rules, Sample, TimelineFrame, Volume } from './types';
 
 /** Thin client for the covmap HTTP API (docs/SPEC.md "HTTP API"). Same origin. */
@@ -73,6 +74,10 @@ export class CovmapApi {
 
   meshBase(caseId: string) {
     return `${this.root}/cases/${encodeURIComponent(caseId)}`;
+  }
+
+  meshes(caseId: string) {
+    return fetchMeshes(this.meshBase(caseId));
   }
 
   samples(caseId: string) {

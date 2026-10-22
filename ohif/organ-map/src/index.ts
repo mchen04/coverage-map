@@ -15,8 +15,8 @@ import vtkInteractorStyleManipulator from '@kitware/vtk.js/Interaction/Style/Int
 import vtkMouseCameraTrackballRotateManipulator from '@kitware/vtk.js/Interaction/Manipulators/MouseCameraTrackballRotateManipulator';
 import vtkMouseCameraTrackballZoomManipulator from '@kitware/vtk.js/Interaction/Manipulators/MouseCameraTrackballZoomManipulator';
 import vtkMouseCameraTrackballPanManipulator from '@kitware/vtk.js/Interaction/Manipulators/MouseCameraTrackballPanManipulator';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkPolyDataNormals from '@kitware/vtk.js/Filters/Core/PolyDataNormals';
 import { FieldAssociations } from '@kitware/vtk.js/Common/DataModel/DataSet/Constants';
 
 export type Status = 'reviewed' | 'partial' | 'skipped';
@@ -136,6 +136,59 @@ export async function fetchMeshes(base: string): Promise<{ meta: MeshesJson; buf
   return { meta: await metaRes.json(), buffer: await binRes.arrayBuffer() };
 }
 
+/**
+ * Smooth point normals of a triangle mesh (local point indices), with the same arithmetic in
+ * the same order as vtk.js's vtkPolyDataNormals (so the same bits, the same pixels) but
+ * without its per-triangle array allocations, which made it the largest single cost of
+ * building the map.
+ */
+function pointNormals(points: Float32Array, tris: Uint32Array, base: number, nTris: number): Float32Array {
+  const out = new Float32Array(points.length);
+  for (let t = 0; t < nTris; t++) {
+    const i1 = 3 * tris[base + t * 3];
+    const i2 = 3 * tris[base + t * 3 + 1];
+    const i3 = 3 * tris[base + t * 3 + 2];
+    // vtkTriangle.computeNormal(v1, v2, v3)
+    const ax = points[i3] - points[i2];
+    const ay = points[i3 + 1] - points[i2 + 1];
+    const az = points[i3 + 2] - points[i2 + 2];
+    const bx = points[i1] - points[i2];
+    const by = points[i1 + 1] - points[i2 + 1];
+    const bz = points[i1 + 2] - points[i2 + 2];
+    let nx = ay * bz - az * by;
+    let ny = az * bx - ax * bz;
+    let nz = ax * by - ay * bx;
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+    if (len !== 0) {
+      nx /= len;
+      ny /= len;
+      nz /= len;
+    }
+    out[i1] += nx;
+    out[i1 + 1] += ny;
+    out[i1 + 2] += nz;
+    out[i2] += nx;
+    out[i2 + 1] += ny;
+    out[i2 + 2] += nz;
+    out[i3] += nx;
+    out[i3 + 1] += ny;
+    out[i3 + 2] += nz;
+  }
+  for (let i = 0; i < out.length; i += 3) {
+    // vtkMath.normalize
+    const x = out[i];
+    const y = out[i + 1];
+    const z = out[i + 2];
+    const den = Math.sqrt(x * x + y * y + z * z);
+    if (den !== 0) {
+      out[i] = x / den;
+      out[i + 1] = y / den;
+      out[i + 2] = z / den;
+    }
+  }
+  return out;
+}
+
 interface Entry {
   key: string;
   actor: any;
@@ -200,9 +253,19 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     prop.setSpecularPower(20);
   };
 
+  let renderQueued = false;
   const render = () => {
+    renderQueued = false;
     if (!disposed) {
       renderWindow.render();
+    }
+  };
+  // Updates (load, camera, statuses, highlight, resize) request a render; one render per
+  // frame covers all of them. render() still draws immediately.
+  const requestRender = () => {
+    if (!renderQueued) {
+      renderQueued = true;
+      requestAnimationFrame(() => renderQueued && render());
     }
   };
 
@@ -218,7 +281,7 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     if (cw !== w || ch !== h) {
       glWindow.setSize(w, h);
     }
-    render();
+    requestRender();
   };
 
   const resetCamera = () => {
@@ -240,7 +303,7 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     const halfW = (x1 - x0) / 2;
     cam.setParallelScale(Math.max(halfH, halfW / aspect) * 1.06);
     renderer.resetCameraClippingRange();
-    render();
+    requestRender();
   };
 
   const loadMeshes = async (src: string | { meta: MeshesJson; buffer: ArrayBuffer }) => {
@@ -275,10 +338,15 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       const poly = vtkPolyData.newInstance();
       poly.getPoints().setData(points, 3);
       poly.getPolys().setData(cells);
-      const normals = vtkPolyDataNormals.newInstance({ computeCellNormals: false });
-      normals.setInputData(poly);
+      poly.getPointData().setNormals(
+        vtkDataArray.newInstance({
+          numberOfComponents: 3,
+          name: 'Normals',
+          values: pointNormals(points, tris, base, o.n_tris),
+        })
+      );
       const mapper = vtkMapper.newInstance({ scalarVisibility: false });
-      mapper.setInputData(normals.getOutputData());
+      mapper.setInputData(poly);
       const actor = vtkActor.newInstance();
       actor.setMapper(mapper);
       const entry: Entry = { key: o.key, actor, visual: { status: 'skipped' }, opacity: 1 };
@@ -303,7 +371,7 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     info.clear();
     organs.forEach(o => info.set(o.key, o));
     entries.forEach(applyVisual);
-    render();
+    requestRender();
   };
 
   const setStatuses = (map: Record<string, Status | OrganVisual>) => {
@@ -312,7 +380,7 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       e.visual = typeof v === 'string' ? { status: v } : { status: 'skipped', ...(v ?? {}) };
       applyVisual(e);
     });
-    render();
+    requestRender();
   };
 
   const setHighlight = (key: string | null) => {
@@ -322,7 +390,7 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     const prev = highlight;
     highlight = key;
     [prev, key].forEach(k => k && entries.get(k) && applyVisual(entries.get(k)));
-    render();
+    requestRender();
   };
 
   // --- picking (hardware selector; hover throttled to one pick in flight) ---

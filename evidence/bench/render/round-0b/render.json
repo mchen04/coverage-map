@@ -1,0 +1,598 @@
+{
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   7.4,
+   9.12,
+   9.94
+  ],
+  "time": "2026-10-21T17:33:25-0700"
+ },
+ "cases": {
+  "pancreas-0051": {
+   "wall_s": {
+    "n": 5,
+    "median": 1.1628,
+    "min": 1.0373,
+    "max": 1.3085,
+    "runs": [
+     1.0373,
+     1.1405,
+     1.1628,
+     1.2523,
+     1.3085
+    ]
+   },
+   "stages_ms": {
+    "import": {
+     "n": 5,
+     "median": 28.9,
+     "min": 22.1,
+     "max": 39.3,
+     "runs": [
+      22.1,
+      25.1,
+      28.9,
+      29.0,
+      39.3
+     ]
+    },
+    "server_start": {
+     "n": 5,
+     "median": 237.6,
+     "min": 120.5,
+     "max": 240.5,
+     "runs": [
+      120.5,
+      122.1,
+      237.6,
+      237.8,
+      240.5
+     ]
+    },
+    "playwright_start": {
+     "n": 5,
+     "median": 173.4,
+     "min": 153.1,
+     "max": 208.8,
+     "runs": [
+      153.1,
+      157.4,
+      173.4,
+      192.9,
+      208.8
+     ]
+    },
+    "browser_start": {
+     "n": 5,
+     "median": 88.6,
+     "min": 62.9,
+     "max": 121.7,
+     "runs": [
+      62.9,
+      63.0,
+      88.6,
+      101.3,
+      121.7
+     ]
+    },
+    "page_load": {
+     "n": 5,
+     "median": 49.8,
+     "min": 38.4,
+     "max": 53.6,
+     "runs": [
+      38.4,
+      41.5,
+      49.8,
+      50.8,
+      53.6
+     ]
+    },
+    "page_ready_wait": {
+     "n": 5,
+     "median": 136.4,
+     "min": 118.8,
+     "max": 149.7,
+     "runs": [
+      118.8,
+      131.2,
+      136.4,
+      137.3,
+      149.7
+     ]
+    },
+    "meshes": {
+     "n": 5,
+     "median": 154.2,
+     "min": 131.6,
+     "max": 165.3,
+     "runs": [
+      131.6,
+      146.4,
+      154.2,
+      160.7,
+      165.3
+     ]
+    },
+    "render": {
+     "n": 5,
+     "median": 2.2,
+     "min": 1.4,
+     "max": 2.5,
+     "runs": [
+      1.4,
+      1.6,
+      2.2,
+      2.4,
+      2.5
+     ]
+    },
+    "screenshot": {
+     "n": 5,
+     "median": 126.4,
+     "min": 102.6,
+     "max": 146.1,
+     "runs": [
+      102.6,
+      107.0,
+      126.4,
+      140.5,
+      146.1
+     ]
+    },
+    "browser_close": {
+     "n": 5,
+     "median": 20.6,
+     "min": 19.1,
+     "max": 34.6,
+     "runs": [
+      19.1,
+      19.4,
+      20.6,
+      22.8,
+      34.6
+     ]
+    },
+    "playwright_stop": {
+     "n": 5,
+     "median": 4.6,
+     "min": 3.8,
+     "max": 8.4,
+     "runs": [
+      3.8,
+      4.0,
+      4.6,
+      8.1,
+      8.4
+     ]
+    },
+    "server_stop": {
+     "n": 5,
+     "median": 34.2,
+     "min": 22.9,
+     "max": 74.8,
+     "runs": [
+      22.9,
+      22.9,
+      34.2,
+      38.0,
+      74.8
+     ]
+    },
+    "check": {
+     "n": 5,
+     "median": 203.3,
+     "min": 196.2,
+     "max": 226.7,
+     "runs": [
+      196.2,
+      202.9,
+      203.3,
+      205.3,
+      226.7
+     ]
+    },
+    "total": {
+     "n": 5,
+     "median": 1100.3,
+     "min": 974.5,
+     "max": 1248.2,
+     "runs": [
+      974.5,
+      1091.0,
+      1100.3,
+      1174.6,
+      1248.2
+     ]
+    }
+   },
+   "timings_ms": [
+    {
+     "import": 39.3,
+     "server_start": 240.5,
+     "playwright_start": 208.8,
+     "browser_start": 121.7,
+     "page_load": 38.4,
+     "page_ready_wait": 131.2,
+     "meshes": 146.4,
+     "render": 1.6,
+     "screenshot": 107.0,
+     "browser_close": 20.6,
+     "playwright_stop": 4.6,
+     "server_stop": 22.9,
+     "check": 202.9,
+     "total": 1174.6
+    },
+    {
+     "import": 29.0,
+     "server_start": 237.6,
+     "playwright_start": 173.4,
+     "browser_start": 63.0,
+     "page_load": 41.5,
+     "page_ready_wait": 118.8,
+     "meshes": 131.6,
+     "render": 2.5,
+     "screenshot": 102.6,
+     "browser_close": 19.4,
+     "playwright_stop": 4.0,
+     "server_stop": 34.2,
+     "check": 226.7,
+     "total": 1100.3
+    },
+    {
+     "import": 25.1,
+     "server_start": 120.5,
+     "playwright_start": 157.4,
+     "browser_start": 62.9,
+     "page_load": 49.8,
+     "page_ready_wait": 136.4,
+     "meshes": 154.2,
+     "render": 2.4,
+     "screenshot": 126.4,
+     "browser_close": 19.1,
+     "playwright_stop": 3.8,
+     "server_stop": 22.9,
+     "check": 196.2,
+     "total": 974.5
+    },
+    {
+     "import": 28.9,
+     "server_start": 237.8,
+     "playwright_start": 192.9,
+     "browser_start": 101.3,
+     "page_load": 50.8,
+     "page_ready_wait": 149.7,
+     "meshes": 165.3,
+     "render": 2.2,
+     "screenshot": 140.5,
+     "browser_close": 34.6,
+     "playwright_stop": 8.4,
+     "server_stop": 38.0,
+     "check": 205.3,
+     "total": 1248.2
+    },
+    {
+     "import": 22.1,
+     "server_start": 122.1,
+     "playwright_start": 153.1,
+     "browser_start": 88.6,
+     "page_load": 53.6,
+     "page_ready_wait": 137.3,
+     "meshes": 160.7,
+     "render": 1.4,
+     "screenshot": 146.1,
+     "browser_close": 22.8,
+     "playwright_stop": 8.1,
+     "server_stop": 74.8,
+     "check": 203.3,
+     "total": 1091.0
+    }
+   ],
+   "distinct_png_sha256": [
+    "ed002210e6d405f3ddf06d0bf51e2f772e60afee8c057962af285d56e2bd2c33"
+   ],
+   "webgl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+  },
+  "lidc-0001": {
+   "wall_s": {
+    "n": 5,
+    "median": 1.3122,
+    "min": 1.0706,
+    "max": 1.3567,
+    "runs": [
+     1.0706,
+     1.175,
+     1.3122,
+     1.3462,
+     1.3567
+    ]
+   },
+   "stages_ms": {
+    "import": {
+     "n": 5,
+     "median": 28.6,
+     "min": 23.6,
+     "max": 29.5,
+     "runs": [
+      23.6,
+      25.5,
+      28.6,
+      29.4,
+      29.5
+     ]
+    },
+    "server_start": {
+     "n": 5,
+     "median": 226.3,
+     "min": 123.3,
+     "max": 230.8,
+     "runs": [
+      123.3,
+      224.5,
+      226.3,
+      227.0,
+      230.8
+     ]
+    },
+    "playwright_start": {
+     "n": 5,
+     "median": 174.4,
+     "min": 145.4,
+     "max": 207.7,
+     "runs": [
+      145.4,
+      153.9,
+      174.4,
+      186.8,
+      207.7
+     ]
+    },
+    "browser_start": {
+     "n": 5,
+     "median": 67.6,
+     "min": 60.5,
+     "max": 96.5,
+     "runs": [
+      60.5,
+      67.5,
+      67.6,
+      68.2,
+      96.5
+     ]
+    },
+    "page_load": {
+     "n": 5,
+     "median": 39.3,
+     "min": 36.7,
+     "max": 51.8,
+     "runs": [
+      36.7,
+      36.9,
+      39.3,
+      44.8,
+      51.8
+     ]
+    },
+    "page_ready_wait": {
+     "n": 5,
+     "median": 126.7,
+     "min": 118.2,
+     "max": 154.7,
+     "runs": [
+      118.2,
+      124.9,
+      126.7,
+      140.5,
+      154.7
+     ]
+    },
+    "meshes": {
+     "n": 5,
+     "median": 142.0,
+     "min": 132.3,
+     "max": 172.2,
+     "runs": [
+      132.3,
+      138.4,
+      142.0,
+      150.5,
+      172.2
+     ]
+    },
+    "render": {
+     "n": 5,
+     "median": 2.0,
+     "min": 1.6,
+     "max": 2.4,
+     "runs": [
+      1.6,
+      1.9,
+      2.0,
+      2.1,
+      2.4
+     ]
+    },
+    "screenshot": {
+     "n": 5,
+     "median": 130.8,
+     "min": 113.2,
+     "max": 163.2,
+     "runs": [
+      113.2,
+      119.2,
+      130.8,
+      157.8,
+      163.2
+     ]
+    },
+    "browser_close": {
+     "n": 5,
+     "median": 22.8,
+     "min": 14.0,
+     "max": 29.5,
+     "runs": [
+      14.0,
+      16.4,
+      22.8,
+      23.2,
+      29.5
+     ]
+    },
+    "playwright_stop": {
+     "n": 5,
+     "median": 7.0,
+     "min": 3.9,
+     "max": 7.4,
+     "runs": [
+      3.9,
+      4.7,
+      7.0,
+      7.3,
+      7.4
+     ]
+    },
+    "server_stop": {
+     "n": 5,
+     "median": 46.6,
+     "min": 39.2,
+     "max": 73.3,
+     "runs": [
+      39.2,
+      40.1,
+      46.6,
+      47.0,
+      73.3
+     ]
+    },
+    "check": {
+     "n": 5,
+     "median": 269.4,
+     "min": 255.2,
+     "max": 280.3,
+     "runs": [
+      255.2,
+      256.4,
+      269.4,
+      276.5,
+      280.3
+     ]
+    },
+    "total": {
+     "n": 5,
+     "median": 1233.8,
+     "min": 1012.6,
+     "max": 1284.2,
+     "runs": [
+      1012.6,
+      1110.7,
+      1233.8,
+      1271.0,
+      1284.2
+     ]
+    }
+   },
+   "timings_ms": [
+    {
+     "import": 23.6,
+     "server_start": 123.3,
+     "playwright_start": 145.4,
+     "browser_start": 60.5,
+     "page_load": 36.9,
+     "page_ready_wait": 124.9,
+     "meshes": 138.4,
+     "render": 1.9,
+     "screenshot": 113.2,
+     "browser_close": 16.4,
+     "playwright_stop": 4.7,
+     "server_stop": 47.0,
+     "check": 276.5,
+     "total": 1012.6
+    },
+    {
+     "import": 29.5,
+     "server_start": 230.8,
+     "playwright_start": 174.4,
+     "browser_start": 96.5,
+     "page_load": 51.8,
+     "page_ready_wait": 154.7,
+     "meshes": 172.2,
+     "render": 2.0,
+     "screenshot": 163.2,
+     "browser_close": 23.2,
+     "playwright_stop": 7.0,
+     "server_stop": 39.2,
+     "check": 255.2,
+     "total": 1284.2
+    },
+    {
+     "import": 29.4,
+     "server_start": 224.5,
+     "playwright_start": 207.7,
+     "browser_start": 68.2,
+     "page_load": 44.8,
+     "page_ready_wait": 126.7,
+     "meshes": 142.0,
+     "render": 2.4,
+     "screenshot": 130.8,
+     "browser_close": 29.5,
+     "playwright_stop": 7.3,
+     "server_stop": 40.1,
+     "check": 269.4,
+     "total": 1233.8
+    },
+    {
+     "import": 28.6,
+     "server_start": 226.3,
+     "playwright_start": 153.9,
+     "browser_start": 67.5,
+     "page_load": 36.7,
+     "page_ready_wait": 118.2,
+     "meshes": 132.3,
+     "render": 1.6,
+     "screenshot": 119.2,
+     "browser_close": 14.0,
+     "playwright_stop": 3.9,
+     "server_stop": 46.6,
+     "check": 256.4,
+     "total": 1110.7
+    },
+    {
+     "import": 25.5,
+     "server_start": 227.0,
+     "playwright_start": 186.8,
+     "browser_start": 67.6,
+     "page_load": 39.3,
+     "page_ready_wait": 140.5,
+     "meshes": 150.5,
+     "render": 2.1,
+     "screenshot": 157.8,
+     "browser_close": 22.8,
+     "playwright_stop": 7.4,
+     "server_stop": 73.3,
+     "check": 280.3,
+     "total": 1271.0
+    }
+   ],
+   "distinct_png_sha256": [
+    "27ec6a5a11672e1e40bd0eafb4593074a68b34e132ca72848054cab9ba9e7d5e"
+   ],
+   "webgl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+  }
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   7.77,
+   9.14,
+   9.94
+  ],
+  "time": "2026-10-21T17:33:37-0700"
+ }
+}

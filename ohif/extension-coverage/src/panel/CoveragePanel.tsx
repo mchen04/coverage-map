@@ -40,6 +40,8 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
     message = 'Waiting for the first displayed image…';
   } else if (state.phase === 'lookup') {
     message = 'Identifying the case…';
+  } else if (state.phase === 'session') {
+    message = 'Starting the reading session…';
   } else if (state.phase === 'no-case' || state.phase === 'error') {
     message = (
       <span className="cm-msg--error">
