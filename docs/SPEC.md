@@ -7,8 +7,8 @@ changing an interface.
 
 ## Hosts and locations
 
-- Code is edited on mbp-old in this checkout (/Users/michaelchen/Projects/Apps/coverage-map; nothing that can exceed 4 GB runs here). Everything executes on the Mac mini in
-  `$MINI_WORK=/Users/michaelchen/coverage-map-work` (task-owned):
+- Code is edited in this checkout on a workstation, where nothing heavy runs. Everything
+  executes on a Mac mini (Apple M4) in `$MINI_WORK=/Users/michaelchen/coverage-map-work`:
   `venv/` (Python 3.12, `requirements-mini.txt`), `deps/node` (Node 24 + pnpm 12),
   `deps/orthanc` (Orthanc 1.13 + DicomWeb plugin), `ohif/` (OHIF v3.13.13 checkout),
   `ohif-dist/` (built viewer), `data/` (`$COVMAP_DATA`), `totalseg/` (weights).
@@ -364,7 +364,7 @@ a one-line research-use note.
   is cleared before the new session's clock starts at its first event. At `pagehide` recording
   stops, so `end` is the page's last event: the beacon carries the events of a POST still in
   flight (unless it was sent with keepalive, which outlives the page), then the queue, then
-  `end`; the server scores an identical resend of a `seq` once.
+  `end`; the server drops identical resends, so each event is scored and logged once.
 - One recording tab per session. A tab records only while it holds the Web Lock
   `covmap-session-<id>`; another tab on the same session shows "This reading is open in another
   tab — not recording here until that tab closes", follows the session's coverage, and keeps a
