@@ -84,6 +84,20 @@ The scripts read these settings from the environment ([scripts/env.sh](scripts/e
    scripts/launch.sh stop
    ```
 
+## Hosting on Hugging Face
+
+`deploy/huggingface/` packages the app as a Docker Space. The container runs Orthanc and
+`covmap serve`, loads both cases into Orthanc at startup, and answers on port 7860.
+
+```bash
+deploy/huggingface/build_space.sh ../coverage-map-space   # code, viewer build and case data from the host
+hf repo create mchen04/coverage-map --repo-type space --space-sdk docker
+hf upload mchen04/coverage-map ../coverage-map-space --repo-type space
+```
+
+The server answers only loopback `Host` headers plus the names in `COVMAP_ALLOWED_HOSTS`. On
+Hugging Face, `start.sh` sets it to the Space's own hostname.
+
 ## Usage
 
 The start page opens the demo abdominal CT with a fresh reading session.
@@ -158,4 +172,5 @@ dataset DOIs and TCIA ([doi:10.1007/s10278-013-9622-7](https://doi.org/10.1007/s
 | `tests/` | pytest suite |
 | `scripts/` | Host setup, sync and service scripts |
 | `config/` | OHIF and Orthanc configuration |
+| `deploy/huggingface/` | Hugging Face Space packaging |
 | `docs/SPEC.md` | Interface contract |

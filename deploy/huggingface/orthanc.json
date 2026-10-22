@@ -1,0 +1,25 @@
+{
+  "Name": "coverage-map-orthanc",
+  "StorageDirectory": "${COVMAP_ORTHANC_DB}",
+  "IndexDirectory": "${COVMAP_ORTHANC_DB}",
+  "HttpPort": 8042,
+  "DicomPort": 4242,
+  "DicomServerEnabled": false,
+  "RemoteAccessAllowed": false,
+  "AuthenticationEnabled": false,
+  "HttpCompressionEnabled": false,
+  "KeepAlive": true,
+  "StorageCompression": false,
+  "Plugins": [
+    "/usr/share/orthanc/plugins/libOrthancDicomWeb.so"
+  ],
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/",
+    "EnableWado": true,
+    "WadoRoot": "/wado",
+    "Ssl": false,
+    "StudiesMetadata": "Full",
+    "SeriesMetadata": "Full"
+  }
+}

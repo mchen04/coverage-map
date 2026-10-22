@@ -1,6 +1,7 @@
 """App server (docs/SPEC.md "HTTP API"): case data, live scoring sessions, a streaming
 read-only (GET/HEAD) reverse proxy to Orthanc for DICOMweb/WADO, and the static OHIF build
-with SPA fallback. Only loopback Host headers are answered (DNS-rebinding guard).
+with SPA fallback. Only loopback Host headers and COVMAP_ALLOWED_HOSTS are answered
+(DNS-rebinding guard).
 
 Scoring runs in a thread pool (numpy releases the GIL) under a per-session lock, so
 event batches of one session apply in order while proxy traffic keeps flowing.
@@ -57,6 +58,11 @@ mimetypes.add_type("application/json", ".map")
 CLOCK_TOLERANCE_MS = 5000.0
 
 
+def _env_allowed_hosts() -> frozenset[str]:
+    names = os.environ.get("COVMAP_ALLOWED_HOSTS", "").split(",")
+    return frozenset(n.strip().lower() for n in names if n.strip())
+
+
 def _env_tolerance() -> float | None:
     v = os.environ.get("COVMAP_CLOCK_TOLERANCE_MS")
     if v is None:
@@ -86,6 +92,7 @@ class Config:
     # live POSTs: a batch with an event t_ms (or now_ms) more than this far ahead of the
     # session's clock is refused (App._check_clock); None = no clock check
     clock_tolerance_ms: float | None = field(default_factory=lambda: _env_tolerance())
+    allowed_hosts: frozenset[str] = field(default_factory=_env_allowed_hosts)
 
     @property
     def cases_dir(self) -> Path:
@@ -887,20 +894,20 @@ LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 _HOST_RE = re.compile(r"^(?:\[(?P<v6>[0-9A-Fa-f:.]+)\]|(?P<name>[^\[\]:/]+))(?::\d{1,5})?$")
 
 
-def host_allowed(host: str | None) -> bool:
-    """Loopback Host headers only, any port (127.0.0.1, localhost, [::1]; the ssh tunnel
-    sends 127.0.0.1:8765). A page that rebinds its own DNS name to 127.0.0.1 still sends that
+def host_allowed(host: str | None, extra: frozenset[str] = frozenset()) -> bool:
+    """Loopback Host headers, any port (127.0.0.1, localhost, [::1]; the ssh tunnel
+    sends 127.0.0.1:8765), plus the exact names in COVMAP_ALLOWED_HOSTS. A page that rebinds its own DNS name to 127.0.0.1 still sends that
     name, so it can neither read the API nor drive the Orthanc proxy. No Host at all (not a
     browser) is allowed."""
     if host is None:
         return True
     m = _HOST_RE.match(host)
-    return bool(m) and (m["v6"] or m["name"]).lower() in LOOPBACK_HOSTS
+    return bool(m) and (m["v6"] or m["name"]).lower() in LOOPBACK_HOSTS | extra
 
 
 @web.middleware
 async def loopback_host_only(request, handler):
-    if not host_allowed(request.headers.get("Host")):
+    if not host_allowed(request.headers.get("Host"), request.app[APP_KEY].cfg.allowed_hosts):
         return _json({"ok": False, "error": "Host not allowed (use 127.0.0.1, localhost or [::1])"},
                      status=403)
     return await handler(request)

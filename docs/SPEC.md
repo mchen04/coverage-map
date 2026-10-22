@@ -258,7 +258,7 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
 | `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
 | `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
-| `GET`/`HEAD` `/dicom-web/*`, `/wado` | read-only reverse proxy to Orthanc (`http://127.0.0.1:8042`); other methods 405, `.`/`..` segments 400; the server answers only loopback `Host` headers |
+| `GET`/`HEAD` `/dicom-web/*`, `/wado` | read-only reverse proxy to Orthanc (`http://127.0.0.1:8042`); other methods 405, `.`/`..` segments 400; the server answers only loopback `Host` headers and the names in `COVMAP_ALLOWED_HOSTS` |
 | `GET /render.html`, `/render/*` | standalone vtk.js organ-map page used by `covmap render` |
 | `GET /*` | OHIF dist (`$COVMAP_OHIF_DIST`), SPA fallback to `index.html` |
 

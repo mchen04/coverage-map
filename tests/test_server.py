@@ -777,6 +777,11 @@ def test_proxy_only_forwards_reads_under_its_prefixes(env):
                 assert hits == [("GET", "/dicom-web/studies")]
         finally:
             await up.close()
+        async with TestClient(TestServer(make_app(_cfg(env, allowed_hosts=frozenset({"covmap.hf.space"}))))) as c:
+            for host, want in (("covmap.hf.space", 200), ("COVMAP.hf.space:443", 200),
+                               ("evil.hf.space", 403), ("covmap.hf.space.evil.example", 403)):
+                status, _ = await _raw(c.server, "/api/health", host=host)
+                assert status == want, host
     asyncio.run(main())
 
 
