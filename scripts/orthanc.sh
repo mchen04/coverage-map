@@ -14,7 +14,7 @@ case "${1:-status}" in
     mkdir -p "$COVMAP_ORTHANC_DB" "$MINI_WORK/logs"
     # Orthanc expands ${VAR} in its config from the environment.
     cp "$here/config/orthanc.json" "$cfg"
-    nohup "$MINI_WORK/deps/orthanc/Orthanc" "$cfg" > "$MINI_WORK/logs/orthanc.log" 2>&1 &
+    nohup "$MINI_WORK/deps/orthanc/Orthanc" "$cfg" < /dev/null > "$MINI_WORK/logs/orthanc.log" 2>&1 &
     echo $! > "$pidfile"
     for _ in $(seq 1 50); do curl -sf http://127.0.0.1:8042/system >/dev/null && break; sleep 0.2; done
     curl -sf http://127.0.0.1:8042/system | python3 -c 'import json,sys; d=json.load(sys.stdin); print("orthanc", d["Version"], "up; dicomweb plugin", "dicom-web" in json.dumps(d) or "?")'

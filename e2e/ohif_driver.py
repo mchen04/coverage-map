@@ -42,7 +42,8 @@ HELPERS = r"""
       return {
         viewportId: v.id, type: v.type, n: ids.length,
         idx: v.getCurrentImageIdIndex(), sop: sopOf(v.getCurrentImageId()),
-        voi: r ? {wc: (r.upper + r.lower) / 2, ww: r.upper - r.lower} : null,
+        // inverse of Cornerstone's toLowHighRange (lower = wc - 0.5 - (ww - 1) / 2)
+        voi: r ? {wc: (r.upper + r.lower + 1) / 2, ww: r.upper - r.lower + 1} : null,
         canvas: [v.canvas.clientWidth, v.canvas.clientHeight],
         parallelScale: cam.parallelScale, focalPoint: cam.focalPoint,
       };
@@ -106,7 +107,27 @@ class OhifDriver:
         self.page.wait_for_function("() => !!(window.services && window.commandsManager)", timeout=timeout_s * 1000)
         self.page.evaluate(HELPERS)
         self.page.wait_for_function("() => window.__e2e.ready()", timeout=timeout_s * 1000)
-        return {"open_s": round(time.perf_counter() - t0, 3), "state": self.state()}
+        # the image's own VOI lands after the first render and would overwrite an early setWindow
+        self.page.wait_for_function("() => !!window.__e2e.state().voi", timeout=timeout_s * 1000)
+        opened = round(time.perf_counter() - t0, 3)
+        tour = self.dismiss_tour() if "/viewer" in url else False  # the tour is bound to /viewer
+        return {"open_s": opened, "tour_dismissed": tour, "state": self.state()}
+
+    def dismiss_tour(self, wait_ms: float = 2500) -> bool:
+        """Stock /viewer starts OHIF's first-visit onboarding tour (Shepherd) in a fresh
+        profile; its overlay swallows wheel input. Close it the way a user would."""
+        tour = self.page.locator(".shepherd-element")
+        try:
+            tour.first.wait_for(state="visible", timeout=wait_ms)
+        except Exception:  # noqa: BLE001 - no tour on this route/profile
+            return False
+        self.page.keyboard.press("Escape")
+        try:
+            tour.first.wait_for(state="hidden", timeout=2000)
+        except Exception:  # noqa: BLE001
+            self.page.get_by_role("button", name="Skip all").click()
+            tour.first.wait_for(state="hidden", timeout=2000)
+        return True
 
     def state(self) -> dict:
         return self.page.evaluate("() => window.__e2e.state()")
@@ -146,10 +167,16 @@ class OhifDriver:
             return False
 
     def set_window(self, wc: float, ww: float) -> None:
-        self.page.evaluate("([wc, ww]) => window.__e2e.setWindow(wc, ww)", [wc, ww])
-        self.page.wait_for_function(
-            "([wc, ww]) => { const v = window.__e2e.state().voi; return v && Math.abs(v.wc - wc) < 1 && Math.abs(v.ww - ww) < 1; }",
-            arg=[wc, ww], timeout=5000)
+        check = ("([wc, ww]) => { const v = window.__e2e.state().voi;"
+                 " return v && Math.abs(v.wc - wc) < 1 && Math.abs(v.ww - ww) < 1; }")
+        for attempt in (1, 2):
+            self.page.evaluate("([wc, ww]) => window.__e2e.setWindow(wc, ww)", [wc, ww])
+            try:
+                self.page.wait_for_function(check, arg=[wc, ww], timeout=2500 * attempt)
+                return
+            except Exception:  # noqa: BLE001 - playwright TimeoutError; retry once
+                if attempt == 2:
+                    raise RuntimeError(f"window {wc}/{ww} not applied: {self.state()}") from None
 
     def press_key(self, key: str) -> None:
         x, y = self.viewport_center()
