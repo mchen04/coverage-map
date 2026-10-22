@@ -63,6 +63,19 @@ function sampleName(sample: { label?: string; name: string }): string {
   return (sample.label || sample.name).replace(/^sample\s*:?\s*/i, '');
 }
 
+/** Marks a stack viewport's resetCamera as wrapped to restore the radiological flips. */
+const RESET_HOOK = Symbol('covmap.radiologicalReset');
+
+/** The stack a viewport shows (image count and first image), or null while it has none. */
+function stackKey(vp: any): string | null {
+  try {
+    const ids: string[] = vp.getImageIds?.() ?? [];
+    return `${ids.length}|${ids[0] ?? ''}`;
+  } catch {
+    return null;
+  }
+}
+
 type Hooks = {
   sessionId: string | null;
   caseId: string | null;
@@ -149,8 +162,11 @@ export default class CoverageService extends PubSubService {
   private recording = true;
   private replaySaved: SavedView[] | null = null;
   private replayShown = -1;
-  /** stack viewports already checked for radiological orientation (viewport -> stack key) */
-  private oriented = new Map<string, string>();
+  /**
+   * stack viewports already checked for radiological orientation: per viewport instance, the
+   * stack it was checked on and the flips that show that stack radiologically (null: as is)
+   */
+  private oriented = new WeakMap<object, { key: string; flips: { h: boolean; v: boolean } | null }>();
   private radiological = true;
   private gapSeen = new Map<string, number>();
   private gapReq = new Map<string, Promise<Gap | null>>();
@@ -204,7 +220,7 @@ export default class CoverageService extends PubSubService {
     this.seq = 0;
     this.t0 = null;
     this.recording = true;
-    this.oriented.clear();
+    this.oriented = new WeakMap();
     this.order = null;
     this.lookupTried.clear();
     this.pending.clear();
@@ -362,26 +378,19 @@ export default class CoverageService extends PubSubService {
     if (!vp || !isStack(vp)) {
       return false;
     }
-    let ids: string[] = [];
-    try {
-      ids = vp.getImageIds?.() ?? [];
-    } catch {
+    const key = stackKey(vp);
+    if (key === null || this.oriented.get(vp)?.key === key) {
       return false;
     }
-    const key = `${ids.length}|${ids[0] ?? ''}`;
-    if (this.oriented.get(s.viewport) === key) {
-      return false;
-    }
-    this.oriented.set(s.viewport, key);
+    this.hookReset(vp);
+    const entry: { key: string; flips: { h: boolean; v: boolean } | null } = { key, flips: null };
+    this.oriented.set(vp, entry);
     if (!this.radiological || Math.abs(s.normal[2]) < 0.9) {
       return false;
     }
     const [tl, tr, , bl] = s.corners_lps;
     const posteriorUp = tl[1] - bl[1] > 0; // screen up points to +y (posterior)
     const rightIsPatientRight = tr[0] - tl[0] < 0; // screen right points to -x (patient right)
-    if (!posteriorUp && !rightIsPatientRight) {
-      return false;
-    }
     try {
       const before = vp.getCamera();
       if (posteriorUp) {
@@ -391,21 +400,69 @@ export default class CoverageService extends PubSubService {
         vp.flip({ flipHorizontal: true });
       }
       const after = vp.getCamera();
-      if (before.flipVertical === after.flipVertical && before.flipHorizontal === after.flipHorizontal) {
-        this.oriented.delete(s.viewport); // image data not ready: try again on the next render
+      const flipped =
+        before.flipVertical !== after.flipVertical || before.flipHorizontal !== after.flipHorizontal;
+      if ((posteriorUp || rightIsPatientRight) && !flipped) {
+        this.oriented.delete(vp); // image data not ready: try again on the next render
         return false;
       }
-      return true;
+      entry.flips = { h: !!after.flipHorizontal, v: !!after.flipVertical };
+      return flipped;
     } catch (e) {
       console.warn('covmap: could not set radiological orientation', e);
       return false;
     }
   }
 
+  /**
+   * A camera reset (OHIF Reset View, viewport.resetCamera() from a script) clears the flips
+   * that make an axial stack radiological. Cornerstone 5.6.8's StackViewport fires no
+   * CAMERA_RESET event, so the viewport's own resetCamera is wrapped (once per instance; CS3D
+   * assigns it per instance). The check runs as a microtask, before the next frame is drawn:
+   * CS3D's internal resets (each new slice, resize, actor changes) restore the previous
+   * presentation, flips included, synchronously, so only a plain reset is flipped back.
+   */
+  private hookReset(vp: any): void {
+    const original = vp.resetCamera;
+    if (typeof original !== 'function' || original[RESET_HOOK]) {
+      return;
+    }
+    const wrapped = (...args: unknown[]) => {
+      const result = original.apply(vp, args);
+      queueMicrotask(() => this.reorient(vp));
+      return result;
+    };
+    (wrapped as any)[RESET_HOOK] = true;
+    vp.resetCamera = wrapped;
+  }
+
+  /** After a camera reset: apply the stack's radiological flips once more (flip never resets). */
+  private reorient(vp: any): void {
+    const entry = this.oriented.get(vp);
+    if (!this.radiological || !entry?.flips || entry.key !== stackKey(vp)) {
+      return;
+    }
+    try {
+      const { h, v } = entry.flips;
+      if (!!vp.getCamera().flipVertical !== v) {
+        vp.flip({ flipVertical: true });
+      }
+      if (!!vp.getCamera().flipHorizontal !== h) {
+        vp.flip({ flipHorizontal: true });
+      }
+      const cam = vp.getCamera();
+      if (!!cam.flipVertical !== v || !!cam.flipHorizontal !== h) {
+        this.oriented.delete(vp); // image data not ready: the next render checks the corners again
+      }
+    } catch (e) {
+      console.warn('covmap: could not restore radiological orientation', e);
+    }
+  }
+
   /** Radiological display on (default) or the acquisition orientation (research/test hook). */
   public setRadiological(on: boolean): void {
     this.radiological = on;
-    this.oriented.clear();
+    this.oriented = new WeakMap();
     for (const vp of allViewports()) {
       if (!isStack(vp) || on) {
         continue;

@@ -1,10 +1,11 @@
 """Coverage-mode UI check: the real OHIF build in headless Chromium against a running covmap
 server. Real input only (mouse wheel over the viewport, keys, clicks on panel and 3D map);
 every claim is checked against the server's own session log, coverage and gap target.
-The two exceptions are labelled in the check details: a scripted continuous scroll
-(setImageIdIndex every 25 ms) that keeps running while the page switches sessions, and the
+The exceptions are labelled in the check details: a scripted continuous scroll
+(setImageIdIndex every 25 ms) that keeps running while the page switches sessions, the
 setRadiological(false) test hook used to compare scoring with and without the radiological
-flip. Research use only.
+flip, and the gauntlet driver's scripted camera calls (frameRect, resetCamera() + render) in
+the camera-reset check, next to a real click on OHIF's Reset View. Research use only.
 
     python ohif/verify/ui_check.py --base http://127.0.0.1:8765 --case lidc-0001 \
         --out $MINI_WORK/evidence
@@ -1145,6 +1146,84 @@ def main() -> int:
                     "continued_from": evs[n_before]["seq"] if len(evs) > n_before else None, "new_after_quick": session()}
         C.run("U10 reload resumes the case's session (seq/t continue); 'New reading' next to 'resumed'", resume)
 
+        # ---- U6 radiological display survives a camera reset --------------------------------
+        def same_corners(c1, c2, ordered=True, tol=0.5):
+            a_, b_ = (c1, c2) if ordered else (sorted(c1), sorted(c2))
+            return all(abs(x - y) <= tol for p, q in zip(a_, b_) for x, y in zip(p, q))
+
+        def views_since(s, n0):
+            flush()
+            page.wait_for_timeout(400)
+            flush()
+            evs = api.events(s)[n0:]
+            return [e for e in evs if e["kind"] == "view" and e.get("vp_type") == "stack" and abs(e["normal"][2]) > 0.9]
+
+        def reset_keeps_orientation():
+            s = session()
+            neutral()  # brain window: counts for no organ
+            drv.goto(len(viewer_sops) // 2)
+            page.wait_for_timeout(300)
+            e0 = views_since(s, 0)[-1]
+            v0 = view()
+            need(radiological(e0), f"default view not radiological: {e0['corners_lps']}")
+            rows, cols = vol["rows"], vol["cols"]
+            rect = (rows // 4, rows // 2, cols // 2, cols * 3 // 4)  # off-centre: a mirrored pan shows another region
+            out_ = {"default_corners": e0["corners_lps"], "flips": [v0["flipH"], v0["flipV"]], "rect": rect}
+
+            def after_reset(how, do_reset):
+                drv.frame_rect(rect)
+                page.wait_for_timeout(300)
+                framed = views_since(s, 0)[-1]
+                need(not same_corners(framed["corners_lps"], e0["corners_lps"]), f"{how}: frame_rect did not zoom")
+                n0 = len(api.events(s))
+                do_reset()
+                after = views_since(s, n0)
+                v = view()
+                need(after, f"{how}: no view event after the reset")
+                need(all(radiological(e) for e in after),
+                     f"{how}: a displayed view after the reset is not radiological: {[e['corners_lps'] for e in after]}")
+                need(same_corners(after[-1]["corners_lps"], e0["corners_lps"]),
+                     f"{how}: reset view {after[-1]['corners_lps']} != default {e0['corners_lps']}")
+                need([v["flipH"], v["flipV"]] == [v0["flipH"], v0["flipV"]], f"{how}: flips {v} vs {v0}")
+                need(len(after) <= 4, f"{how}: {len(after)} view events after one reset (re-flip loop?)")
+                return {"views_after_reset": len(after), "all_radiological": True, "flips": [v["flipH"], v["flipV"]]}
+
+            def ohif_reset():
+                btn = page.locator('[data-cy="Reset-btn"]')
+                need(btn.count() == 1 and btn.is_visible(), "OHIF Reset View button not in the toolbar")
+                btn.click()
+
+            out_["ohif_reset_view_button"] = after_reset("OHIF Reset View", ohif_reset)
+            shot("u06-after-reset-view", page.locator(".cornerstone-canvas").first.locator("xpath=.."))
+            neutral()  # Reset View also resets the window to the image default
+            out_["driver_reset_camera"] = after_reset("viewport.resetCamera() + render", drv.reset_camera)
+
+            # the gauntlet driver frames after a reset: same displayed region with and without the flip
+            drv.frame_rect(rect)
+            page.wait_for_timeout(300)
+            fr = views_since(s, 0)[-1]
+            need(radiological(fr), f"frame after reset not radiological: {fr['corners_lps']}")
+            page.evaluate("() => window.__covmap.setRadiological(false)")
+            drv.reset_camera()
+            drv.frame_rect(rect)
+            page.wait_for_timeout(300)
+            fa = views_since(s, 0)[-1]
+            v_acq = view()
+            drv.reset_camera()
+            page.evaluate("() => window.__covmap.setRadiological(true)")
+            page.wait_for_timeout(300)
+            need(same_corners(fr["corners_lps"], fa["corners_lps"], ordered=False),
+                 f"framed region differs with the flip: {fr['corners_lps']} vs {fa['corners_lps']}")
+            back = views_since(s, 0)[-1]
+            need(radiological(back) and same_corners(back["corners_lps"], e0["corners_lps"]),
+                 f"not back to the radiological default view: {back['corners_lps']}")
+            out_["frame_after_reset"] = {"radiological": fr["corners_lps"], "acquisition": fa["corners_lps"],
+                                         "acquisition_flips": [v_acq["flipH"], v_acq["flipV"]],
+                                         "same_region": True}
+            return out_
+        C.run("U6 radiological display kept after OHIF Reset View and viewport.resetCamera(); framing after a reset "
+              "shows the same region as without the flip", reset_keeps_orientation)
+
         # ---- U6 scoring unchanged by the radiological flip ---------------------------------
         def flip_equivalence():
             mid = len(viewer_sops) // 2
@@ -1152,6 +1231,10 @@ def main() -> int:
             got = {}
             for mode, radio in (("radiological", True), ("acquisition", False)):
                 page.evaluate("on => window.__covmap.setRadiological(on)", radio)
+                # OHIF Reset View before the reading; it also resets the window to the image's
+                # own, so it comes before the neutral window and the new session
+                page.locator('[data-cy="Reset-btn"]').click()
+                page.wait_for_timeout(300)
                 neutral()
                 s = page.evaluate("async () => await window.__covmap.newReading()")
                 drv.goto(idxs[0])
@@ -1167,14 +1250,18 @@ def main() -> int:
                 page.wait_for_timeout(500)
                 flush()
                 c = api.coverage(s)
-                e = last_axial_view([x for x in api.events(s) if x["kind"] == "view"])
+                axial = [x for x in api.events(s) if x["kind"] == "view" and x.get("vp_type") == "stack"
+                         and abs(x["normal"][2]) > 0.9]
+                e = axial[-1]
                 v = view()
                 got[mode] = {"session": s, "seen": {o["key"]: o["seen_voxels"] for o in c["organs"]},
-                             "radiological_corners": radiological(e), "flip": [v["flipH"], v["flipV"]]}
+                             "radiological_corners": radiological(e), "flip": [v["flipH"], v["flipV"]],
+                             "axial_views": len(axial), "all_views_radiological": all(radiological(x) for x in axial)}
             page.evaluate("() => window.__covmap.setRadiological(true)")
             page.wait_for_timeout(300)
             r, q = got["radiological"], got["acquisition"]
             need(r["radiological_corners"], "radiological session not shown radiologically")
+            need(r["all_views_radiological"], "a view after Reset View was recorded non-radiological")
             diff = {k: (r["seen"][k], q["seen"][k]) for k in r["seen"] if r["seen"][k] != q["seen"][k]}
             need(not diff, f"seen voxels differ with the flip: {diff}")
             need(sum(r["seen"].values()) > 0, "scripted reading saw nothing")
@@ -1182,8 +1269,8 @@ def main() -> int:
                     "radiological": {k: v for k, v in r.items() if k != "seen"},
                     "acquisition": {k: v for k, v in q.items() if k != "seen"},
                     "seen_voxels_total": sum(r["seen"].values()), "organs_equal": len(r["seen"])}
-        C.run("U6 scoring identical with and without the radiological flip (same scripted reading, 2 sessions)",
-              flip_equivalence)
+        C.run("U6 scoring identical with and without the radiological flip (Reset View, then the same scripted "
+              "reading; 2 sessions)", flip_equivalence)
 
         # ---- hidden / visibility ------------------------------------------------------------
         def hidden():
