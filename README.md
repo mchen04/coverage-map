@@ -71,6 +71,6 @@ Both are public, deidentified research datasets downloaded without credentials; 
 
 ## Evaluation
 
-See [evidence/INDEX.md](evidence/INDEX.md): end-to-end CLI runs on both CTs with known skip
-truth, performance baseline vs final, the gauntlet against stock OHIF's built-in viewed-slice
-tracker and an implemented per-image viewed/unviewed model, review and UI evidence.
+[evidence/INDEX.md](evidence/INDEX.md) lists every evaluation run with its command, exit status
+and result: performance baseline vs final, browser readings with known skip truth, review and
+UI evidence.
