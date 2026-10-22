@@ -306,6 +306,25 @@ def test_duplicate_seq_ignored(case, vol):
     assert cov["events"]["ignored"]["other"] == 1
 
 
+def test_reused_seq_counted_as_conflict_first_event_wins(case, vol, tmp_path):
+    """A different event with an already used seq (e.g. a second tab numbering from the
+    same seq) is not applied and is counted under ignored.conflict; resends stay "other"."""
+    k = busiest_slice(case, "liver")
+    ev = stack_view(vol, k, 0, 0)
+    other_tab = stack_view(vol, k + 1, 50, 0)
+    sc = Scorer(case)
+    sc.add([ev])
+    cov = sc.add([{**ev, "session": "s-restamped"}, other_tab, end(vol, 100, 1)])
+    assert cov["events"]["total"] == 4 and cov["events"]["views"] == 1
+    assert cov["events"]["ignored"] == {"oblique": 0, "unknown_image": 0, "other": 1, "conflict": 1}
+    assert by_key(cov)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k])
+    p = tmp_path / "ev.jsonl"  # replay of a file: same semantics
+    p.write_text("".join(json.dumps(e) + "\n" for e in (ev, other_tab, ev, end(vol, 100, 1))))
+    rep = replay_file(case, p)
+    assert rep["events"]["ignored"]["conflict"] == 1 and rep["events"]["ignored"]["other"] == 1
+    assert rep["organs"] == cov["organs"]
+
+
 def test_events_sorted_by_time_then_seq(case, vol):
     k = busiest_slice(case, "liver")
     evs = [end(vol, 100, 2), stack_view(vol, k, 0, 0), stack_view(vol, k + 1, 0, 1)]

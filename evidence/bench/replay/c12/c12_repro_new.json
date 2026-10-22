@@ -1,0 +1,1 @@
+{"tab1_status": 200, "tab2_status": 409, "tab2_renumbered_status": 200, "tab2_body": {"conflicts": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "last_seq": 13, "last_t_ms": 1950.0}, "ignored": {"oblique": 0, "unknown_image": 0, "other": 0, "conflict": 0}, "lung_coverage": {"lung_left": 0.553193, "lung_right": 0.536274}}

@@ -132,10 +132,21 @@ POST body to `/api/sessions/{id}/events`: `{"events": [...], "now_ms": 2345.6}`.
 lets live scoring credit the still-open state of each viewport up to now (provisional,
 not committed).
 
+`seq` identifies an event within its session. An event whose `seq` was already applied is
+not applied again: an identical resend (equal apart from the `session` / `from_sample`
+stamps) counts under `events.ignored.other`, a different event with a used `seq` (e.g. two
+tabs numbering from the same `seq`) under `events.ignored.conflict` (replay of a file, CLI;
+live POSTs refuse it, below). The first event applied with a `seq` wins.
+
 Live POST guards (HTTP only; `covmap replay`, `timeline` and the CLI score logs without
-them). A batch failing a guard is refused whole with 400 and nothing is applied:
-- every event's `session`, when present, must be the session in the URL;
-- clock: the scorer never runs time backwards, so events from an earlier client clock
+them). A batch failing a guard is refused whole and nothing is applied:
+- 400: every event's `session`, when present, must be the session in the URL;
+- 409 seq conflict: an event reuses a `seq` already accepted in the session, or used earlier
+  in the same batch, for a different event (compared as above, in the log numbering after
+  the sample shift). Body `{"ok": false, "error", "conflicts": [seq, ...], "last_seq",
+  "last_t_ms"}`, all in the client's numbering (`last_*` as in session info), so the client
+  can renumber after `last_seq` and resend. Identical resends are accepted as before;
+- 400 clock: the scorer never runs time backwards, so events from an earlier client clock
   would freeze it. All times are checked in the client's clock (as POSTed, before the
   sample shift, so sample-started sessions post from `t_ms` 0). `elapsed` = server time
   since the session was created; the first accepted POST carrying `now_ms` pins the
@@ -174,7 +185,7 @@ displayed but the voxel was never inside the visible rectangle), `never_displaye
  "summary": {"reviewed": 0, "partial": 0, "skipped": 0, "organs": 0, "voxel_coverage": 0.0},
  "baseline": {"model": "per-image-viewed", "images": 133, "viewed": 120,
               "unviewed_ranges": [[a, b]], "complete": false},
- "events": {"total": 0, "views": 0, "ignored": {"oblique": 0, "unknown_image": 0, "other": 0},
+ "events": {"total": 0, "views": 0, "ignored": {"oblique": 0, "unknown_image": 0, "other": 0, "conflict": 0},
             "sources": {"ohif": 0}},
  "timing_ms": {"score": 0.0}}
 ```
@@ -205,7 +216,7 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/meshes.json`, `/meshes.bin` | mesh files (bin as `application/octet-stream`) |
 | `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
 | `GET /api/sessions/{id}` | session info (below), 404 if unknown |
-| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; 400 (nothing applied) for invalid events or a failed live guard ("Reading events") |
+| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; nothing applied on 400 (invalid events, foreign `session`, clock guard) or 409 (a `seq` already used for a different event: `{error, conflicts: [seq…], last_seq, last_t_ms}`, client numbering) — see "Reading events" |
 | `GET /api/sessions/{id}/coverage` | committed coverage JSON + `session_info` |
 | `GET /api/sessions/{id}/gap?organ=<key>[&now_ms=]` | where the organ is still unseen (below); 400 without `organ`, 404 unknown organ |
 | `GET /api/sessions/{id}/events.jsonl` | the session's event log |

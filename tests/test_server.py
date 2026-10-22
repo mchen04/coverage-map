@@ -452,6 +452,58 @@ def test_live_post_guards(env, monkeypatch):
         Config()
 
 
+def test_reused_seq_with_other_content_is_409(env):
+    """Two tabs on one session number from the same seq: the second tab's batch is refused
+    whole (409, nothing applied, client numbering to resync); identical resends pass."""
+    vol = env.vol
+    log = lambda sid: (env.data / "sessions" / f"{sid}.jsonl").read_text().splitlines()  # noqa: E731
+
+    async def conflict(c, sid, events, want):
+        r = await c.post(f"/api/sessions/{sid}/events", json={"events": events})
+        body = await r.json()
+        assert r.status == 409 and body["conflicts"] == want, (r.status, body)
+        return body
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        tab1 = _to(sid, read_pass(vol, range(10, 15), 0, 0, "lung"))  # seq 0-4
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1}))
+        # a resend (e.g. after a lost response) of accepted events, with a new one: applied as before
+        more = _to(sid, [stack_view(vol, 15, 750, 5, "lung")])
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1[3:] + more}))
+        assert cov["events"]["ignored"]["other"] == 2 and cov["events"]["ignored"]["conflict"] == 0
+        state = lambda cov: ({k: v for k, v in cov.items() if k != "timing_ms"}, log(sid))  # noqa: E731
+        before = state(await _json(await c.get(f"/api/sessions/{sid}/coverage")))
+        # a second tab numbering from seq 3: refused whole, nothing applied
+        tab2 = _to(sid, read_pass(vol, range(30, 34), 800, 3, "soft"))  # seq 3-6
+        body = await conflict(c, sid, tab2, [3, 4, 5])
+        assert (body["last_seq"], body["last_t_ms"]) == (5, 750.0) and "nothing was applied" in body["error"]
+        assert state(await _json(await c.get(f"/api/sessions/{sid}/coverage"))) == before
+        # a stamp change is not a content change; the same seq twice in one batch is checked too
+        await _json(await c.post(f"/api/sessions/{sid}/events",
+                                 json={"events": [{k: v for k, v in tab1[0].items() if k != "session"}]}))
+        twice = _to(sid, [stack_view(vol, 20, 900, 6), stack_view(vol, 21, 950, 6)])
+        await conflict(c, sid, twice, [6])
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": twice[:1] * 2}))
+        # the renumbered second tab is accepted
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events",
+                                       json={"events": [{**e, "seq": e["seq"] + 4} for e in tab2]}))
+        assert cov["session_info"]["last_seq"] == 10 and cov["events"]["ignored"]["conflict"] == 0
+        # sample session: conflicts and last_seq in the client numbering
+        s2 = (await _json(await c.post("/api/sessions", json={"case": CASE, "from_sample": "skip-lungs"})))["session"]
+        await _json(await c.post(f"/api/sessions/{s2}/events", json={"events": _to(s2, [stack_view(vol, 5, 0, 0)])}))
+        body = await conflict(c, s2, _to(s2, [stack_view(vol, 6, 10, 0)]), [0])
+        assert (body["last_seq"], body["last_t_ms"]) == (0, 0.0)
+        return sid, tab1, tab2
+
+    sid, tab1, tab2 = run_client(_cfg(env), fn)
+
+    async def rehydrate(c):  # rebuilt from the log by a fresh server: same checks
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": tab1}))
+        await conflict(c, sid, tab2[:1], [3])
+    run_client(_cfg(env), rehydrate)
+
+
 # ---- demo and static ------------------------------------------------------------------
 def test_demo_root_and_static(env):
     async def fn(c):

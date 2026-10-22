@@ -173,6 +173,16 @@ def resolve_view(case: Case, ev: dict, pts: np.ndarray | None = None) -> Plane |
     return Plane(axis, index, region, classify(ev["voi"]["wc"], ev["voi"]["ww"]))
 
 
+_NOT_CONTENT = ("session", "from_sample")  # stamps, not what the event says
+
+
+def same_event(a: dict, b: dict) -> bool:
+    """Whether two events with the same seq are the same event (a resend): equal apart from
+    the ``session`` / ``from_sample`` stamps (validated events, exact float equality)."""
+    return {k: v for k, v in a.items() if k not in _NOT_CONTENT} == \
+        {k: v for k, v in b.items() if k not in _NOT_CONTENT}
+
+
 class Scorer:
     """Incremental coverage scorer for one reading session of one case."""
 
@@ -194,10 +204,10 @@ class Scorer:
         self.segmenter = Segmenter()
         self.pending: dict[Plane, float] = {}
         self.baseline = PerImageBaseline(c.shape[0])
-        self.ignored = {"oblique": 0, "unknown_image": 0, "other": 0}
+        self.ignored = {"oblique": 0, "unknown_image": 0, "other": 0, "conflict": 0}
         self.sources: Counter = Counter()
         self.n_total = self.n_views = self.n_states = 0
-        self.seqs: set[int] = set()
+        self.seqs: dict[int, dict] = {}  # seq -> the first event applied with it
         self.last_t: float | None = None
         self.reader = {k: {"reader": None, "flagged": False, "note": None} for k in c.organ_keys}
         self.finished: dict | None = None
@@ -226,10 +236,11 @@ class Scorer:
     def feed(self, ev: dict, _pts: np.ndarray | None = None) -> None:
         """Apply one validated event (callers keep (t_ms, seq) order)."""
         self.n_total += 1
-        if ev["seq"] in self.seqs:  # resent event
-            self.ignored["other"] += 1
+        first = self.seqs.get(ev["seq"])
+        if first is not None:  # a resent event (other) or another event with a used seq (conflict)
+            self.ignored["other" if same_event(first, ev) else "conflict"] += 1
             return
-        self.seqs.add(ev["seq"])
+        self.seqs[ev["seq"]] = ev
         self.sources[ev["source"]] += 1
         if self.session is None:
             self.session = ev.get("session")

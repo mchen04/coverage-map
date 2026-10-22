@@ -39,7 +39,7 @@ from yarl import URL
 from covmap import paths
 from covmap.casedata import organ_outline, read_json
 from covmap.events import EventError, parse_post_body, read_jsonl, validate_events
-from covmap.scoring import REASONS, Scorer, make_params, timeline
+from covmap.scoring import REASONS, Scorer, make_params, same_event, timeline
 
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 HOP_BY_HOP = {"connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te",
@@ -100,9 +100,10 @@ class Config:
 
 
 class ApiError(Exception):
-    def __init__(self, status: int, message: str):
+    def __init__(self, status: int, message: str, **extra):
         super().__init__(message)
         self.status = status
+        self.extra = extra  # more fields of the JSON error body
 
 
 def _json(obj, status=200, headers=None) -> web.Response:
@@ -358,6 +359,25 @@ class App:
                                 f"{tol:.0f} ms); nothing was applied")
         return lead if pinned is None and now is not None else None
 
+    @staticmethod
+    def _check_seqs(s: Session, scorer: Scorer, events: list[dict]) -> None:
+        """409 (nothing applied) when an event reuses a seq already accepted in this session
+        (or earlier in the batch) for a different event, e.g. two tabs numbering from the
+        same seq; an identical resend passes (the scorer ignores it as before). Compared in
+        the log numbering (after the sample shift); ``conflicts`` are client seqs."""
+        accepted, batch, bad = scorer.seqs, {}, set()
+        for e in events:
+            first = accepted.get(e["seq"]) or batch.setdefault(e["seq"], e)
+            if first is not e and not same_event(first, e):
+                bad.add(e["seq"])
+        if bad:
+            ds, st = s.meta.get("seq_offset", 0), s.stats
+            conflicts = [q - ds for q in sorted(bad)]
+            raise ApiError(409, f"seq {conflicts[:5]} already used in session {s.id!r} by different events "
+                                "(another tab or client on this session?); nothing was applied: continue "
+                                "after last_seq", conflicts=conflicts, last_seq=st["last_seq"],
+                           last_t_ms=st["last_t_ms"])
+
     async def add_events(self, s: Session, body) -> dict:
         try:
             events, now = parse_post_body(body)
@@ -370,6 +390,7 @@ class App:
             scorer = await self._ready(s)
             lead = self._check_clock(s, events, now)
             events = s.shift(events)
+            self._check_seqs(s, scorer, events)
             if now is not None:
                 now += s.meta.get("t_offset_ms", 0.0)
             try:
@@ -781,7 +802,7 @@ async def errors(request, handler):
     try:
         return await handler(request)
     except ApiError as e:
-        return _json({"ok": False, "error": str(e)}, status=e.status)
+        return _json({"ok": False, "error": str(e), **e.extra}, status=e.status)
     except web.HTTPException:
         raise
     except Exception as e:  # noqa: BLE001 - API clients always get JSON
