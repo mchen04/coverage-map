@@ -29,7 +29,7 @@ case "${1:-status}" in
     ;;
   stop)
     stop_one covmap; stop_one stock
-    [[ "${2:-}" == "--all" ]] && bash "$here/scripts/orthanc.sh" stop
+    if [[ "${2:-}" == "--all" ]]; then bash "$here/scripts/orthanc.sh" stop; fi
     ;;
   restart)
     stop_one covmap; stop_one stock

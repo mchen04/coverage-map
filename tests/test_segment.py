@@ -147,6 +147,7 @@ def _reuse_case(synthetic_series, tmp_path, monkeypatch, with_header=False):
         "versions": {"TotalSegmentator": "2.4.0", "covmap": "0.0.1-old"},
         "input": {"ct_nii": "/elsewhere/ct.nii.gz", "ct_nii_sha256": segment._sha256(cdir / "ct.nii.gz")},
         "totalsegmentator": {"wall_s": 12.5, "kwargs": {"ml": True, "fast": False, "roi_subset": None}},
+        "hashes_sha256": {"totalseg.nii.gz": segment._sha256(cdir / "seg" / "totalseg.nii.gz")},
     }
     (cdir / "seg" / "segment.json").write_text(json.dumps(producing))
     return cdir, truth, producing
@@ -196,6 +197,9 @@ def test_reuse_refuses_other_ct_flags_or_no_record(synthetic_series, tmp_path, m
     refused("roi_subset=True", roi_subset=True)
     rec.write_text(json.dumps({**producing, "input": {"ct_nii_sha256": "0" * 64}}))
     refused("not the CT")
+    # another totalseg.nii.gz under this record (interrupted rerun or hand copy)
+    rec.write_text(json.dumps({**producing, "hashes_sha256": {"totalseg.nii.gz": "0" * 64}}))
+    refused("not the file")
     # record options say fast=False, but TotalSegmentator was actually called with fast=True
     rec.write_text(json.dumps({**producing, "totalsegmentator": {"kwargs": {"fast": True, "roi_subset": None}}}))
     refused("fast=False")

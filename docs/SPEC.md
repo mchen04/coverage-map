@@ -274,17 +274,19 @@ qualifying window class (`windows[0]`).
 
 | Command | Does |
 |---|---|
-| `fetch --case <id> [--series UID --collection C]` | download from TCIA NBIA v1, write source/, provenance, volume.json, ct.nii.gz |
-| `orthanc-load --case <id>` | upload `source/` into Orthanc |
-| `segment --case <id> [--fast] [--device auto|cpu|mps] [--roi-subset] [--reuse]` | TotalSegmentator → labels.npy, organs.json, meshes |
-| `simulate --case <id> --scenario <name> [--out events.jsonl]` | scripted reading events (`source: simulated`) + truth |
-| `replay --case <id> --events <file>` | coverage JSON (+ baseline) |
-| `report --case <id> --coverage <file> [--truth <file>]` | summary + truth comparison (TP/FP/FN per organ, baseline catches) |
-| `render --case <id> [--coverage <file>] --out <png>` | 3D organ map PNG via the same vtk.js module in headless Chromium |
-| `serve [--port 8765]` | app server |
-| `gauntlet ...`, `bench ...` | evaluation drivers |
+| `fetch --case <id> [--series UID --collection C] [--force]` | download from TCIA NBIA v1, write source/, provenance, volume.json, ct.nii.gz |
+| `orthanc-load --case <id> [--orthanc URL]` | upload `source/` into Orthanc |
+| `segment --case <id> [--fast] [--device auto\|cpu\|mps] [--roi-subset] [--threads N] [--reuse] [--out-name seg]` | TotalSegmentator → labels.npy, organs.json, meshes |
+| `scenarios --case <id>` | scripted reading scenarios available for the case |
+| `simulate --case <id> --scenario <name> --out events.jsonl [--seed N]` | scripted reading events (`source: simulated`) + truth (`<out>.truth.json`) |
+| `replay --case <id> --events <file> [--out cov.json] [--min-dwell-ms] [--reviewed-threshold] [--skipped-threshold]` | coverage JSON (+ baseline) |
+| `report --case <id> --coverage <file> [--truth <file>] [--out <file>]` | summary + truth comparison (TP/FP/FN per organ, baseline catches) |
+| `render --case <id> [--coverage <file>] --out <png> [--width] [--height] [--server URL]` | 3D organ map PNG via the same vtk.js module in headless Chromium |
+| `serve [--host] [--port 8765] [--orthanc URL]` | app server |
 
-Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout.
+Evaluation drivers are scripts, not subcommands: `e2e/gauntlet.py`, `e2e/run_reading.py`, `bench/bench_*.py`.
+
+Errors: non-zero exit and `{"ok": false, "error": "..."}` on stdout (usage errors: exit 2, error starting `usage:`). `--help` prints argparse's plain-text help, the one non-JSON output.
 
 ### Scenario truth (`simulate` output, `<out>.truth.json`)
 

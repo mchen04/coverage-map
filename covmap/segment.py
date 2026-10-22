@@ -554,16 +554,22 @@ def _label_source(ts_version: str | None, fast: bool, roi_subset: bool) -> str:
             + (" roi_subset" if roi_subset else ""))
 
 
-def reuse_provenance(previous: dict, record_path: Path, ct_sha: str, fast: bool, roi_subset: bool) -> dict:
+def reuse_provenance(previous: dict, record_path: Path, ct_sha: str, ts_sha: str, fast: bool,
+                     roi_subset: bool) -> dict:
     """Check that an existing ``totalseg.nii.gz`` may be reused for this request.
 
-    It must come from the current ``ct.nii.gz`` and the same ``fast``/``roi_subset`` flags
-    (per the record of the run that produced it). Returns that run's provenance (options,
-    versions, input, label_source), which a reuse run carries forward unchanged.
+    It must be the file the record describes (same sha256: a run interrupted after replacing
+    the file, or a hand copy, leaves another file under the old record), come from the current
+    ``ct.nii.gz`` and use the same ``fast``/``roi_subset`` flags. Returns that run's provenance
+    (options, versions, input, label_source), which a reuse run carries forward unchanged.
     """
     if not previous:
         raise SegmentError(f"{record_path} missing: no record of the run that produced totalseg.nii.gz; "
                            "rerun without --reuse")
+    recorded = (previous.get("hashes_sha256") or {}).get("totalseg.nii.gz")
+    if recorded != ts_sha:
+        raise SegmentError(f"--reuse refused: totalseg.nii.gz (sha256 {ts_sha}) is not the file "
+                           f"{record_path} records (sha256 {recorded}); rerun without --reuse")
     prev_input = previous.get("input") or {}
     if prev_input.get("ct_nii_sha256") != ct_sha:
         raise SegmentError(f"--reuse refused: ct.nii.gz (sha256 {ct_sha}) is not the CT that produced "
@@ -614,7 +620,7 @@ def segment_case(case_id: str, fast: bool = False, device: str = "auto", roi_sub
     if run_ts:
         device, conv, device_info = select_device(device)
     else:
-        produced = reuse_provenance(previous, record_path, ct_sha, fast, roi_subset)
+        produced = reuse_provenance(previous, record_path, ct_sha, _sha256(ts_path), fast, roi_subset)
     out.mkdir(parents=True, exist_ok=True)
 
     options = {"task": "total", "fast": fast, "device": device, "device_requested": requested,

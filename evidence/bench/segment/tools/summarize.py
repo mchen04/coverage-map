@@ -31,7 +31,11 @@ for r in rounds:
         conv = seg.get("totalsegmentator", {}).get("conv3d", {})
         row["conv3d"] = {k: conv.get(k) for k in ("mode", "device", "budget_mb", "source")}
         row["torch_threads"] = seg.get("totalsegmentator", {}).get("torch_threads")
-        row["rss_gb"] = seg.get("totalsegmentator", {}).get("process_max_rss_gb")
+        # main-process peak RSS excludes MPS (GPU) memory; the driver allocation is read after the run (a lower bound)
+        for key, src in (("rss_gb", "process_max_rss_gb"), ("mps_driver_gb", "mps_driver_allocated_gb")):
+            v = seg.get("totalsegmentator", {}).get(src)
+            if v is not None:
+                row[key] = max(row.get(key, 0.0), v)
     summ = {}
     for (case, label), row in sorted(rows.items()):
         ts = [x for x in row["ts_s"] if x]
@@ -40,6 +44,7 @@ for r in rounds:
         print(f"round {r} {case:14s} {label:12s} n={len(row['wall_s'])} wall med {statistics.median(row['wall_s']):7.1f} "
               f"runs {row['wall_s']} ts med {summ[f'{case}/{label}']['median_ts_s']} pass {row['pass']} "
               f"dice_min {row['dice_min']} mean {row['dice_mean']} labels_identical {row['labels_identical']} "
-              f"load1 {row['load1']} conv {row['conv3d']} thr {row['torch_threads']} rss {row['rss_gb']}", file=sys.stderr)
+              f"load1 {row['load1']} conv {row['conv3d']} thr {row['torch_threads']} rss {row.get('rss_gb')} "
+              f"mps {row.get('mps_driver_gb')}", file=sys.stderr)
     out[r] = {"round": r, "production_hashes": prod, "rows": summ}
 json.dump(out, sys.stdout, indent=1)

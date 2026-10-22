@@ -1,0 +1,2804 @@
+{
+ "case": "lidc-0001",
+ "base": "http://127.0.0.1:8765",
+ "passed": 40,
+ "failed": 0,
+ "checks": [
+  {
+   "check": "open coverage mode: first image, case lookup, session, map ready, soft window, title",
+   "ok": true,
+   "s": 0.62,
+   "detail": {
+    "open_s": 0.62,
+    "viewer": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1037,
+      842
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    },
+    "marks_ms": {
+     "first": [
+      444.09999999403954
+     ],
+     "map": [
+      532.0999999940395
+     ],
+     "hooks": {
+      "first": 444.09999999403954,
+      "map": 532.0999999940395,
+      "caseId": "lidc-0001",
+      "sessionId": "s-20261021-205112-c4520a"
+     }
+    },
+    "voi": {
+     "type": "stack",
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "ww": 400,
+     "wc": 40,
+     "flipH": false,
+     "flipV": false
+    },
+    "title": "Coverage Map",
+    "first_use_hint": "Scroll the CT; organs turn green once shown in their window \u00b7 N next gap\n\u00d7"
+   }
+  },
+  {
+   "check": "panel lists every organ of the case",
+   "ok": true,
+   "s": 0.01,
+   "detail": {
+    "rows": 25,
+    "summary": "0\n0\n25\n\u00b7\n25 left\n\u00b7 0% of voxels\nSession \u25be"
+   }
+  },
+  {
+   "check": "no page scroll at 1440x900",
+   "ok": true,
+   "s": 0.0,
+   "detail": {
+    "1440x900": {
+     "inner": [
+      1440,
+      900
+     ],
+     "doc": [
+      1440,
+      900
+     ],
+     "body": [
+      1440,
+      896
+     ],
+     "scrollY_after_scrollTo": 0,
+     "panel": [
+      360,
+      804,
+      804,
+      360,
+      0
+     ],
+     "header": [
+      [
+       348,
+       348
+      ],
+      [
+       348,
+       348
+      ]
+     ],
+     "note_bottom": 891.984375,
+     "list": [
+      328,
+      698
+     ],
+     "offenders": [
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 885,
+       "bottom": 979,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 979,
+       "bottom": 1203,
+       "parent": "cm-list"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "check": "R6 first-use hint on a fresh browser; no page scroll with it at 1280x800; dismissed and remembered",
+   "ok": true,
+   "s": 2.15,
+   "detail": {
+    "text": "Scroll the CT; organs turn green once shown in their window \u00b7 N next gap\n\u00d7",
+    "height_px": {
+     "1440": 32,
+     "1280": 32
+    },
+    "stored": "dismissed",
+    "1280x800 with the first-use hint": {
+     "inner": [
+      1280,
+      800
+     ],
+     "doc": [
+      1280,
+      800
+     ],
+     "body": [
+      1280,
+      796
+     ],
+     "scrollY_after_scrollTo": 0,
+     "panel": [
+      360,
+      705,
+      705,
+      360,
+      0
+     ],
+     "header": [
+      [
+       348,
+       348
+      ],
+      [
+       348,
+       348
+      ]
+     ],
+     "note_bottom": 791.984375,
+     "list": [
+      261,
+      698
+     ],
+     "offenders": [
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 472,
+       "bottom": 852,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 852,
+       "bottom": 946,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 946,
+       "bottom": 1170,
+       "parent": "cm-list"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "check": "U6 axial stack shown radiologically (anterior up, patient right on screen left), true corners recorded",
+   "ok": true,
+   "s": 0.43,
+   "detail": {
+    "corners_lps": [
+     [
+      -208.038,
+      -172.052,
+      -10.0
+     ],
+     [
+      235.335,
+      -172.052,
+      -10.0
+     ],
+     [
+      235.335,
+      187.948,
+      -10.0
+     ],
+     [
+      -208.038,
+      187.948,
+      -10.0
+     ]
+    ],
+    "flipped": {
+     "h": false,
+     "v": false
+    }
+   }
+  },
+  {
+   "check": "events POST every ~400 ms (heartbeat when idle)",
+   "ok": true,
+   "s": 2.1,
+   "detail": {
+    "posts_in_2.1s": 5,
+    "gaps_ms": [
+     401,
+     394,
+     406,
+     400
+    ]
+   }
+  },
+  {
+   "check": "wheel-scroll reading with soft (1) and lung (2) hotkey windows",
+   "ok": true,
+   "s": 37.1,
+   "detail": {
+    "s": 37.1,
+    "wheel_ticks": 195,
+    "api_jumps": 2,
+    "statuses": {
+     "reviewed": 6,
+     "partial": 6,
+     "skipped": 13
+    },
+    "soft_k": [
+     39,
+     132
+    ],
+    "lung_k": [
+     19,
+     121
+    ]
+   }
+  },
+  {
+   "check": "U7 window hint in a non-counting window; active preset highlighted",
+   "ok": true,
+   "s": 0.23,
+   "detail": {
+    "hint": "This window counts for no organ \u2014 press 1 soft, 2 lung, 3 bone",
+    "active_after_key": {
+     "1": "soft",
+     "2": "lung"
+    }
+   }
+  },
+  {
+   "check": "U20/U11 rows floor the % (never shows the threshold early); hints '34% unseen \u00b7 reason'",
+   "ok": true,
+   "s": 0.77,
+   "detail": {
+    "partial_rows": [
+     [
+      "aorta",
+      "86%",
+      "14% unseen \u00b7 wrong window"
+     ],
+     [
+      "spleen",
+      "60%",
+      "40% unseen \u00b7 wrong window"
+     ],
+     [
+      "liver",
+      "53%",
+      "47% unseen \u00b7 wrong window"
+     ],
+     [
+      "inferior_vena_cava",
+      "40%",
+      "60% unseen \u00b7 wrong window"
+     ],
+     [
+      "stomach",
+      "14%",
+      "86% unseen \u00b7 wrong window"
+     ],
+     [
+      "colon",
+      "8%",
+      "92% unseen \u00b7 never shown"
+     ]
+    ]
+   }
+  },
+  {
+   "check": "R4 organ names never truncated by the unseen hint (1440x900, 1280x800)",
+   "ok": true,
+   "s": 2.16,
+   "detail": {
+    "1440x900": {
+     "rows": 25,
+     "name_width_px": [
+      129,
+      142,
+      144
+     ],
+     "hints_shown": [
+      [
+       "aorta",
+       "14% unseen \u00b7 wrong window"
+      ],
+      [
+       "spleen",
+       "40% unseen \u00b7 wrong window"
+      ],
+      [
+       "liver",
+       "47% unseen \u00b7 wrong window"
+      ],
+      [
+       "inferior_vena_cava",
+       "60% unseen \u00b7 wrong window"
+      ],
+      [
+       "stomach",
+       "86% unseen \u00b7 wrong window"
+      ],
+      [
+       "pancreas",
+       "wrong window"
+      ],
+      [
+       "colon",
+       "92% unseen \u00b7 never shown"
+      ],
+      [
+       "duodenum",
+       "never shown"
+      ],
+      [
+       "kidney_left",
+       "never shown"
+      ],
+      [
+       "kidney_right",
+       "never shown"
+      ],
+      [
+       "small_bowel",
+       "never shown"
+      ],
+      [
+       "cervical_spine",
+       "wrong window"
+      ],
+      [
+       "ribs_left",
+       "wrong window"
+      ],
+      [
+       "thoracic_spine",
+       "wrong window"
+      ],
+      [
+       "ribs_right",
+       "wrong window"
+      ],
+      [
+       "lumbar_spine",
+       "never shown"
+      ]
+     ],
+     "hints_cut": [],
+     "two_line_names": [
+      [
+       "shoulder_left",
+       true,
+       0
+      ],
+      [
+       "shoulder_right",
+       true,
+       0
+      ],
+      [
+       "sternum",
+       true,
+       0
+      ]
+     ]
+    },
+    "1280x800": {
+     "rows": 25,
+     "name_width_px": [
+      129,
+      142,
+      144
+     ],
+     "hints_shown": [
+      [
+       "aorta",
+       "14% unseen \u00b7 wrong window"
+      ],
+      [
+       "spleen",
+       "40% unseen \u00b7 wrong window"
+      ],
+      [
+       "liver",
+       "47% unseen \u00b7 wrong window"
+      ],
+      [
+       "inferior_vena_cava",
+       "60% unseen \u00b7 wrong window"
+      ],
+      [
+       "stomach",
+       "86% unseen \u00b7 wrong window"
+      ],
+      [
+       "pancreas",
+       "wrong window"
+      ],
+      [
+       "colon",
+       "92% unseen \u00b7 never shown"
+      ],
+      [
+       "duodenum",
+       "never shown"
+      ],
+      [
+       "kidney_left",
+       "never shown"
+      ],
+      [
+       "kidney_right",
+       "never shown"
+      ],
+      [
+       "small_bowel",
+       "never shown"
+      ],
+      [
+       "cervical_spine",
+       "wrong window"
+      ],
+      [
+       "ribs_left",
+       "wrong window"
+      ],
+      [
+       "thoracic_spine",
+       "wrong window"
+      ],
+      [
+       "ribs_right",
+       "wrong window"
+      ],
+      [
+       "lumbar_spine",
+       "never shown"
+      ]
+     ],
+     "hints_cut": [],
+     "two_line_names": [
+      [
+       "shoulder_left",
+       true,
+       0
+      ],
+      [
+       "shoulder_right",
+       true,
+       0
+      ],
+      [
+       "sternum",
+       true,
+       0
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "check": "events.jsonl: view events with sop/corners/normal/voi, deduped, ordered",
+   "ok": true,
+   "s": 0.01,
+   "detail": {
+    "events": 211,
+    "views": 211,
+    "distinct_sops": 114,
+    "vois": [
+     [
+      -600.0,
+      1500.0
+     ],
+     [
+      -600.0,
+      1600.0
+     ],
+     [
+      40.0,
+      80.0
+     ],
+     [
+      40.0,
+      400.0
+     ]
+    ],
+    "canvas_px": [
+     1037,
+     842
+    ],
+    "example": {
+     "v": 1,
+     "session": "s-20261021-205112-c4520a",
+     "case": "lidc-0001",
+     "seq": 105,
+     "t_ms": 23417.5,
+     "kind": "view",
+     "viewport": "default",
+     "vp_type": "stack",
+     "series": "1.3.6.1.4.1.14519.5.2.1.6279.6001.179049373636438705059720603192",
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.319822435757480507732230214660",
+     "corners_lps": [
+      [
+       -208.038,
+       -172.052,
+       -280.0
+      ],
+      [
+       235.335,
+       -172.052,
+       -280.0
+      ],
+      [
+       235.335,
+       187.948,
+       -280.0
+      ],
+      [
+       -208.038,
+       187.948,
+       -280.0
+      ]
+     ],
+     "normal": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "voi": {
+      "wc": -600.0,
+      "ww": 1500.0
+     },
+     "canvas_px": [
+      1037,
+      842
+     ],
+     "source": "ohif"
+    }
+   }
+  },
+  {
+   "check": "3D map hover shows organ name and %",
+   "ok": true,
+   "s": 11.38,
+   "detail": {
+    "organs_hovered": 16,
+    "examples": [
+     "Right shoulder girdle and humerus \u00b7 0% \u00b7 skipped \u00b7 click to jump",
+     "Thyroid \u00b7 100% \u00b7 reviewed \u00b7 click to jump",
+     "Left shoulder girdle and humerus \u00b7 0% \u00b7 skipped \u00b7 click to jump",
+     "Right lung \u00b7 100% \u00b7 reviewed \u00b7 click to jump"
+    ]
+   }
+  },
+  {
+   "check": "U1 click gray/yellow organ in 3D map -> the server's gap slice in the organ window",
+   "ok": true,
+   "s": 0.41,
+   "detail": {
+    "clicked": "shoulder_right",
+    "status": "skipped",
+    "gap": {
+     "organ": "shoulder_right",
+     "k": 123,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.224825877563911119032132489531",
+     "window": "bone",
+     "unseen_voxels": 128501,
+     "ranges": [
+      [
+       65,
+       132
+      ]
+     ]
+    },
+    "now": {
+     "type": "stack",
+     "idx": 9,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.224825877563911119032132489531",
+     "ww": 2500,
+     "wc": 480,
+     "flipH": false,
+     "flipV": false
+    },
+    "center_k": 120
+   }
+  },
+  {
+   "check": "U1 Next gap jumps to remaining organs at the server's gap slice with the organ window",
+   "ok": true,
+   "s": 1.01,
+   "detail": [
+    {
+     "key": "ribs_left",
+     "gap_k": 117,
+     "center_k": 81,
+     "image": 16,
+     "window": [
+      480,
+      2500
+     ]
+    },
+    {
+     "key": "thoracic_spine",
+     "gap_k": 34,
+     "center_k": 72,
+     "image": 99,
+     "window": [
+      480,
+      2500
+     ]
+    },
+    {
+     "key": "ribs_right",
+     "gap_k": 111,
+     "center_k": 74,
+     "image": 22,
+     "window": [
+      480,
+      2500
+     ]
+    }
+   ]
+  },
+  {
+   "check": "U1/U2/R5 organ row click -> gap slice; detail shows extent and still-to-read in viewer image numbers 'of N (viewer n/N)', matching the viewer's (n/N) counter",
+   "ok": true,
+   "s": 0.41,
+   "detail": {
+    "key": "liver",
+    "gap": {
+     "organ": "liver",
+     "k": 38,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.314001743501886473835425275360",
+     "window": "soft",
+     "unseen_voxels": 384425,
+     "ranges": [
+      [
+       6,
+       38
+      ]
+     ]
+    },
+    "image": 95,
+    "of": 133,
+    "extent": "On images 69\u2013127 of 133 (viewer n/133).",
+    "still_to_read": "Still to read: images 95\u2013127 of 133.",
+    "k_range": [
+     6,
+     64
+    ],
+    "viewer_counter": {
+     "instance": 95,
+     "n": 95,
+     "of": 133
+    },
+    "tooltips": {
+     "extent": "Image numbers as in the viewer's (n/133) counter at the bottom right of the image, not its I: instance number",
+     "gap": "Image numbers as in the viewer's (n/133) counter at the bottom right of the image, not its I: instance number"
+    }
+   }
+  },
+  {
+   "check": "U9/U17 row actions done / N/A / flag (note focused, in view) post annotation events; 24px buttons",
+   "ok": true,
+   "s": 1.0,
+   "detail": {
+    "done": "lumbar_spine",
+    "na": "sternum",
+    "flag": "ribs_right",
+    "annotations": [
+     [
+      "lumbar_spine",
+      "done",
+      null
+     ],
+     [
+      "ribs_right",
+      "flag",
+      "outline cuts through neighbour"
+     ],
+     [
+      "ribs_right",
+      "flag",
+      null
+     ],
+     [
+      "sternum",
+      "na",
+      null
+     ]
+    ],
+    "server_reader_layer": {
+     "lumbar_spine": [
+      "done",
+      false,
+      null
+     ],
+     "sternum": [
+      "na",
+      false,
+      null
+     ],
+     "ribs_right": [
+      null,
+      true,
+      "outline cuts through neighbour"
+     ]
+    },
+    "summary": {
+     "reviewed": 6,
+     "partial": 6,
+     "skipped": 13,
+     "organs": 25,
+     "voxel_coverage": 0.676454,
+     "attested": 1,
+     "not_applicable": 1,
+     "flagged": 1,
+     "remaining": [
+      "aorta",
+      "inferior_vena_cava",
+      "liver",
+      "spleen",
+      "pancreas",
+      "stomach",
+      "kidney_left",
+      "kidney_right",
+      "duodenum",
+      "small_bowel",
+      "colon",
+      "cervical_spine",
+      "thoracic_spine",
+      "ribs_left",
+      "ribs_right",
+      "shoulder_left",
+      "shoulder_right"
+     ],
+     "finished": null
+    },
+    "button_boxes": [
+     {
+      "x": 1346,
+      "y": 1188.6875,
+      "width": 26,
+      "height": 24
+     },
+     {
+      "x": 1376,
+      "y": 1188.6875,
+      "width": 26,
+      "height": 24
+     },
+     {
+      "x": 1406,
+      "y": 1188.6875,
+      "width": 26,
+      "height": 24
+     }
+    ],
+    "button_gaps_px": [
+     4,
+     4
+    ],
+    "note_box": {
+     "x": 1106,
+     "y": 749.6875,
+     "width": 322,
+     "height": 20
+    }
+   }
+  },
+  {
+   "check": "hotkeys D / A / G toggle reader state of the selected organ",
+   "ok": true,
+   "s": 0.52,
+   "detail": {
+    "organ": "aorta",
+    "sequence": [
+     "d->data-reader=done",
+     "d->data-reader=",
+     "a->data-reader=na",
+     "a->data-reader=",
+     "g->data-flagged=1",
+     "note focused; Esc",
+     "g->data-flagged=0"
+    ],
+    "posted_actions": [
+     "done",
+     "clear",
+     "na",
+     "clear",
+     "flag",
+     "clear"
+    ]
+   }
+  },
+  {
+   "check": "U3/U13 map: A/P/R/L views + side labels, drag keeps model centred, picking after rotation, hide reviewed, N/A legend",
+   "ok": true,
+   "s": 13.91,
+   "detail": {
+    "views": {
+     "back": {
+      "orient": "LR",
+      "model": {
+       "size": [
+        346,
+        287
+       ],
+       "bbox": [
+        48,
+        28,
+        293,
+        278
+       ],
+       "center": [
+        0.493,
+        0.533
+       ],
+       "fill": 0.5122
+      }
+     },
+     "right": {
+      "orient": "PA",
+      "model": {
+       "size": [
+        346,
+        287
+       ],
+       "bbox": [
+        80,
+        28,
+        265,
+        278
+       ],
+       "center": [
+        0.499,
+        0.533
+       ],
+       "fill": 0.3836
+      }
+     },
+     "left": {
+      "orient": "AP",
+      "model": {
+       "size": [
+        346,
+        287
+       ],
+       "bbox": [
+        80,
+        28,
+        265,
+        278
+       ],
+       "center": [
+        0.499,
+        0.533
+       ],
+       "fill": 0.383
+      }
+     },
+     "front": {
+      "orient": "RL",
+      "model": {
+       "size": [
+        346,
+        287
+       ],
+       "bbox": [
+        52,
+        28,
+        297,
+        278
+       ],
+       "center": [
+        0.504,
+        0.533
+       ],
+       "fill": 0.507
+      }
+     }
+    },
+    "drag": {
+     "before": {
+      "size": [
+       346,
+       287
+      ],
+      "bbox": [
+       52,
+       28,
+       297,
+       278
+      ],
+      "center": [
+       0.504,
+       0.533
+      ],
+      "fill": 0.507
+     },
+     "after": {
+      "size": [
+       346,
+       287
+      ],
+      "bbox": [
+       41,
+       28,
+       285,
+       278
+      ],
+      "center": [
+       0.471,
+       0.533
+      ],
+      "fill": 0.4911
+     },
+     "orient": "LR"
+    },
+    "back_hovered": [
+     "aorta",
+     "colon",
+     "duodenum",
+     "heart",
+     "inferior_vena_cava",
+     "kidney_left",
+     "kidney_right",
+     "liver",
+     "lumbar_spine",
+     "lung_left",
+     "lung_right",
+     "pancreas",
+     "ribs_left",
+     "ribs_right",
+     "shoulder_left",
+     "shoulder_right",
+     "small_bowel",
+     "spleen",
+     "stomach",
+     "thoracic_spine",
+     "thyroid",
+     "trachea"
+    ],
+    "left_right_checks": [
+     [
+      "front",
+      "shoulder_right",
+      true
+     ],
+     [
+      "front",
+      "shoulder_left",
+      true
+     ],
+     [
+      "front",
+      "lung_right",
+      true
+     ],
+     [
+      "front",
+      "lung_left",
+      true
+     ],
+     [
+      "front",
+      "ribs_left",
+      true
+     ],
+     [
+      "front",
+      "heart",
+      true
+     ],
+     [
+      "front",
+      "ribs_right",
+      true
+     ],
+     [
+      "front",
+      "colon",
+      true
+     ],
+     [
+      "front",
+      "spleen",
+      true
+     ],
+     [
+      "front",
+      "stomach",
+      true
+     ],
+     [
+      "front",
+      "kidney_right",
+      true
+     ],
+     [
+      "back",
+      "shoulder_left",
+      true
+     ],
+     [
+      "back",
+      "ribs_right",
+      true
+     ],
+     [
+      "back",
+      "shoulder_right",
+      true
+     ],
+     [
+      "back",
+      "lung_left",
+      true
+     ],
+     [
+      "back",
+      "lung_right",
+      true
+     ],
+     [
+      "back",
+      "ribs_left",
+      true
+     ],
+     [
+      "back",
+      "heart",
+      true
+     ],
+     [
+      "back",
+      "colon",
+      true
+     ],
+     [
+      "back",
+      "spleen",
+      true
+     ],
+     [
+      "back",
+      "stomach",
+      true
+     ],
+     [
+      "back",
+      "kidney_left",
+      true
+     ],
+     [
+      "back",
+      "kidney_right",
+      true
+     ],
+     [
+      "back",
+      "small_bowel",
+      true
+     ]
+    ],
+    "unsettled": 17,
+    "visible_hidden_reviewed": 17,
+    "drawn": 25,
+    "na_organ": "sternum"
+   }
+  },
+  {
+   "check": "O toggles the selected organ outline (SVG, redrawn on slice change, banner below the marker)",
+   "ok": true,
+   "s": 0.7,
+   "detail": {
+    "organ": "liver",
+    "path_chars": 3578,
+    "redrawn_on_scroll": true,
+    "toggled_off": true,
+    "label_box": {
+     "x": 484.5,
+     "y": 78,
+     "width": 143.921875,
+     "height": 21
+    },
+    "top_marker": {
+     "top": 57.078125,
+     "bottom": 77.078125
+    }
+   }
+  },
+  {
+   "check": "hotkeys 1-5 set exact W/L (soft, lung, bone, liver, brain)",
+   "ok": true,
+   "s": 0.11,
+   "detail": {
+    "1": [
+     40,
+     400
+    ],
+    "2": [
+     -600,
+     1500
+    ],
+    "3": [
+     480,
+     2500
+    ],
+    "4": [
+     90,
+     150
+    ],
+    "5": [
+     40,
+     80
+    ]
+   }
+  },
+  {
+   "check": "U8/U19/U22 Finish: list, decisions, jump, Go back, Esc, Confirm -> finish events + summary",
+   "ok": true,
+   "s": 0.62,
+   "detail": {
+    "listed": 17,
+    "jumped_to": "aorta",
+    "gap": {
+     "organ": "aorta",
+     "k": 34,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.189326175962760378238867950139",
+     "window": "soft",
+     "unseen_voxels": 17322,
+     "ranges": [
+      [
+       0,
+       34
+      ]
+     ]
+    },
+    "finish_events": [
+     [
+      false,
+      17
+     ],
+     [
+      false,
+      17
+     ],
+     [
+      true,
+      17
+     ]
+    ],
+    "decisions": null,
+    "server_finished": {
+     "t_ms": 75444.5,
+     "confirmed": true,
+     "remaining": [
+      "aorta",
+      "spleen",
+      "liver",
+      "inferior_vena_cava",
+      "stomach",
+      "pancreas",
+      "colon",
+      "duodenum",
+      "kidney_left",
+      "kidney_right",
+      "small_bowel",
+      "cervical_spine",
+      "shoulder_left",
+      "shoulder_right",
+      "ribs_left",
+      "thoracic_spine",
+      "ribs_right"
+     ]
+    },
+    "summary_text": "6\n6\n13\n\u00b7\n17 left\n\u00b7 70% of voxels\nSession \u25be"
+   }
+  },
+  {
+   "check": "C13 finished follows the last finish event: Confirm, then F + Go back / Esc un-finishes at once (chip, server), Confirm again",
+   "ok": true,
+   "s": 1.24,
+   "detail": {
+    "steps": {
+     "go-back": {
+      "server": false,
+      "chip": 0,
+      "reconfirmed": true
+     },
+     "escape": {
+      "server": false,
+      "chip": 0,
+      "reconfirmed": true
+     }
+    },
+    "finish_events": [
+     false,
+     false,
+     true,
+     false,
+     true,
+     false,
+     true
+    ]
+   }
+  },
+  {
+   "check": "Export JSONL / JSON / CSV downloads",
+   "ok": true,
+   "s": 0.18,
+   "detail": {
+    "jsonl": {
+     "file": "s-20261021-205112-c4520a.jsonl",
+     "bytes": 120274
+    },
+    "json": {
+     "file": "s-20261021-205112-c4520a.coverage.json",
+     "bytes": 11617
+    },
+    "csv": {
+     "file": "s-20261021-205112-c4520a.csv",
+     "bytes": 2107
+    }
+   }
+  },
+  {
+   "check": "U12 rules: min 0, empty rejected, custom marker, Restore defaults; re-scores the session",
+   "ok": true,
+   "s": 0.52,
+   "detail": {
+    "empty_dwell_error": "Min dwell must be a number of milliseconds, 0 or more.",
+    "at_400ms": {
+     "reviewed": 0,
+     "partial": 4,
+     "skipped": 21,
+     "organs": 25,
+     "voxel_coverage": 0.020504,
+     "attested": 1,
+     "not_applicable": 1,
+     "flagged": 1,
+     "remaining": [
+      "lung_left",
+      "lung_right",
+      "trachea",
+      "heart",
+      "aorta",
+      "inferior_vena_cava",
+      "esophagus",
+      "thyroid",
+      "liver",
+      "spleen",
+      "pancreas",
+      "stomach",
+      "kidney_left",
+      "kidney_right",
+      "duodenum",
+      "small_bowel",
+      "colon",
+      "cervical_spine",
+      "thoracic_spine",
+      "ribs_left",
+      "ribs_right",
+      "shoulder_left",
+      "shoulder_right"
+     ],
+     "finished": {
+      "t_ms": 76560.6,
+      "confirmed": true,
+      "remaining": [
+       "aorta",
+       "spleen",
+       "liver",
+       "inferior_vena_cava",
+       "stomach",
+       "pancreas",
+       "colon",
+       "duodenum",
+       "kidney_left",
+       "kidney_right",
+       "small_bowel",
+       "cervical_spine",
+       "shoulder_left",
+       "shoulder_right",
+       "ribs_left",
+       "thoracic_spine",
+       "ribs_right"
+      ]
+     }
+    },
+    "params": {
+     "min_dwell_ms": 400,
+     "reviewed_threshold": 0.9,
+     "skipped_threshold": 0.05
+    },
+    "restored": {
+     "min_dwell_ms": 80,
+     "reviewed_threshold": 0.9,
+     "skipped_threshold": 0.05
+    },
+    "layout": {
+     "finished + custom rules + marks": {
+      "inner": [
+       1440,
+       900
+      ],
+      "doc": [
+       1440,
+       900
+      ],
+      "body": [
+       1440,
+       896
+      ],
+      "scrollY_after_scrollTo": 0,
+      "panel": [
+       360,
+       804,
+       804,
+       360,
+       0
+      ],
+      "header": [
+       [
+        348,
+        348
+       ],
+       [
+        348,
+        348
+       ]
+      ],
+      "note_bottom": 891.984375,
+      "list": [
+       347,
+       759
+      ],
+      "offenders": [
+       {
+        "tag": "DIV",
+        "cls": "",
+        "id": "",
+        "top": 486,
+        "bottom": 927,
+        "parent": "cm-list"
+       },
+       {
+        "tag": "DIV",
+        "cls": "",
+        "id": "",
+        "top": 927,
+        "bottom": 1021,
+        "parent": "cm-list"
+       },
+       {
+        "tag": "DIV",
+        "cls": "",
+        "id": "",
+        "top": 1021,
+        "bottom": 1245,
+        "parent": "cm-list"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "check": "U5/U14 Replay: viewer follows frames, nothing recorded, view restored, recording resumes, aria; each frame shows its marks and counts (N/A, done, flag); Rules disabled during replay",
+   "ok": true,
+   "s": 3.29,
+   "detail": {
+    "frames": 40,
+    "mid_index": 24,
+    "frame_view": {
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.335592589368111321380689269255",
+     "k": 121,
+     "voi": {
+      "wc": 40,
+      "ww": 80
+     },
+     "window": "other"
+    },
+    "summary_start": "0\n0\n25\n\u00b7\n25 left\n\u00b7 0% of voxels\nSession \u25be",
+    "summary_mid": "6\n6\n13\n\u00b7\n19 left\n\u00b7 66% of voxels\nSession \u25be",
+    "read_only": true,
+    "aria": {
+     "play": "Play replay",
+     "slider": "Replay position",
+     "close": "Close replay"
+    },
+    "restored": {
+     "type": "stack",
+     "idx": 98,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.189326175962760378238867950139",
+     "ww": 400,
+     "wc": 40,
+     "flipH": false,
+     "flipV": false
+    },
+    "views_after_close": 1,
+    "frame_marks": [
+     {
+      "index": 0,
+      "t_ms": 0,
+      "shown": {
+       "left": 25,
+       "na": [],
+       "done": [],
+       "flagged": [],
+       "attested": 0,
+       "row_left": 25
+      },
+      "summary": {
+       "left": 25,
+       "na": 0,
+       "flagged": 0,
+       "attested": 0
+      }
+     },
+     {
+      "index": 24,
+      "t_ms": 47926.70769230769,
+      "shown": {
+       "left": 19,
+       "na": [],
+       "done": [],
+       "flagged": [],
+       "attested": 0,
+       "row_left": 19
+      },
+      "summary": {
+       "left": 19,
+       "na": 0,
+       "flagged": 0,
+       "attested": 0
+      }
+     },
+     {
+      "index": 39,
+      "t_ms": 77880.9,
+      "shown": {
+       "left": 17,
+       "na": [
+        "sternum"
+       ],
+       "done": [
+        "lumbar_spine"
+       ],
+       "flagged": [
+        "ribs_right"
+       ],
+       "attested": 1,
+       "row_left": 17
+      },
+      "summary": {
+       "left": 17,
+       "na": 1,
+       "flagged": 1,
+       "attested": 1
+      }
+     }
+    ],
+    "live_left_at_close": 17,
+    "rules_item_title": "Close replay to change the reading rules",
+    "apply_rules_in_replay": "refused: Close replay to change the reading rules."
+   }
+  },
+  {
+   "check": "U4/U10/C6 Start from sample while scrolling: confirm, labelled as your reading, source shown, clean seq/clock",
+   "ok": true,
+   "s": 2.03,
+   "detail": {
+    "sample": {
+     "name": "partial-reading",
+     "label": "Sample: partial reading",
+     "source": "browser-scripted",
+     "events": 170
+    },
+    "session": "s-20261021-205233-9b9534",
+    "label": "Your reading, started from sample: partial reading",
+    "origin": "sample events: scripted automated reading (not a human) \u00b7 170",
+    "summary": {
+     "reviewed": 5,
+     "partial": 7,
+     "skipped": 13,
+     "organs": 25,
+     "voxel_coverage": 0.56938,
+     "attested": 0,
+     "not_applicable": 0,
+     "flagged": 0,
+     "remaining": [
+      "lung_left",
+      "lung_right",
+      "aorta",
+      "inferior_vena_cava",
+      "liver",
+      "pancreas",
+      "stomach",
+      "kidney_left",
+      "kidney_right",
+      "duodenum",
+      "small_bowel",
+      "colon",
+      "cervical_spine",
+      "thoracic_spine",
+      "lumbar_spine",
+      "ribs_left",
+      "ribs_right",
+      "sternum",
+      "shoulder_left",
+      "shoulder_right"
+     ],
+     "finished": null
+    },
+    "prefilled": 170,
+    "live_after": 37,
+    "first_live": {
+     "seq": 170,
+     "t_ms": 33746.799999999996,
+     "kind": "view"
+    },
+    "scripted_scroll_ticks": 38,
+    "c6": {
+     "live_events": 37,
+     "seq": [
+      170,
+      206
+     ],
+     "first_t_ms": 0.2,
+     "kinds": [
+      "view"
+     ]
+    },
+    "old_events": 251,
+    "old_last": "end"
+   }
+  },
+  {
+   "check": "U10/U24/C6 New reading (confirm, and the __covmap.newReading hook) while scrolling: seq 0, t~0, no leaks",
+   "ok": true,
+   "s": 2.71,
+   "detail": {
+    "old": "s-20261021-205233-9b9534",
+    "new": "s-20261021-205235-a1be28",
+    "list_scroll_before": 351,
+    "scripted_scroll_ticks": 34,
+    "c6_menu": {
+     "live_events": 33,
+     "seq": [
+      0,
+      32
+     ],
+     "first_t_ms": 0.1,
+     "kinds": [
+      "view"
+     ]
+    },
+    "old_events": 208,
+    "old_last": "end",
+    "hook": "s-20261021-205236-7a5cf0",
+    "c6_hook": {
+     "live_events": 34,
+     "seq": [
+      0,
+      33
+     ],
+     "first_t_ms": 0.4,
+     "kinds": [
+      "view"
+     ]
+    },
+    "hook_old_closed": {
+     "old_events": 34,
+     "old_last": "end"
+    }
+   }
+  },
+  {
+   "check": "R1 Finish at the confirm moment: an organ read just past 90% on its last image is not listed, Confirm; JSON/CSV exports (mid-reading and finished) match the screen, CSV == JSON, same after reload",
+   "ok": true,
+   "s": 6.22,
+   "detail": {
+    "session": "s-20261021-205236-7a5cf0",
+    "organ": "thyroid",
+    "slices": 13,
+    "steps_image_cov": [
+     [
+      12,
+      0.1349
+     ],
+     [
+      11,
+      0.2658
+     ],
+     [
+      10,
+      0.3836
+     ],
+     [
+      13,
+      0.5008
+     ],
+     [
+      9,
+      0.5985
+     ],
+     [
+      8,
+      0.6898
+     ],
+     [
+      7,
+      0.768
+     ],
+     [
+      14,
+      0.8371
+     ],
+     [
+      6,
+      0.8894
+     ],
+     [
+      15,
+      0.936
+     ]
+    ],
+    "screen_pct": "93%",
+    "listed_at_finish": [
+     "esophagus",
+     "aorta",
+     "heart",
+     "spleen",
+     "liver",
+     "inferior_vena_cava",
+     "stomach",
+     "pancreas",
+     "colon",
+     "duodenum",
+     "kidney_left",
+     "kidney_right",
+     "small_bowel",
+     "trachea",
+     "lung_left",
+     "lung_right",
+     "cervical_spine",
+     "shoulder_left",
+     "shoulder_right",
+     "ribs_left",
+     "thoracic_spine",
+     "ribs_right",
+     "sternum",
+     "lumbar_spine"
+    ],
+    "counts_on_screen": [
+     1,
+     2,
+     22
+    ],
+    "mid": {
+     "provisional": true,
+     "summary": {
+      "reviewed": 1,
+      "partial": 2,
+      "skipped": 22,
+      "organs": 25,
+      "voxel_coverage": 0.01199,
+      "attested": 0,
+      "not_applicable": 0,
+      "flagged": 0,
+      "remaining": [
+       "lung_left",
+       "lung_right",
+       "trachea",
+       "heart",
+       "aorta",
+       "inferior_vena_cava",
+       "esophagus",
+       "liver",
+       "spleen",
+       "pancreas",
+       "stomach",
+       "kidney_left",
+       "kidney_right",
+       "duodenum",
+       "small_bowel",
+       "colon",
+       "cervical_spine",
+       "thoracic_spine",
+       "lumbar_spine",
+       "ribs_left",
+       "ribs_right",
+       "sternum",
+       "shoulder_left",
+       "shoulder_right"
+      ],
+      "finished": null
+     },
+     "files": {
+      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-mid-reading-lidc-0001.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-mid-reading-lidc-0001.csv"
+     }
+    },
+    "finished": {
+     "provisional": false,
+     "summary": {
+      "reviewed": 1,
+      "partial": 2,
+      "skipped": 22,
+      "organs": 25,
+      "voxel_coverage": 0.01199,
+      "attested": 0,
+      "not_applicable": 0,
+      "flagged": 0,
+      "remaining": [
+       "lung_left",
+       "lung_right",
+       "trachea",
+       "heart",
+       "aorta",
+       "inferior_vena_cava",
+       "esophagus",
+       "liver",
+       "spleen",
+       "pancreas",
+       "stomach",
+       "kidney_left",
+       "kidney_right",
+       "duodenum",
+       "small_bowel",
+       "colon",
+       "cervical_spine",
+       "thoracic_spine",
+       "lumbar_spine",
+       "ribs_left",
+       "ribs_right",
+       "sternum",
+       "shoulder_left",
+       "shoulder_right"
+      ],
+      "finished": {
+       "t_ms": 5244.6,
+       "confirmed": true,
+       "remaining": [
+        "esophagus",
+        "aorta",
+        "heart",
+        "spleen",
+        "liver",
+        "inferior_vena_cava",
+        "stomach",
+        "pancreas",
+        "colon",
+        "duodenum",
+        "kidney_left",
+        "kidney_right",
+        "small_bowel",
+        "trachea",
+        "lung_left",
+        "lung_right",
+        "cervical_spine",
+        "shoulder_left",
+        "shoulder_right",
+        "ribs_left",
+        "thoracic_spine",
+        "ribs_right",
+        "sternum",
+        "lumbar_spine"
+       ]
+      }
+     },
+     "organ": {
+      "status": "reviewed",
+      "coverage": 0.936,
+      "seen_voxels": 7371
+     },
+     "files": {
+      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-finished-lidc-0001.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-finished-lidc-0001.csv"
+     }
+    },
+    "after_reload": {
+     "provisional": true,
+     "files": {
+      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-after-reload-lidc-0001.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-after-reload-lidc-0001.csv"
+     },
+     "restored_view": {
+      "type": "stack",
+      "idx": 14,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.191903244423867893617286976466",
+      "ww": 400,
+      "wc": 40,
+      "flipH": false,
+      "flipV": false
+     }
+    }
+   }
+  },
+  {
+   "check": "U10/R2/R3 reload resumes the case's session (seq/t continue) at its last image and window; events counter = session total; 'New reading' next to 'resumed'",
+   "ok": true,
+   "s": 3.07,
+   "detail": {
+    "session": "s-20261021-205236-7a5cf0",
+    "events_before_reload": 53,
+    "events_after": 58,
+    "continued_from": 53,
+    "new_after_quick": "s-20261021-205247-f3e92b",
+    "r2": {
+     "left": {
+      "type": "stack",
+      "idx": 18,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.570068921030053359205501367792",
+      "ww": 1500,
+      "wc": -600,
+      "flipH": false,
+      "flipV": false
+     },
+     "server_last_view": {
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.570068921030053359205501367792",
+      "k": 114,
+      "voi": {
+       "wc": -600.0,
+       "ww": 1500.0
+      },
+      "window": "lung"
+     },
+     "after_reload": {
+      "type": "stack",
+      "idx": 18,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.570068921030053359205501367792",
+      "ww": 1500,
+      "wc": -600,
+      "flipH": false,
+      "flipV": false
+     },
+     "first_view_after": {
+      "seq": 54,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.570068921030053359205501367792",
+      "voi": {
+       "wc": -600.0,
+       "ww": 1500.0
+      }
+     }
+    },
+    "r3": {
+     "counter": "55 events",
+     "session_total": 55
+    }
+   }
+  },
+  {
+   "check": "C12 two tabs on one case: one records (Web Lock), the other shows 'open in another tab' and records nothing; Record here takes over both ways; server ignored.other == 0, organs counted",
+   "ok": true,
+   "s": 10.08,
+   "detail": {
+    "session": "s-20261021-205247-f3e92b",
+    "read_in_A": "liver",
+    "read_in_B": "heart",
+    "read_in_A_again": "kidney_right",
+    "seen_voxels": {
+     "liver": 38628,
+     "heart": 14566,
+     "kidney_right": 3376
+    },
+    "ignored": {
+     "oblique": 0,
+     "unknown_image": 0,
+     "other": 0,
+     "conflict": 0
+    },
+    "events": 10,
+    "seq_gaps": [],
+    "tab_B_posts": 11,
+    "tab_B_refusal_toast": 1,
+    "banner": "This reading is open in another tab \u2014 not recording here\nRecord here"
+   }
+  },
+  {
+   "check": "C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, no duplicates",
+   "ok": true,
+   "s": 1.2,
+   "detail": {
+    "events_before": 10,
+    "events_after": 13,
+    "resyncs": 1,
+    "ignored": {
+     "oblique": 0,
+     "unknown_image": 0,
+     "other": 0,
+     "conflict": 0
+    },
+    "last_seqs": [
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ]
+   }
+  },
+  {
+   "check": "U6 radiological display kept after OHIF Reset View and viewport.resetCamera(); framing after a reset shows the same region as without the flip",
+   "ok": true,
+   "s": 5.83,
+   "detail": {
+    "default_corners": [
+     [
+      -208.038,
+      -172.052,
+      -175.0
+     ],
+     [
+      235.335,
+      -172.052,
+      -175.0
+     ],
+     [
+      235.335,
+      187.948,
+      -175.0
+     ],
+     [
+      -208.038,
+      187.948,
+      -175.0
+     ]
+    ],
+    "flips": [
+     false,
+     false
+    ],
+    "rect": [
+     128,
+     256,
+     256,
+     384
+    ],
+    "ohif_reset_view_button": {
+     "views_after_reset": 1,
+     "all_radiological": true,
+     "flips": [
+      false,
+      false
+     ]
+    },
+    "driver_reset_camera": {
+     "views_after_reset": 1,
+     "all_radiological": true,
+     "flips": [
+      false,
+      false
+     ]
+    },
+    "frame_after_reset": {
+     "radiological": [
+      [
+       13.648,
+       -82.052,
+       -175.0
+      ],
+      [
+       103.648,
+       -82.052,
+       -175.0
+      ],
+      [
+       103.648,
+       -8.975,
+       -175.0
+      ],
+      [
+       13.648,
+       -8.975,
+       -175.0
+      ]
+     ],
+     "acquisition": [
+      [
+       13.648,
+       -82.052,
+       -175.0
+      ],
+      [
+       103.648,
+       -82.052,
+       -175.0
+      ],
+      [
+       103.648,
+       -8.975,
+       -175.0
+      ],
+      [
+       13.648,
+       -8.975,
+       -175.0
+      ]
+     ],
+     "acquisition_flips": [
+      false,
+      false
+     ],
+     "same_region": true
+    }
+   }
+  },
+  {
+   "check": "U6 scoring identical with and without the radiological flip (Reset View, then the same scripted reading; 2 sessions)",
+   "ok": true,
+   "s": 23.43,
+   "detail": {
+    "images": [
+     47,
+     86
+    ],
+    "flip_needed_for_this_case": false,
+    "radiological": {
+     "session": "s-20261021-205304-99f173",
+     "radiological_corners": true,
+     "flip": [
+      false,
+      false
+     ],
+     "axial_views": 43,
+     "all_views_radiological": true
+    },
+    "acquisition": {
+     "session": "s-20261021-205316-28d58b",
+     "radiological_corners": true,
+     "flip": [
+      false,
+      false
+     ],
+     "axial_views": 43,
+     "all_views_radiological": true
+    },
+    "seen_voxels_total": 597281,
+    "organs_equal": 25
+   }
+  },
+  {
+   "check": "visibilitychange hidden -> hidden event; visible -> state re-emitted",
+   "ok": true,
+   "s": 1.03,
+   "detail": {
+    "hidden": {
+     "v": 1,
+     "session": "s-20261021-205316-28d58b",
+     "case": "lidc-0001",
+     "seq": 44,
+     "t_ms": 11275.3,
+     "kind": "hidden",
+     "viewport": "*",
+     "source": "ohif"
+    },
+    "views_after": 1
+   }
+  },
+  {
+   "check": "no page scroll at 1280x800",
+   "ok": true,
+   "s": 1.27,
+   "detail": {
+    "1280x800": {
+     "rows": 25,
+     "name_width_px": [
+      131,
+      144
+     ],
+     "hints_shown": [
+      [
+       "thyroid",
+       "never shown"
+      ],
+      [
+       "esophagus",
+       "45% unseen \u00b7 never shown"
+      ],
+      [
+       "aorta",
+       "51% unseen \u00b7 never shown"
+      ],
+      [
+       "spleen",
+       "89% unseen \u00b7 never shown"
+      ],
+      [
+       "liver",
+       "76% unseen \u00b7 never shown"
+      ],
+      [
+       "inferior_vena_cava",
+       "67% unseen \u00b7 never shown"
+      ],
+      [
+       "stomach",
+       "never shown"
+      ],
+      [
+       "pancreas",
+       "never shown"
+      ],
+      [
+       "colon",
+       "99% unseen \u00b7 never shown"
+      ],
+      [
+       "duodenum",
+       "never shown"
+      ],
+      [
+       "kidney_left",
+       "never shown"
+      ],
+      [
+       "kidney_right",
+       "never shown"
+      ],
+      [
+       "small_bowel",
+       "never shown"
+      ],
+      [
+       "trachea",
+       "88% unseen \u00b7 never shown"
+      ],
+      [
+       "lung_left",
+       "wrong window"
+      ],
+      [
+       "lung_right",
+       "wrong window"
+      ],
+      [
+       "cervical_spine",
+       "never shown"
+      ],
+      [
+       "ribs_left",
+       "never shown"
+      ],
+      [
+       "thoracic_spine",
+       "never shown"
+      ],
+      [
+       "ribs_right",
+       "never shown"
+      ],
+      [
+       "lumbar_spine",
+       "never shown"
+      ]
+     ],
+     "hints_cut": [],
+     "two_line_names": [
+      [
+       "shoulder_left",
+       true,
+       0
+      ],
+      [
+       "shoulder_right",
+       true,
+       0
+      ],
+      [
+       "sternum",
+       true,
+       0
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "check": "MPR volume viewports are instrumented (vp_type volume, 3 normals)",
+   "ok": true,
+   "s": 6.01,
+   "detail": {
+    "volume_views": 8,
+    "normals": [
+     [
+      0,
+      -1,
+      0
+     ],
+     [
+      0,
+      0,
+      -1
+     ],
+     [
+      1,
+      0,
+      0
+     ]
+    ],
+    "viewports": [
+     "mpr-axial",
+     "mpr-coronal",
+     "mpr-sagittal"
+    ],
+    "hidden_on_disable": 1,
+    "example": {
+     "v": 1,
+     "session": "s-20261021-205316-28d58b",
+     "case": "lidc-0001",
+     "seq": 50,
+     "t_ms": 13636.5,
+     "kind": "view",
+     "viewport": "mpr-axial",
+     "vp_type": "volume",
+     "series": "1.3.6.1.4.1.14519.5.2.1.6279.6001.179049373636438705059720603192",
+     "sop": null,
+     "corners_lps": [
+      [
+       -166.352,
+       -431.356,
+       -175.0
+      ],
+      [
+       193.648,
+       -431.356,
+       -175.0
+      ],
+      [
+       193.648,
+       447.253,
+       -175.0
+      ],
+      [
+       -166.352,
+       447.253,
+       -175.0
+      ]
+     ],
+     "normal": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "voi": {
+      "wc": 40.0,
+      "ww": 80.0
+     },
+     "canvas_px": [
+      345,
+      842
+     ],
+     "source": "ohif"
+    }
+   }
+  },
+  {
+   "check": "U15/R2 case picker: lists cases, opens the other, returning resumes this case's reading at its last image and window",
+   "ok": true,
+   "s": 1.97,
+   "detail": {
+    "cases": [
+     "lidc-0001",
+     "pancreas-0051"
+    ],
+    "went_to": "pancreas-0051",
+    "other_session": "s-20261021-205337-934c6e",
+    "resumed": "s-20261021-205316-28d58b",
+    "r2": {
+     "left": {
+      "type": "stack",
+      "idx": 88,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.201239728533350762649445834208",
+      "ww": 2500,
+      "wc": 480,
+      "flipH": false,
+      "flipV": false
+     },
+     "back": {
+      "type": "stack",
+      "idx": 88,
+      "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.201239728533350762649445834208",
+      "ww": 2500,
+      "wc": 480,
+      "flipH": false,
+      "flipV": false
+     }
+    }
+   }
+  },
+  {
+   "check": "no page scroll after every interaction (1280x800, 1440x900)",
+   "ok": true,
+   "s": 3.14,
+   "detail": {
+    "1280x800 after all interactions": {
+     "inner": [
+      1280,
+      800
+     ],
+     "doc": [
+      1280,
+      800
+     ],
+     "body": [
+      1280,
+      796
+     ],
+     "scrollY_after_scrollTo": 0,
+     "panel": [
+      360,
+      705,
+      705,
+      360,
+      0
+     ],
+     "header": [
+      [
+       348,
+       348
+      ],
+      [
+       348,
+       348
+      ]
+     ],
+     "note_bottom": 791.984375,
+     "list": [
+      294,
+      698
+     ],
+     "offenders": [
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 439,
+       "bottom": 819,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 819,
+       "bottom": 913,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 913,
+       "bottom": 1137,
+       "parent": "cm-list"
+      }
+     ]
+    },
+    "1280x800 names after all interactions": {
+     "rows": 25,
+     "name_width_px": [
+      131,
+      144
+     ],
+     "hints_shown": [
+      [
+       "thyroid",
+       "never shown"
+      ],
+      [
+       "esophagus",
+       "45% unseen \u00b7 never shown"
+      ],
+      [
+       "aorta",
+       "51% unseen \u00b7 never shown"
+      ],
+      [
+       "spleen",
+       "89% unseen \u00b7 never shown"
+      ],
+      [
+       "liver",
+       "76% unseen \u00b7 never shown"
+      ],
+      [
+       "inferior_vena_cava",
+       "67% unseen \u00b7 never shown"
+      ],
+      [
+       "stomach",
+       "never shown"
+      ],
+      [
+       "pancreas",
+       "never shown"
+      ],
+      [
+       "colon",
+       "99% unseen \u00b7 never shown"
+      ],
+      [
+       "duodenum",
+       "never shown"
+      ],
+      [
+       "kidney_left",
+       "never shown"
+      ],
+      [
+       "kidney_right",
+       "never shown"
+      ],
+      [
+       "small_bowel",
+       "never shown"
+      ],
+      [
+       "trachea",
+       "88% unseen \u00b7 never shown"
+      ],
+      [
+       "lung_left",
+       "wrong window"
+      ],
+      [
+       "lung_right",
+       "wrong window"
+      ],
+      [
+       "cervical_spine",
+       "never shown"
+      ],
+      [
+       "ribs_left",
+       "98% unseen \u00b7 never shown"
+      ],
+      [
+       "thoracic_spine",
+       "97% unseen \u00b7 never shown"
+      ],
+      [
+       "ribs_right",
+       "98% unseen \u00b7 never shown"
+      ],
+      [
+       "lumbar_spine",
+       "never shown"
+      ]
+     ],
+     "hints_cut": [],
+     "two_line_names": [
+      [
+       "shoulder_left",
+       true,
+       0
+      ],
+      [
+       "shoulder_right",
+       true,
+       0
+      ],
+      [
+       "sternum",
+       true,
+       0
+      ]
+     ]
+    },
+    "1440x900 after all interactions": {
+     "inner": [
+      1440,
+      900
+     ],
+     "doc": [
+      1440,
+      900
+     ],
+     "body": [
+      1440,
+      896
+     ],
+     "scrollY_after_scrollTo": 0,
+     "panel": [
+      360,
+      804,
+      804,
+      360,
+      0
+     ],
+     "header": [
+      [
+       348,
+       348
+      ],
+      [
+       348,
+       348
+      ]
+     ],
+     "note_bottom": 891.984375,
+     "list": [
+      361,
+      698
+     ],
+     "offenders": [
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 852,
+       "bottom": 946,
+       "parent": "cm-list"
+      },
+      {
+       "tag": "DIV",
+       "cls": "",
+       "id": "",
+       "top": 946,
+       "bottom": 1170,
+       "parent": "cm-list"
+      }
+     ]
+    },
+    "1440x900 names after all interactions": {
+     "rows": 25,
+     "name_width_px": [
+      131,
+      144
+     ],
+     "hints_shown": [
+      [
+       "thyroid",
+       "never shown"
+      ],
+      [
+       "esophagus",
+       "45% unseen \u00b7 never shown"
+      ],
+      [
+       "aorta",
+       "51% unseen \u00b7 never shown"
+      ],
+      [
+       "spleen",
+       "89% unseen \u00b7 never shown"
+      ],
+      [
+       "liver",
+       "76% unseen \u00b7 never shown"
+      ],
+      [
+       "inferior_vena_cava",
+       "67% unseen \u00b7 never shown"
+      ],
+      [
+       "stomach",
+       "never shown"
+      ],
+      [
+       "pancreas",
+       "never shown"
+      ],
+      [
+       "colon",
+       "99% unseen \u00b7 never shown"
+      ],
+      [
+       "duodenum",
+       "never shown"
+      ],
+      [
+       "kidney_left",
+       "never shown"
+      ],
+      [
+       "kidney_right",
+       "never shown"
+      ],
+      [
+       "small_bowel",
+       "never shown"
+      ],
+      [
+       "trachea",
+       "88% unseen \u00b7 never shown"
+      ],
+      [
+       "lung_left",
+       "wrong window"
+      ],
+      [
+       "lung_right",
+       "wrong window"
+      ],
+      [
+       "cervical_spine",
+       "never shown"
+      ],
+      [
+       "ribs_left",
+       "98% unseen \u00b7 never shown"
+      ],
+      [
+       "thoracic_spine",
+       "97% unseen \u00b7 never shown"
+      ],
+      [
+       "ribs_right",
+       "98% unseen \u00b7 never shown"
+      ],
+      [
+       "lumbar_spine",
+       "never shown"
+      ]
+     ],
+     "hints_cut": [],
+     "two_line_names": [
+      [
+       "shoulder_left",
+       true,
+       0
+      ],
+      [
+       "shoulder_right",
+       true,
+       0
+      ],
+      [
+       "sternum",
+       true,
+       0
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "check": "stock /viewer mode unchanged (no panel, no instrumentation, stock hotkeys)",
+   "ok": true,
+   "s": 3.04,
+   "detail": {
+    "covmap_panel": 0,
+    "window.__covmap": "undefined",
+    "covmap_hotkeys": 0,
+    "covmap_mode_class": false
+   }
+  },
+  {
+   "check": "/ opens the demo case in coverage mode",
+   "ok": true,
+   "s": 0.35,
+   "detail": {
+    "landed": "http://127.0.0.1:8765/coverage?StudyInstanceUIDs=1.2.826.0.1.3680043.2.1125.1.26661117508834397948676763221432807"
+   }
+  }
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+   "check": "C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, no duplicates",
+   "at": {
+    "url": "http://127.0.0.1:8765/api/sessions/s-20261021-205247-f3e92b/events",
+    "line": 0,
+    "column": 0,
+    "lineNumber": 0,
+    "columnNumber": 0
+   }
+  },
+  {
+   "type": "error",
+   "text": "Unable to preventDefault inside passive event listener invocation.",
+   "check": "MPR volume viewports are instrumented (vp_type volume, 3 normals)",
+   "at": {
+    "url": "http://127.0.0.1:8765/app.bundle.1c95b5f4fc236d86.js",
+    "line": 24,
+    "column": 0,
+    "lineNumber": 24,
+    "columnNumber": 0
+   }
+  }
+ ],
+ "console_warnings": {
+  "covmap: seq conflict (409); continuing after the server's last event: 1 events renumbered from seq 10": 1
+ },
+ "event_posts": 510,
+ "screenshots": [
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-01-initial-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r6-first-use-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u06-radiological.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-02-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-03-panel-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-04-map-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u07-window-hint.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r4-names-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r4-names-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-05-map-hover.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-06-after-map-click.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u01-u02-row-detail.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r5-numbering.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u09-flag-note-focus.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-07-row-actions.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-right.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-left.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-front.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-dragged.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u03-map-hide-reviewed.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u13-map-na-legend.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-08-outline.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-08b-outline-full.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-09-finish-dialog.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-10-finished-summary.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-c13-after-go-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-11-rules-applied.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-12-replay-start.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-13-replay-mid.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-replay-last-frame.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-replay-rules-disabled.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-14a-sample-list.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u10-confirm.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-14-sample-loaded.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-a-read-past-90.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-b-finish-dialog.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-c-after-confirm.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r1-d-after-reload.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r2-r3-resumed-last-view.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u10-resumed.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-c12-tabB-not-recording.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-c12-tabA-after-takeover.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u06-after-reset-view.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-15-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-16-mpr.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u15-case-list.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-u15-other-case.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-r2-case-switch-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-18-final-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r2-fixes/lidc-0001/c-17-stock-viewer.png"
+ ]
+}

@@ -22,6 +22,8 @@ if [[ $what == venv || $what == all ]]; then
   log "installing python requirements"
   VIRTUAL_ENV="$MINI_WORK/venv" uv pip install -r "$(dirname "$0")/../requirements-mini.txt"
   venv/bin/python -c "import totalsegmentator, torch, pydicom, nibabel, aiohttp; print('torch', torch.__version__, 'mps', torch.backends.mps.is_available())"
+  log "installing the Playwright Chromium (render, e2e, benches)"
+  venv/bin/python -m playwright install chromium
 fi
 
 if [[ $what == node || $what == all ]]; then
