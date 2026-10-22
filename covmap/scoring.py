@@ -15,6 +15,11 @@ reason of short_dwell (QUAL), wrong_window (NONQUAL), out_of_region (PLANE),
 never_displayed. Open states are credited provisionally up to ``now_ms`` on temporary
 copies of the touched voxels only. Voxel centres are at integer indices; a voxel is
 inside the visible region when its centre is (inclusive edges).
+
+Per-organ outputs come from ``table``: counts of voxels per organ and per voxel state
+``flags | seen << 3`` (16 states). It is built by one full pass at the first coverage
+call and then kept up to date by per-plane deltas, so a live POST costs work
+proportional to the planes it touches, not to the size of the volume.
 """
 
 from __future__ import annotations
@@ -38,6 +43,11 @@ REASONS = ("short_dwell", "wrong_window", "out_of_region", "never_displayed")
 QUAL, NONQUAL, PLANE = 1, 2, 4
 # flags -> reason code 1..4 (index into REASONS + 1); 0 is reserved for "seen"
 _REASON_CODE = np.array([4, 1, 2, 1, 3, 1, 2, 1], np.uint8)
+SEEN = 8  # state bit next to the flags: qdwell >= min_dwell_ms
+N_STATES = 16
+# state -> reason-code column (0 seen, 1..4 REASONS), as a 16 x 5 one-hot matrix
+_STATE_TO_CODE = np.zeros((N_STATES, 5), np.int64)
+_STATE_TO_CODE[np.arange(N_STATES), np.concatenate([_REASON_CODE, np.zeros(8, np.uint8)])] = 1
 OBLIQUE_COS = math.cos(math.radians(5.0))
 EPS = 1e-4  # voxel units: tolerance for corners landing exactly on a voxel centre
 
@@ -74,23 +84,33 @@ class Plane:
     cls: str
 
 
-def _region(u: np.ndarray, v: np.ndarray, nu: int, nv: int) -> tuple:
+def _region(u, v, nu: int, nv: int) -> tuple:
     """Visible region from the 4 corners' in-plane coords: ("all",), ("none",),
-    ("box", u0, u1, v0, v1) inclusive voxel bounds, or ("quad", u0, v0, ..., u3, v3)."""
-    eu, ev = np.roll(u, -1) - u, np.roll(v, -1) - v
-    aligned = bool(np.all(np.minimum(abs(eu), abs(ev)) <= 1e-3 * np.hypot(eu, ev) + 1e-6))
-    lo_u, hi_u = max(0, math.ceil(u.min() - EPS)), min(nu - 1, math.floor(u.max() + EPS))
-    lo_v, hi_v = max(0, math.ceil(v.min() - EPS)), min(nv - 1, math.floor(v.max() + EPS))
+    ("box", u0, u1, v0, v1) inclusive voxel bounds, or ("quad", u0, v0, ..., u3, v3).
+    Plain float arithmetic on the 4 corners (per-event numpy calls on 4-element arrays
+    cost ~8x more), in the same IEEE operation order as the array formulation."""
+    us = [float(x) for x in u]
+    vs = [float(x) for x in v]
+    aligned = True
+    for i in range(4):
+        eu, ev = us[(i + 1) % 4] - us[i], vs[(i + 1) % 4] - vs[i]
+        if not min(abs(eu), abs(ev)) <= 1e-3 * float(np.hypot(eu, ev)) + 1e-6:
+            aligned = False
+            break
+    lo_u, hi_u = max(0, math.ceil(min(us) - EPS)), min(nu - 1, math.floor(max(us) + EPS))
+    lo_v, hi_v = max(0, math.ceil(min(vs) - EPS)), min(nv - 1, math.floor(max(vs) + EPS))
     if lo_u > hi_u or lo_v > hi_v:
         return ("none",)
     if aligned:
         if lo_u == 0 and lo_v == 0 and hi_u == nu - 1 and hi_v == nv - 1:
             return ("all",)
         return ("box", lo_u, hi_u, lo_v, hi_v)
-    area = 0.5 * float(np.sum(u * np.roll(v, -1) - np.roll(u, -1) * v))
-    if abs(area) < 1e-6:
+    area = 0.0
+    for i in range(4):  # shoelace, summed in index order
+        area += us[i] * vs[(i + 1) % 4] - us[(i + 1) % 4] * vs[i]
+    if abs(0.5 * area) < 1e-6:
         return ("none",)
-    return ("quad",) + tuple(round(float(x), 6) for p in zip(u, v) for x in p)
+    return ("quad",) + tuple(round(x, 6) for p in zip(us, vs) for x in p)
 
 
 def _inside(region: tuple, u: np.ndarray, v: np.ndarray) -> np.ndarray | None:
@@ -115,14 +135,16 @@ def _inside(region: tuple, u: np.ndarray, v: np.ndarray) -> np.ndarray | None:
     return mask
 
 
-def resolve_view(case: Case, ev: dict) -> Plane | str:
+def resolve_view(case: Case, ev: dict, pts: np.ndarray | None = None) -> Plane | str:
     """Plane of a validated ``view`` event, or the ignore reason
-    (``oblique`` / ``unknown_image`` / ``other``)."""
+    (``oblique`` / ``unknown_image`` / ``other``). ``pts``: the corners already mapped to
+    continuous voxel (k, r, c) (Scorer.add maps a whole batch with one solve)."""
     series = ev.get("series")
     if series is not None and case.series_uid and series != case.series_uid:
         return "unknown_image"
     world = np.asarray(ev["corners_lps"], float)
-    pts = case.geom.world_to_voxel(world)
+    if pts is None:
+        pts = case.geom.world_to_voxel(world)
     if ev["vp_type"] == "stack":
         k = case.sop_index.get(ev.get("sop"))
         if k is None:
@@ -162,9 +184,12 @@ class Scorer:
         n_org = len(c.organs)
         self.qdwell = np.zeros(c.n_vox, np.float32)
         self.flags = np.zeros(c.n_vox, np.uint8)
-        self.seen_counts = np.zeros(n_org, np.int64)
-        self._qual = {cls: np.array([cls in o["windows"] for o in c.organs] + [False], bool)
+        self.table: np.ndarray | None = None  # (n_org, 16) voxel counts per state, see module doc
+        self._flushed = False  # states were applied while there was no table
+        self._qual = {cls: np.array([cls in o["windows"] for o in c.organs], bool)
                       for cls in CLASSES + (OTHER,)}
+        # per-organ flag bits a state of class cls sets on its in-region voxels
+        self._bits = {cls: np.where(q, QUAL, NONQUAL).astype(np.uint8) for cls, q in self._qual.items()}
         self.segmenter = Segmenter()
         self.pending: dict[Plane, float] = {}
         self.baseline = PerImageBaseline(c.shape[0])
@@ -186,11 +211,18 @@ class Scorer:
         if foreign:
             raise EventError(f"events for case {sorted(foreign)} sent to a session of case "
                              f"{self.case.case_id!r}")
-        for ev in sort_events(evs):
-            self.feed(ev)
+        evs = sort_events(evs)
+        # all view corners -> voxel coords with one solve (same LAPACK result per column)
+        views = [i for i, e in enumerate(evs) if e["kind"] == "view"]
+        pts = {}
+        if views:
+            world = np.asarray([evs[i]["corners_lps"] for i in views], float)
+            pts = dict(zip(views, self.case.geom.world_to_voxel(world)))
+        for i, ev in enumerate(evs):
+            self.feed(ev, pts.get(i))
         return self.coverage(now_ms, _t0=t0)
 
-    def feed(self, ev: dict) -> None:
+    def feed(self, ev: dict, _pts: np.ndarray | None = None) -> None:
         """Apply one validated event (callers keep (t_ms, seq) order)."""
         self.n_total += 1
         if ev["seq"] in self.seqs:  # resent event
@@ -207,7 +239,7 @@ class Scorer:
         payload = None
         if kind == "view":
             self.n_views += 1
-            plane = resolve_view(self.case, ev)
+            plane = resolve_view(self.case, ev, _pts)
             if isinstance(plane, str):
                 self.ignored[plane] += 1
             else:
@@ -241,90 +273,161 @@ class Scorer:
             r["note"] = note
 
     # ---- accumulation -------------------------------------------------------------
-    def _masks(self, plane: Plane):
-        """(sel, qualifying-in-region mask, non-qualifying-in-region mask) over the plane's
-        voxels; for boxes ``sel`` is narrowed to the box's u-range (u is sorted per plane)."""
-        sel, u, v = self.case.plane(plane.axis, plane.index)
+    def _apply(self, plane: Plane, dwell: float, oi, u, v, f, q) -> None:
+        """Credit one state to a plane's local arrays (oi organ ordinals as intp, u/v
+        in-plane coords, f flags, q qdwell; f and q are modified in place). Boxes only
+        touch the u-range of the box (u is sorted within a plane). Per-organ lookups
+        instead of boolean scatter: out-of-region / non-qualifying voxels get bit 0 and
+        +0.0 ms, which leaves them exactly unchanged."""
         region = plane.region
+        if region[0] == "none":
+            return
         if region[0] == "box":
             _, u0, u1, v0, v1 = region
-            lo, hi = int(np.searchsorted(u, u0, "left")), int(np.searchsorted(u, u1, "right"))
-            sel = slice(sel.start + lo, sel.start + hi) if isinstance(sel, slice) else sel[lo:hi]
-            v = v[lo:hi]
-            inside = (v >= v0) & (v <= v1)
+            # keys in u's dtype: a Python int key makes numpy cast the whole plane to int64
+            t = u.dtype.type
+            lo, hi = int(u.searchsorted(t(u0), "left")), int(u.searchsorted(t(u1), "right"))
+            if lo == hi:
+                return
+            oi, f, q, vv = oi[lo:hi], f[lo:hi], q[lo:hi], v[lo:hi]
+            inside = (vv >= v0) & (vv <= v1)
         else:
             inside = _inside(region, u, v)
-        qual = self._qual[plane.cls][self.case.vord[sel]]
-        if inside is None:
-            return sel, qual, ~qual
-        return sel, inside & qual, inside & ~qual
+        bits = self._bits[plane.cls][oi]
+        if inside is not None:
+            bits *= inside
+        f |= bits
+        if dwell > 0:
+            add = np.where(self._qual[plane.cls], np.float32(dwell), np.float32(0))[oi]
+            if inside is not None:
+                add *= inside
+            q += add
+
+    def _state(self, f, q) -> np.ndarray:
+        return f | ((q >= self.params["min_dwell_ms"]).view(np.uint8) << 3)
+
+    def _delta(self, oi, s_old, s_new) -> np.ndarray | None:
+        """(n_org, 16) change of the state table when voxels of organs ``oi`` go s_old -> s_new."""
+        ch = s_old != s_new
+        if not ch.any():
+            return None
+        n = len(self.case.organs) * N_STATES
+        oc = oi[ch] * N_STATES
+        return (np.bincount(oc + s_new[ch], minlength=n) - np.bincount(oc + s_old[ch], minlength=n)
+                ).reshape(-1, N_STATES)
+
+    def _group(self, states) -> dict:
+        groups: dict[tuple[int, int], list] = {}
+        for plane, dwell in states:
+            groups.setdefault((plane.axis, plane.index), []).append((plane, dwell))
+        return groups
 
     def _flush(self) -> None:
-        min_d = self.params["min_dwell_ms"]
-        vord = self.case.vord
-        for axis, index in {(p.axis, p.index) for p in self.pending}:
-            self.flags[self.case.plane(axis, index)[0]] |= PLANE
-        for plane, dwell in self.pending.items():
-            sel, mq, mn = self._masks(plane)
-            if mq.size == 0:
-                continue
-            f = self.flags[sel]  # view (axial) or copy (coronal/sagittal)
-            f[mn] |= NONQUAL
-            f[mq] |= QUAL
-            if not isinstance(sel, slice):
-                self.flags[sel] = f
-            if dwell > 0 and mq.any():
-                q = self.qdwell[sel]
-                before = q[mq]
-                after = before + np.float32(dwell)
-                q[mq] = after
-                if not isinstance(sel, slice):
-                    self.qdwell[sel] = q
-                newly = (before < min_d) & (after >= min_d)
-                if newly.any():
-                    self.seen_counts += np.bincount(vord[sel][mq][newly], minlength=self.seen_counts.size)
+        """Apply the closed states, plane by plane (all states of a plane in one go),
+        keeping the state table up to date when there is one."""
+        if not self.pending:
+            return
+        c = self.case
+        groups = self._group(self.pending.items())
         self.pending.clear()
+        track = self.table is not None
+        self._flushed |= not track
+        for (axis, index), states in groups.items():
+            sel, u, v = c.plane(axis, index)
+            if u.size == 0:
+                continue
+            oi = c.vord[sel].astype(np.intp)
+            f, q = self.flags[sel], self.qdwell[sel]  # views (axial) or copies
+            s_old = self._state(f, q) if track else None
+            f |= PLANE
+            for plane, dwell in states:
+                self._apply(plane, dwell, oi, u, v, f, q)
+            if not isinstance(sel, slice):
+                self.flags[sel], self.qdwell[sel] = f, q
+            if track and (d := self._delta(oi, s_old, self._state(f, q))) is not None:
+                self.table += d
 
-    def _provisional(self, now_ms: float):
-        """Open states credited to ``now_ms`` on copies: (union idx, qdwell, flags) or None."""
+    # replay heuristic: with many pending planes and no table yet, one chunked pass over all
+    # voxels after the flush is cheaper than per-plane deltas
+    FULL_PASS_MIN_PLANES = 64
+
+    def _current_table(self) -> np.ndarray:
+        """Flush, then the committed state table (built on first use)."""
+        if self.table is None and not self._flushed and \
+                len({(p.axis, p.index) for p in self.pending}) < self.FULL_PASS_MIN_PLANES:
+            n = len(self.case.organs)  # nothing applied yet: every voxel is in state 0
+            self.table = np.zeros((n, N_STATES), np.int64)
+            self.table[:, 0] = self.case.organ_voxels
+        self._flush()
+        if self.table is None:
+            self.table = self._full_table()
+        return self.table
+
+    @property
+    def seen_counts(self) -> np.ndarray:
+        """Committed seen voxels per organ."""
+        return self._current_table()[:, SEEN:].sum(axis=1)
+
+    def _full_table(self) -> np.ndarray:
+        """State table by one pass over all voxels, in cache-sized chunks."""
+        n = len(self.case.organs) * N_STATES
+        out = np.zeros(n, np.int64)
+        vord, step = self.case.vord, 1 << 18
+        for a in range(0, vord.size, step):
+            b = a + step
+            key = vord[a:b].astype(np.intp) * N_STATES + self._state(self.flags[a:b], self.qdwell[a:b])
+            out += np.bincount(key, minlength=n)
+        return out.reshape(-1, N_STATES)
+
+    def _provisional(self, now_ms: float) -> np.ndarray | None:
+        """(n_org, 16) table change from crediting the open states up to ``now_ms``
+        (computed on copies; nothing is modified), or None."""
         open_states = [(iv.payload, iv.dwell_ms) for iv in self.segmenter.provisional(now_ms)
                        if iv.payload is not None]
         if not open_states:
             return None
-
+        c = self.case
+        groups = self._group(open_states)
+        if len({axis for axis, _ in groups}) == 1:  # planes of one axis are disjoint
+            total = None
+            for (axis, index), states in groups.items():
+                sel, u, v = c.plane(axis, index)
+                oi = c.vord[sel].astype(np.intp)
+                f0, q0 = self.flags[sel], self.qdwell[sel]
+                f, q = f0 | PLANE, q0.copy()
+                for plane, dwell in states:
+                    self._apply(plane, dwell, oi, u, v, f, q)
+                d = self._delta(oi, self._state(f0, q0), self._state(f, q))
+                if d is not None:
+                    total = d if total is None else total + d
+            return total
+        # planes of different axes intersect: work on the union of their voxels
         def gidx(sel):
             return np.arange(sel.start, sel.stop) if isinstance(sel, slice) else sel
 
-        parts = []
-        for plane, dwell in open_states:
-            sel, mq, mn = self._masks(plane)
-            parts.append((gidx(self.case.plane(plane.axis, plane.index)[0]), gidx(sel), mq, mn, dwell))
-        union = np.unique(np.concatenate([p[0] for p in parts]))
-        q, f = self.qdwell[union].copy(), self.flags[union].copy()
-        for whole, sub, mq, mn, dwell in parts:
-            f[np.searchsorted(union, whole)] |= PLANE
-            pos = np.searchsorted(union, sub)
-            f[pos[mn]] |= NONQUAL
-            f[pos[mq]] |= QUAL
-            q[pos[mq]] += np.float32(dwell)
-        return union, q, f
+        planes = {key: c.plane(*key) for key in groups}
+        union = np.unique(np.concatenate([gidx(p[0]) for p in planes.values()]))
+        f0, q0 = self.flags[union], self.qdwell[union]
+        f, q = f0 | PLANE, q0.copy()
+        for key, states in groups.items():
+            sel, u, v = planes[key]
+            pos = np.searchsorted(union, gidx(sel))
+            oi = c.vord[sel].astype(np.intp)
+            fl, ql = f[pos], q[pos]
+            for plane, dwell in states:
+                self._apply(plane, dwell, oi, u, v, fl, ql)
+            f[pos], q[pos] = fl, ql
+        return self._delta(c.vord[union].astype(np.intp), self._state(f0, q0), self._state(f, q))
 
     # ---- outputs ------------------------------------------------------------------
     def coverage(self, now_ms: float | None = None, *, _t0: float | None = None) -> dict:
         """Coverage JSON (SPEC); committed unless ``now_ms`` is given."""
         t0 = time.perf_counter() if _t0 is None else _t0
-        self._flush()
-        c, min_d = self.case, self.params["min_dwell_ms"]
-        codes = _REASON_CODE[self.flags]
-        codes[self.qdwell >= min_d] = 0
-        prov = self._provisional(now_ms) if now_ms is not None else None
-        if prov is not None:
-            union, q, f = prov
-            pc = _REASON_CODE[f]
-            pc[q >= min_d] = 0
-            codes[union] = pc
-        n_org = len(c.organs)
-        table = np.bincount(c.vord.astype(np.int64) * 5 + codes, minlength=n_org * 5).reshape(n_org, 5)
+        c = self.case
+        states = self._current_table()
+        if now_ms is not None and (d := self._provisional(now_ms)) is not None:
+            states = states + d
+        table = states @ _STATE_TO_CODE  # (n_org, 5): seen, then REASONS
         organs = []
         for i, o in enumerate(c.organs):
             nv = int(c.organ_voxels[i])
@@ -367,13 +470,9 @@ class Scorer:
 
     def snapshot(self, now_ms: float | None = None) -> dict:
         """Cheap status snapshot (no unseen reasons) from the incremental seen counts."""
-        self._flush()
-        seen = self.seen_counts.copy()
-        if now_ms is not None and (prov := self._provisional(now_ms)) is not None:
-            union, q, _ = prov
-            min_d = self.params["min_dwell_ms"]
-            newly = (q >= min_d) & (self.qdwell[union] < min_d)
-            seen += np.bincount(self.case.vord[union[newly]], minlength=seen.size)
+        seen = self.seen_counts
+        if now_ms is not None and (d := self._provisional(now_ms)) is not None:
+            seen += d[:, SEEN:].sum(axis=1)
         nv = self.case.organ_voxels
         cov = np.divide(seen, nv, out=np.zeros(seen.size), where=nv > 0)
         statuses = [status_of(x, self.params) for x in cov]

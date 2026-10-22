@@ -468,3 +468,152 @@ def test_seen_counts_match_full_recount(case, vol):
         mask = case.labels == o["id"]
         q = sum(dwell[w] for w in o["windows"])
         assert o["seen_voxels"] == int(np.count_nonzero(q[mask] >= 80)), o["key"]
+
+
+def _random_mixed_events(case, vol, n, seed):
+    """Random axial stack views (panned/zoomed) on viewport "a" and coronal/sagittal volume
+    views (partial boxes) on viewport "b", with hidden events, at irregular times."""
+    rng = np.random.default_rng(seed)
+    K, R, C = case.shape
+    evs, t = [], 0.0
+    for i in range(n):
+        w = ["soft", "lung", "bone", "brain"][int(rng.integers(4))]
+        roll = rng.random()
+        if roll < 0.55:
+            k, side = int(rng.integers(K)), int(rng.integers(8, R))
+            r0, c0 = int(rng.integers(-10, R - 4)), int(rng.integers(-10, C - 4))
+            evs.append(stack_view(vol, k, t, i, w, rect=(r0, r0 + side, c0, c0 + side), viewport="a"))
+        elif roll < 0.9:
+            k0, k1 = sorted(rng.uniform(-0.5, K - 0.5, 2))
+            a0, a1 = sorted(rng.uniform(-0.5, C - 0.5, 2))
+            if rng.random() < 0.5:  # coronal r = const
+                r = int(rng.integers(R))
+                corners = [(k0, r, a0), (k0, r, a1), (k1, r, a1), (k1, r, a0)]
+            else:  # sagittal c = const
+                c = int(rng.integers(C))
+                corners = [(k0, a0, c), (k0, a1, c), (k1, a1, c), (k1, a0, c)]
+            evs.append(view_krc(vol, corners, t, i, w, viewport="b"))
+        else:
+            evs.append(hidden(vol, t, i, viewport="ab"[int(rng.integers(2))]))
+        t += float(rng.integers(5, 120))
+    return evs, t
+
+
+@pytest.mark.parametrize("seed", [1, 2])
+def test_incremental_table_equals_recount_and_provisional_equals_closing(case, vol, seed):
+    """Live path: after every batch the incrementally kept state table equals a full
+    recount, and the provisional coverage at now equals committing the open states at now."""
+    evs, t_end = _random_mixed_events(case, vol, 240, seed)
+    sc = Scorer(case)
+    for i in range(0, len(evs), 6):
+        batch = evs[i:i + 6]
+        now = batch[-1]["t_ms"] + 37.0
+        prov = sc.add(batch, now_ms=now)
+        assert np.array_equal(sc.table, sc._full_table()), i
+        if i % 30 == 0:
+            closed = Scorer(case).add(evs[:i + 6] + [end(vol, now, 10_000)])
+            assert [(o["key"], o["seen_voxels"], o["unseen"]) for o in prov["organs"]] == \
+                [(o["key"], o["seen_voxels"], o["unseen"]) for o in closed["organs"]], i
+            snap = sc.snapshot(now)
+            assert snap["statuses"] == {o["key"]: o["status"] for o in prov["organs"]}
+    final = sc.add([end(vol, t_end, 10_001)])
+    one = Scorer(case).add(evs + [end(vol, t_end, 10_001)])
+    assert final["organs"] == one["organs"]
+    assert sc.seen_counts.tolist() == [o["seen_voxels"] for o in final["organs"]]
+
+
+@pytest.mark.parametrize("shape", [(9, 64, 32), (7, 50, 44)])
+def test_case_voxel_index_matches_nonzero(tmp_path, shape):
+    from covmap.casedata import Case
+
+    d = build_case(tmp_path, f"idx-{shape[1]}", shape=shape)
+    lab = np.load(d / "seg" / "labels.npy")
+    lab[0, :3, :3] = 200  # a label that is not in the organ catalog: ignored
+    np.save(d / "seg" / "labels.npy", lab)
+    c = Case(d)
+    ids = [o["id"] for o in c.organs]
+    kk, rr, cc = np.nonzero(np.isin(lab, ids))
+    assert np.array_equal(c.vk, kk) and np.array_equal(c.vr, rr) and np.array_equal(c.vc, cc)
+    assert np.array_equal(c.organ_ids[c.vord], lab[kk, rr, cc])
+    assert c.organ_voxels.tolist() == [int(np.count_nonzero(lab == i)) for i in ids]
+    assert c.organ_slice_counts.tolist() == [[int(np.count_nonzero(lab[k] == i)) for k in range(shape[0])] for i in ids]
+    for k in (0, shape[0] // 2):
+        sel, u, v = c.plane(0, k)
+        assert np.array_equal(u, rr[kk == k]) and np.array_equal(v, cc[kk == k])
+    # coronal / sagittal planes: every voxel of the plane, in (k, c) / (k, r) order
+    flat_ids = np.arange(kk.size)
+    for axis, coord, uu, vv in ((1, rr, kk, cc), (2, cc, kk, rr)):
+        for i in range(shape[axis]):
+            sel, u, v = c.plane(axis, i)
+            m = coord == i
+            assert np.array_equal(sel, flat_ids[m]), (axis, i)
+            assert np.array_equal(u, uu[m]) and np.array_equal(v, vv[m]), (axis, i)
+
+
+def test_index_disk_cache(tmp_path, monkeypatch):
+    import os
+
+    from covmap.casedata import INDEX_FILE, Case
+
+    d = build_case(tmp_path, "cache-1", shape=(9, 64, 32))
+    first = Case(d)
+    assert first.index_source == "built" and (d / INDEX_FILE).is_file()
+    hit = Case(d)
+    assert hit.index_source == "cache"
+    for name in ("vord", "vr", "vc", "organ_slice_counts", "organ_voxels"):
+        assert np.array_equal(getattr(hit, name), getattr(first, name)), name
+    assert np.array_equal(hit._offsets[0], first._offsets[0])
+    assert np.array_equal(hit.plane(1, 20)[0], first.plane(1, 20)[0])
+    # labels rewritten -> stale key -> rebuilt from the new labels
+    lab = np.load(d / "seg" / "labels.npy")
+    lab[4] = 0
+    np.save(d / "seg" / "labels.npy", lab)
+    fresh = Case(d)
+    assert fresh.index_source == "built" and fresh.organ_slice_counts[:, 4].sum() == 0
+    assert Case(d).index_source == "cache"
+    # a different organ catalog (ids / order) -> rebuilt
+    org = json.loads((d / "seg" / "organs.json").read_text())
+    org["organs"] = org["organs"][::-1]
+    (d / "seg" / "organs.json").write_text(json.dumps(org))
+    rev = Case(d)
+    assert rev.index_source == "built" and rev.organ_keys == [o["key"] for o in org["organs"]]
+    assert rev.organ_voxels.tolist() == fresh.organ_voxels[::-1].tolist()
+    # corrupt cache file -> rebuilt and rewritten
+    (d / INDEX_FILE).write_bytes(b"not a zip")
+    assert Case(d).index_source == "built" and Case(d).index_source == "cache"
+    # disabled
+    monkeypatch.setenv("COVMAP_INDEX_CACHE", "0")
+    assert Case(d).index_source == "built"
+    monkeypatch.delenv("COVMAP_INDEX_CACHE")
+    # read-only cache dir: works, just no cache
+    d2 = build_case(tmp_path, "cache-ro", shape=(5, 32, 32))
+    (d2 / INDEX_FILE.parent).mkdir()
+    os.chmod(d2 / INDEX_FILE.parent, 0o500)
+    try:
+        c = Case(d2)
+        assert c.index_source == "built" and not (d2 / INDEX_FILE).exists()
+        assert not list((d2 / INDEX_FILE.parent).iterdir())
+    finally:
+        os.chmod(d2 / INDEX_FILE.parent, 0o700)
+    # labels.npy replaced (atomically) while the index is being built: that index is used
+    # for this Case but not cached; the next Case builds from the new labels and caches
+    import covmap.casedata as cd
+
+    d3 = build_case(tmp_path, "cache-race", shape=(9, 64, 32))
+    real = cd._build_index
+
+    def racing(labels, organ_ids):
+        out = real(labels, organ_ids)
+        new = np.array(labels)
+        new[int(np.argmax(np.count_nonzero(new.reshape(new.shape[0], -1), axis=1)))] = 0
+        np.save(d3 / "seg" / "labels.new.npy", new)
+        os.replace(d3 / "seg" / "labels.new.npy", d3 / "seg" / "labels.npy")
+        return out
+
+    monkeypatch.setattr(cd, "_build_index", racing)
+    raced = Case(d3)
+    assert raced.index_source == "built" and not (d3 / INDEX_FILE).exists()
+    monkeypatch.setattr(cd, "_build_index", real)
+    after = Case(d3)
+    assert after.index_source == "built" and after.n_vox < raced.n_vox
+    assert Case(d3).index_source == "cache"

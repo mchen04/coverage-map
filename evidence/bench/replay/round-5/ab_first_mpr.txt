@@ -1,0 +1,4 @@
+Latency of a live session's first coronal-view POST (Scorer.add with now_ms) in a fresh process, median of 7, interleaved.
+A = round-4 casedata.py (argsort-based axis index), B = round-5; "prewarmed" = Case.prepare_planes() ran first (what the server now does in the background). Probe: scratch firstmpr.py. Mini load ~24.
+lidc-0001 first coronal-view POST ms (median of 7): {'A cold': 90.1, 'B cold': 30.9, 'B prewarmed': 8.2}
+pancreas-0051 first coronal-view POST ms (median of 7): {'A cold': 200.9, 'B cold': 72.6, 'B prewarmed': 17.3}

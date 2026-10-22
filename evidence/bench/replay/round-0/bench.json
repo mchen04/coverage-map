@@ -1,0 +1,542 @@
+{
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   6.75,
+   7.58,
+   12.24
+  ],
+  "time": "2026-10-21T16:30:00-0700"
+ },
+ "cases": {
+  "lidc-0001": {
+   "full_read": {
+    "events": 400,
+    "cli_exit": 0,
+    "cli_cold_s": 0.319,
+    "cli_cold_runs": [
+     0.295,
+     0.319,
+     0.326
+    ],
+    "live_fingerprint": "f278a4e7e87ae9f1",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 116.1544,
+     "min": 112.3226,
+     "max": 125.0282,
+     "runs": [
+      112.3226,
+      112.4427,
+      116.1544,
+      120.6751,
+      125.0282
+     ]
+    },
+    "live_posts": 150,
+    "live_post_ms": {
+     "median": 31.3569,
+     "p95": 37.89054200751707,
+     "max": 38.94870899966918
+    },
+    "fingerprint": "fe5cea32b7fa9a2e",
+    "statuses": {
+     "lung_left": "reviewed",
+     "lung_right": "reviewed",
+     "trachea": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "thyroid": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "cervical_spine": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed",
+     "shoulder_left": "reviewed",
+     "shoulder_right": "reviewed"
+    }
+   },
+   "window_skip_lung": {
+    "events": 267,
+    "cli_exit": 0,
+    "cli_cold_s": 0.282,
+    "cli_cold_runs": [
+     0.267,
+     0.282,
+     0.302
+    ],
+    "live_fingerprint": "a27f9d10c6ac0b28",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 86.8978,
+     "min": 85.9894,
+     "max": 88.6109,
+     "runs": [
+      85.9894,
+      86.7923,
+      86.8978,
+      87.7981,
+      88.6109
+     ]
+    },
+    "live_posts": 100,
+    "live_post_ms": {
+     "median": 32.1666,
+     "p95": 41.25637499964796,
+     "max": 69.41258299048059
+    },
+    "fingerprint": "24c315d5c818fd78",
+    "statuses": {
+     "lung_left": "skipped",
+     "lung_right": "skipped",
+     "trachea": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "thyroid": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "cervical_spine": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed",
+     "shoulder_left": "reviewed",
+     "shoulder_right": "reviewed"
+    }
+   },
+   "region_skip_left_lung": {
+    "events": 400,
+    "cli_exit": 0,
+    "cli_cold_s": 0.312,
+    "cli_cold_runs": [
+     0.311,
+     0.312,
+     0.325
+    ],
+    "live_fingerprint": "ab603e5104362143",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 113.3568,
+     "min": 108.4109,
+     "max": 122.5704,
+     "runs": [
+      108.4109,
+      111.2794,
+      113.3568,
+      118.1094,
+      122.5704
+     ]
+    },
+    "live_posts": 150,
+    "live_post_ms": {
+     "median": 31.1846,
+     "p95": 36.228207987733185,
+     "max": 39.22579201753251
+    },
+    "fingerprint": "296598473ea3c552",
+    "statuses": {
+     "lung_left": "skipped",
+     "lung_right": "reviewed",
+     "trachea": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "thyroid": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "cervical_spine": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed",
+     "shoulder_left": "reviewed",
+     "shoulder_right": "reviewed"
+    }
+   },
+   "organ_skip_spleen": {
+    "events": 469,
+    "cli_exit": 0,
+    "cli_cold_s": 0.316,
+    "cli_cold_runs": [
+     0.3,
+     0.316,
+     0.347
+    ],
+    "live_fingerprint": "0e67b294b9b86111",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 133.1102,
+     "min": 125.1868,
+     "max": 148.0181,
+     "runs": [
+      125.1868,
+      127.6659,
+      133.1102,
+      134.7573,
+      148.0181
+     ]
+    },
+    "live_posts": 176,
+    "live_post_ms": {
+     "median": 31.8455,
+     "p95": 37.554792012088,
+     "max": 39.261541998712346
+    },
+    "fingerprint": "ad8e1f19d815119b",
+    "statuses": {
+     "lung_left": "reviewed",
+     "lung_right": "reviewed",
+     "trachea": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "thyroid": "reviewed",
+     "liver": "reviewed",
+     "spleen": "skipped",
+     "pancreas": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "cervical_spine": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed",
+     "shoulder_left": "reviewed",
+     "shoulder_right": "reviewed"
+    }
+   }
+  },
+  "pancreas-0051": {
+   "full_read": {
+    "events": 556,
+    "cli_exit": 0,
+    "cli_cold_s": 0.477,
+    "cli_cold_runs": [
+     0.456,
+     0.477,
+     0.478
+    ],
+    "live_fingerprint": "9db2a2e03f945831",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 175.1967,
+     "min": 174.2397,
+     "max": 177.1227,
+     "runs": [
+      174.2397,
+      174.5305,
+      175.1967,
+      176.2455,
+      177.1227
+     ]
+    },
+    "live_posts": 209,
+    "live_post_ms": {
+     "median": 53.2589,
+     "p95": 62.27599998237565,
+     "max": 68.33816700964235
+    },
+    "fingerprint": "e392fae8dd069e5c",
+    "statuses": {
+     "lung_left": "reviewed",
+     "lung_right": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "gallbladder": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed"
+    }
+   },
+   "window_skip_lung": {
+    "events": 371,
+    "cli_exit": 0,
+    "cli_cold_s": 0.47,
+    "cli_cold_runs": [
+     0.453,
+     0.47,
+     0.493
+    ],
+    "live_fingerprint": "89fb478c175b507f",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 148.9084,
+     "min": 147.3444,
+     "max": 162.7011,
+     "runs": [
+      147.3444,
+      148.8138,
+      148.9084,
+      158.7349,
+      162.7011
+     ]
+    },
+    "live_posts": 139,
+    "live_post_ms": {
+     "median": 55.1001,
+     "p95": 60.43620899436064,
+     "max": 62.42558400845155
+    },
+    "fingerprint": "616241be591059d5",
+    "statuses": {
+     "lung_left": "skipped",
+     "lung_right": "skipped",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "gallbladder": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed"
+    }
+   },
+   "region_skip_left_lung": {
+    "events": 556,
+    "cli_exit": 0,
+    "cli_cold_s": 0.545,
+    "cli_cold_runs": [
+     0.541,
+     0.545,
+     0.551
+    ],
+    "live_fingerprint": "d3d69d5deb53b283",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 213.0011,
+     "min": 210.8325,
+     "max": 215.3567,
+     "runs": [
+      210.8325,
+      211.3792,
+      213.0011,
+      213.1468,
+      215.3567
+     ]
+    },
+    "live_posts": 209,
+    "live_post_ms": {
+     "median": 59.0252,
+     "p95": 65.06170801003464,
+     "max": 76.30320801399648
+    },
+    "fingerprint": "bc46ca9a9cbe4c1d",
+    "statuses": {
+     "lung_left": "skipped",
+     "lung_right": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "liver": "reviewed",
+     "spleen": "reviewed",
+     "pancreas": "reviewed",
+     "gallbladder": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed"
+    }
+   },
+   "organ_skip_spleen": {
+    "events": 6664,
+    "cli_exit": 0,
+    "cli_cold_s": 0.997,
+    "cli_cold_runs": [
+     0.955,
+     0.997,
+     1.114
+    ],
+    "live_fingerprint": "c6ca6107e40d4a9e",
+    "live_final_matches_replay": true,
+    "warm_ms": {
+     "n": 5,
+     "median": 614.6243,
+     "min": 605.112,
+     "max": 627.0768,
+     "runs": [
+      605.112,
+      608.4893,
+      614.6243,
+      624.3324,
+      627.0768
+     ]
+    },
+    "live_posts": 2499,
+    "live_post_ms": {
+     "median": 52.1374,
+     "p95": 60.210750001715496,
+     "max": 108.74070899444632
+    },
+    "fingerprint": "f6719f21fa07c1af",
+    "statuses": {
+     "lung_left": "reviewed",
+     "lung_right": "reviewed",
+     "heart": "reviewed",
+     "aorta": "reviewed",
+     "inferior_vena_cava": "reviewed",
+     "esophagus": "reviewed",
+     "liver": "reviewed",
+     "spleen": "skipped",
+     "pancreas": "reviewed",
+     "gallbladder": "reviewed",
+     "stomach": "reviewed",
+     "kidney_left": "reviewed",
+     "kidney_right": "reviewed",
+     "duodenum": "reviewed",
+     "small_bowel": "reviewed",
+     "colon": "reviewed",
+     "thoracic_spine": "reviewed",
+     "lumbar_spine": "reviewed",
+     "ribs_left": "reviewed",
+     "ribs_right": "reviewed",
+     "sternum": "reviewed"
+    }
+   }
+  }
+ },
+ "http": {
+  "cadence_ms": 400.0,
+  "context": {
+   "host": "Mac.attlocal.net",
+   "cpu": "Apple M4",
+   "cores": 10,
+   "macos": "26.2",
+   "loadavg_1_5_15": [
+    6.65,
+    7.5,
+    11.25
+   ],
+   "time": "2026-10-21T16:33:28-0700"
+  },
+  "cases": {
+   "lidc-0001": {
+    "full_read": {
+     "session": "s-20261021-163328-9a6519",
+     "posts": 150,
+     "events_per_post_median": 3.0,
+     "rtt_ms": {
+      "median": 59.8858,
+      "p95": 64.153,
+      "max": 67.821
+     },
+     "server_score_ms": {
+      "median": 58.348,
+      "p95": 62.6
+     },
+     "fingerprint": "fe5cea32b7fa9a2e",
+     "fingerprint_matches_replay": true
+    }
+   },
+   "pancreas-0051": {
+    "full_read": {
+     "session": "s-20261021-163428-536afb",
+     "posts": 209,
+     "events_per_post_median": 3,
+     "rtt_ms": {
+      "median": 89.4734,
+      "p95": 103.403,
+      "max": 111.714
+     },
+     "server_score_ms": {
+      "median": 87.325,
+      "p95": 101.224
+     },
+     "fingerprint": "e392fae8dd069e5c",
+     "fingerprint_matches_replay": true
+    }
+   }
+  },
+  "server_exit": 0
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   5.34,
+   6.31,
+   10.16
+  ],
+  "time": "2026-10-21T16:35:52-0700"
+ }
+}

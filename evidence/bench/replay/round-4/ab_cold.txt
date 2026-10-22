@@ -1,0 +1,5 @@
+Interleaved A/B of fresh-process `python -m covmap replay` (9 runs each, alternating; A = round-3 casedata.py, B = round-4; same scoring.py), median seconds:
+lidc-0001 full_read {'A': 0.258, 'B': 0.215} load 10.61474609375
+lidc-0001 window_skip_lung {'A': 0.233, 'B': 0.206} load 10.5654296875
+pancreas-0051 full_read {'A': 0.361, 'B': 0.302} load 10.27978515625
+pancreas-0051 window_skip_lung {'A': 0.254, 'B': 0.226} load 9.85693359375

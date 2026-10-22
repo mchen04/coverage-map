@@ -238,6 +238,8 @@ class App:
         if s.scorer is None:
             s.events = await self.run(read_jsonl, s.log) if s.log.exists() else []
             s.scorer = await self.run(self._rescore, s, s.params)
+            # coronal/sagittal plane indexes in the background (idempotent, built once per case)
+            self.pool.submit(s.scorer.case.prepare_planes)
         self.live[s.id] = None
         self.live.move_to_end(s.id)
         for sid in list(self.live)[:-MAX_LIVE_SESSIONS]:

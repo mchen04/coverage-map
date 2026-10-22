@@ -1,0 +1,237 @@
+{
+ "A": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r0",
+ "B": "/Users/michaelchen/coverage-map-work/scratch-b/variants/r8",
+ "iters": 2,
+ "scenario": "full_read",
+ "cadence_ms": 400.0,
+ "order": "AB / BA alternating per iteration",
+ "loadavg_per_iteration": [
+  [
+   13.72,
+   11.62,
+   10.86
+  ],
+  [
+   7.39,
+   9.04,
+   9.9
+  ],
+  [
+   15.39,
+   10.99,
+   10.43
+  ]
+ ],
+ "summary": {
+  "lidc-0001": {
+   "A": {
+    "rtt_median_ms": 59.935,
+    "rtt_p95_ms": 73.035,
+    "server_score_median_ms": 58.009,
+    "posts": 150,
+    "events_per_post": 3.0
+   },
+   "B": {
+    "rtt_median_ms": 6.633,
+    "rtt_p95_ms": 12.883,
+    "server_score_median_ms": 4.193,
+    "posts": 150,
+    "events_per_post": 3.0
+   }
+  },
+  "pancreas-0051": {
+   "A": {
+    "rtt_median_ms": 87.076,
+    "rtt_p95_ms": 103.523,
+    "server_score_median_ms": 85.035,
+    "posts": 209,
+    "events_per_post": 3
+   },
+   "B": {
+    "rtt_median_ms": 5.978,
+    "rtt_p95_ms": 12.429,
+    "server_score_median_ms": 3.852,
+    "posts": 209,
+    "events_per_post": 3
+   }
+  }
+ },
+ "final_fingerprint_identical": {
+  "lidc-0001": true,
+  "pancreas-0051": true
+ },
+ "runs": {
+  "A": {
+   "lidc-0001": [
+    {
+     "session": "s-20261021-172852-737588",
+     "posts": 150,
+     "events_per_post_median": 3.0,
+     "rtt_ms": {
+      "median": 61.2834,
+      "p95": 77.46,
+      "max": 168.516
+     },
+     "server_score_ms": {
+      "median": 59.487,
+      "p95": 75.544
+     },
+     "fingerprint": "fe5cea32b7fa9a2e",
+     "loadavg": [
+      11.08203125,
+      11.15966796875,
+      10.736328125
+     ]
+    },
+    {
+     "session": "s-20261021-173442-033ee3",
+     "posts": 150,
+     "events_per_post_median": 3.0,
+     "rtt_ms": {
+      "median": 58.5863,
+      "p95": 68.61,
+      "max": 90.602
+     },
+     "server_score_ms": {
+      "median": 56.5305,
+      "p95": 66.184
+     },
+     "fingerprint": "fe5cea32b7fa9a2e",
+     "loadavg": [
+      12.18994140625,
+      9.89794921875,
+      10.10009765625
+     ]
+    }
+   ],
+   "pancreas-0051": [
+    {
+     "session": "s-20261021-173053-517c49",
+     "posts": 209,
+     "events_per_post_median": 3,
+     "rtt_ms": {
+      "median": 90.6818,
+      "p95": 108.999,
+      "max": 168.265
+     },
+     "server_score_ms": {
+      "median": 88.443,
+      "p95": 105.939
+     },
+     "fingerprint": "e392fae8dd069e5c",
+     "loadavg": [
+      6.56640625,
+      9.57958984375,
+      10.173828125
+     ]
+    },
+    {
+     "session": "s-20261021-173707-1a9f1f",
+     "posts": 209,
+     "events_per_post_median": 3,
+     "rtt_ms": {
+      "median": 83.4712,
+      "p95": 98.048,
+      "max": 113.817
+     },
+     "server_score_ms": {
+      "median": 81.626,
+      "p95": 95.986
+     },
+     "fingerprint": "e392fae8dd069e5c",
+     "loadavg": [
+      15.390625,
+      10.9873046875,
+      10.42919921875
+     ]
+    }
+   ]
+  },
+  "B": {
+   "lidc-0001": [
+    {
+     "session": "s-20261021-172953-e0f9be",
+     "posts": 150,
+     "events_per_post_median": 3.0,
+     "rtt_ms": {
+      "median": 7.0883,
+      "p95": 14.413,
+      "max": 21.879
+     },
+     "server_score_ms": {
+      "median": 4.502,
+      "p95": 10.899
+     },
+     "fingerprint": "fe5cea32b7fa9a2e",
+     "loadavg": [
+      10.0712890625,
+      10.69189453125,
+      10.580078125
+     ]
+    },
+    {
+     "session": "s-20261021-173342-35051c",
+     "posts": 150,
+     "events_per_post_median": 3.0,
+     "rtt_ms": {
+      "median": 6.1776,
+      "p95": 11.352,
+      "max": 44.063
+     },
+     "server_score_ms": {
+      "median": 3.884,
+      "p95": 7.946
+     },
+     "fingerprint": "fe5cea32b7fa9a2e",
+     "loadavg": [
+      9.45458984375,
+      9.2392578125,
+      9.91064453125
+     ]
+    }
+   ],
+   "pancreas-0051": [
+    {
+     "session": "s-20261021-173218-9ebbf7",
+     "posts": 209,
+     "events_per_post_median": 3,
+     "rtt_ms": {
+      "median": 5.9533,
+      "p95": 13.582,
+      "max": 19.352
+     },
+     "server_score_ms": {
+      "median": 3.915,
+      "p95": 10.469
+     },
+     "fingerprint": "e392fae8dd069e5c",
+     "loadavg": [
+      7.38623046875,
+      9.04248046875,
+      9.90380859375
+     ]
+    },
+    {
+     "session": "s-20261021-173543-bdeeb3",
+     "posts": 209,
+     "events_per_post_median": 3,
+     "rtt_ms": {
+      "median": 6.0026,
+      "p95": 11.276,
+      "max": 14.564
+     },
+     "server_score_ms": {
+      "median": 3.789,
+      "p95": 8.638
+     },
+     "fingerprint": "e392fae8dd069e5c",
+     "loadavg": [
+      8.7685546875,
+      9.46337890625,
+      9.91943359375
+     ]
+    }
+   ]
+  }
+ }
+}
