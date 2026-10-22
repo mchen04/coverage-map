@@ -8,6 +8,7 @@ NODE_VERSION="${NODE_VERSION:-v24.22.1}"
 ORTHANC_VERSION="${ORTHANC_VERSION:-26.9.1}"
 OHIF_TAG="${OHIF_TAG:-v3.13.13}"
 PY_VERSION="${PY_VERSION:-3.12}"
+here="$(cd "$(dirname "$0")/.." && pwd)"  # the repo, before the cd below
 mkdir -p "$MINI_WORK"/{deps,data,totalseg,downloads,logs}
 cd "$MINI_WORK"
 what="${1:-all}"
@@ -20,7 +21,7 @@ if [[ $what == venv || $what == all ]]; then
     uv venv --python "$PY_VERSION" venv
   fi
   log "installing python requirements"
-  VIRTUAL_ENV="$MINI_WORK/venv" uv pip install -r "$(dirname "$0")/../requirements-mini.txt"
+  VIRTUAL_ENV="$MINI_WORK/venv" uv pip install -r "$here/requirements-mini.txt"
   venv/bin/python -c "import totalsegmentator, torch, pydicom, nibabel, aiohttp; print('torch', torch.__version__, 'mps', torch.backends.mps.is_available())"
   log "installing the Playwright Chromium (render, e2e, benches)"
   venv/bin/python -m playwright install chromium

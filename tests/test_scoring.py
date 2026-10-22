@@ -430,7 +430,10 @@ def test_annotations_and_finish(case, vol, tmp_path):
     evs = read_pass(vol, range(K), 0, 0, "soft") + [
         annotation(vol, K * 150 + 1, K, "lung_left", "done", note="read on prior"),
         annotation(vol, K * 150 + 2, K + 1, "sternum", "na"),
+        annotation(vol, K * 150 + 2.1, K + 9, "sternum", "flag", note="ribs"),
+        annotation(vol, K * 150 + 2.2, K + 10, "sternum", "flag", note=""),  # "" removes the note
         annotation(vol, K * 150 + 3, K + 2, "liver", "flag", note="outline off"),
+        annotation(vol, K * 150 + 3.1, K + 11, "liver", "flag"),  # no note keeps it
         annotation(vol, K * 150 + 4, K + 3, "spleen", "done"),  # already reviewed: not attested
         annotation(vol, K * 150 + 5, K + 4, "lung_right", "flag"),
         annotation(vol, K * 150 + 6, K + 5, "lung_right", "clear"),
@@ -442,9 +445,10 @@ def test_annotations_and_finish(case, vol, tmp_path):
     assert o["lung_left"]["status"] == "skipped" and o["lung_left"]["reader"] == "done"
     assert o["lung_left"]["note"] == "read on prior"
     assert o["sternum"]["reader"] == "na" and o["liver"]["flagged"] and o["liver"]["reader"] is None
+    assert o["sternum"]["flagged"] and o["sternum"]["note"] is None and o["liver"]["note"] == "outline off"
     assert o["lung_right"] == {**o["lung_right"], "reader": None, "flagged": False, "note": None}
     s = cov["summary"]
-    assert s["attested"] == 1 and s["not_applicable"] == 1 and s["flagged"] == 1
+    assert s["attested"] == 1 and s["not_applicable"] == 1 and s["flagged"] == 2
     non_reviewed = [k for k, x in o.items() if x["status"] != "reviewed"]
     assert s["remaining"] == [k for k in non_reviewed if k not in ("lung_left", "sternum")]
     assert {k: v for k, v in s["finished"].items() if k != "at_finish"} == \
@@ -584,6 +588,17 @@ def test_incremental_table_equals_recount_and_provisional_equals_closing(case, v
     one = Scorer(case).add(evs + [end(vol, t_end, 10_001)])
     assert final["organs"] == one["organs"]
     assert sc.seen_counts.tolist() == [o["seen_voxels"] for o in final["organs"]]
+
+
+def test_snapshot_coverage_rounds_down(case, monkeypatch):
+    """Replay frames carry 4-decimal coverage rounded down: an organ just under the reviewed
+    threshold never arrives as 0.9 (and shows 90%) while its status is partial."""
+    nv = case.organ_voxels.astype(float)
+    monkeypatch.setattr(Scorer, "seen_counts", property(lambda self: 0.89996 * nv))  # 1 of 25,000 short
+    snap = Scorer(case).snapshot()
+    shown = {k: snap["coverage"][k] for k, n in zip(case.organ_keys, nv) if n}
+    assert shown and set(shown.values()) == {0.8999}
+    assert {snap["statuses"][k] for k in shown} == {"partial"}
 
 
 @pytest.mark.parametrize("min_dwell", [0.0, 0.001])

@@ -90,6 +90,8 @@ def main() -> int:
             t = rep.get("truth", {}) if isinstance(rep, dict) else {}
             res["scenarios"][name] = {"exact_match": t.get("exact_match"), "false_skips": t.get("false_skips"),
                                       "missed_skips": t.get("missed_skips")}
+        if not names:
+            continue  # scenarios failed (exit != 0 above): nothing to render
         shot = RENDER_SCENARIO if RENDER_SCENARIO in names else names[0]
         ren = r.run(case, "render", "render", "--case", case, "--coverage", str(work / f"{shot}.coverage.json"),
                     "--out", str(out / case / f"map-{shot}.png"))
@@ -102,7 +104,8 @@ def main() -> int:
         "all_stdout_one_json_object": all(s["json"] for s in r.steps),
         "usage_error": {"exit": usage["exit"],
                         "error": usage["stdout"].get("error") if usage["stdout_is_one_json_object"] else None},
-        "all_scenarios_exact": all(v["exact_match"] for c in cases.values() for v in c["scenarios"].values()),
+        "all_scenarios_exact": all(c["scenarios"] and all(v["exact_match"] for v in c["scenarios"].values())
+                                   for c in cases.values()),
         "no_false_skips": not any(v["false_skips"] for c in cases.values() for v in c["scenarios"].values()),
         "segment_matches_production": all(c["segment"]["labels_identical_to_production"] for c in cases.values()),
         "wall_s": round(time.perf_counter() - t_all, 1), "steps": r.steps,

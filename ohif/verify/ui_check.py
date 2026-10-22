@@ -996,8 +996,23 @@ def main() -> int:
             need(nb and nb["y"] >= lb["y"] - 1 and nb["y"] + nb["height"] <= lb["y"] + lb["height"] + 1,
                  f"note input not visible in the list: {nb} list {lb}")
             shot("u09-flag-note-focus", tid("covmap-panel"))
-            page.keyboard.type("outline cuts through neighbour")
+            # J5-1: a note saved empty removes the note, on screen and in the record
+            page.keyboard.type("first thought")
             page.keyboard.press("Enter")
+            note.click()
+            note.fill("")
+            note.press("Enter")
+            flush()
+            page.wait_for_timeout(500)
+            flush()
+            cleared = {"state": page.evaluate("k => window.__covmap.state().reader[k]", k_flag),
+                       "server": {k_: v for k_, v in next(o for o in cov()["organs"] if o["key"] == k_flag).items()
+                                  if k_ in ("flagged", "note")}}
+            need(cleared["state"]["note"] is None and cleared["server"] == {"flagged": True, "note": None},
+                 f"emptied note kept: {cleared}")
+            note.click()
+            note.fill("outline cuts through neighbour")
+            note.press("Enter")
             flush()
             page.wait_for_timeout(500)
             flush()
@@ -1016,9 +1031,9 @@ def main() -> int:
             shot("07-row-actions", tid("covmap-panel"))
             return {"done": k_done, "na": k_na, "flag": k_flag, "annotations": sorted(got, key=str),
                     "server_reader_layer": server_layer, "summary": cov()["summary"], "button_boxes": boxes,
-                    "button_gaps_px": gaps_px, "note_box": nb}
-        C.run("U9/U17 row actions done / N/A / flag (note focused, in view) post annotation events; 24px buttons",
-              row_actions)
+                    "button_gaps_px": gaps_px, "note_box": nb, "note_emptied": cleared}
+        C.run("U9/U17 row actions done / N/A / flag (note focused, in view) post annotation events; 24px buttons; "
+              "J5-1 an emptied note is removed", row_actions)
 
         # ---- hotkeys D A G O on the selected organ --------------------------------------
         def hotkeys_reader():
@@ -2459,11 +2474,47 @@ def main() -> int:
             page.set_viewport_size({"width": 1440, "height": 900})
             s = session()
             flush()
+            # J4-1: the series' images decached and all but the first 40 frames held back, so the MPR
+            # volume renders part loaded (gray slices): no plane is recorded until its volume has loaded
+            held, gate = [], {"open": False, "passed": 0}
+
+            def hold(route):
+                if gate["open"] or gate["passed"] < 40:
+                    gate["passed"] += 1
+                    route.continue_()
+                else:
+                    held.append(route)
+            page.route("**/frames/**", hold)
+            decached = page.evaluate("""() => { const ids = window.services.cornerstoneViewportService.getRenderingEngine()
+                .getViewports()[0].getImageIds(); let n = 0;
+              ids.forEach(id => { try { window.cornerstone.cache.removeImageLoadObject(id, {force: true}); n++; } catch {} });
+              return n; }""")
+            loaded_js = """() => window.services.cornerstoneViewportService.getRenderingEngine().getViewports()
+                .map(v => { try { return !!window.cornerstone.cache.getVolume(v.getVolumeId()).loadStatus.loaded; }
+                            catch { return false; } })"""
             n0 = len(api.events(s))
-            page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
-            page.wait_for_function("""() => { const vps = window.services.cornerstoneViewportService.getRenderingEngine().getViewports();
-                                      return vps.length >= 3 && vps.every(v => v.type === 'orthographic'); }""", timeout=60000)
-            page.wait_for_timeout(2500)
+            try:
+                page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
+                page.wait_for_function("""() => { const vps = window.services.cornerstoneViewportService.getRenderingEngine().getViewports();
+                                          return vps.length >= 3 && vps.every(v => v.type === 'orthographic'); }""", timeout=60000)
+                page.wait_for_timeout(2500)
+                flush()
+                page.wait_for_timeout(400)
+                while_loading = page.evaluate(loaded_js)
+                early = [e for e in api.events(s)[n0:] if e["kind"] == "view" and e["vp_type"] == "volume"]
+            finally:
+                gate["open"] = True
+                dropped = 0
+                for r in held:
+                    try:
+                        r.continue_()
+                    except Exception:  # the page dropped that request meanwhile
+                        dropped += 1
+                page.unroute("**/frames/**", hold)
+            need(held and not any(while_loading), f"volume not held loading: {len(held)} frames held, {while_loading}")
+            need(not early, f"{len(early)} volume planes recorded while the volume loads")
+            page.wait_for_function(f"() => ({loaded_js})().every(Boolean)", timeout=60000)
+            page.wait_for_timeout(1000)
             box = page.locator(".cornerstone-canvas").nth(1).bounding_box()
             page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
             for _ in range(5):
@@ -2503,11 +2554,13 @@ def main() -> int:
             need(reset_vois in ([], [soft]), f"windows recorded after Reset View: {reset_vois}")
             page.evaluate("() => window.commandsManager.runCommand('toggleHangingProtocol', {protocolId: 'mpr'})")
             page.wait_for_timeout(2000)
-            return {"volume_views": len(vol_views), "normals": normals, "viewports": sorted({e["viewport"] for e in vol_views}),
+            return {"loading": {"decached": decached, "frames_held": len(held), "dropped": dropped, "loaded": while_loading,
+                                "views_while_loading": len(early)},
+                    "volume_views": len(vol_views), "normals": normals, "viewports": sorted({e["viewport"] for e in vol_views}),
                     "hidden_on_disable": len(hidden_), "example": vol_views[0],
                     "reset_view": {"windows": vois, "recorded": reset_vois}}
-        C.run("MPR volume viewports are instrumented (vp_type volume, 3 normals); U2 Reset View keeps the soft preset",
-              mpr)
+        C.run("MPR volume viewports are instrumented (vp_type volume, 3 normals), J4-1 not while their volume "
+              "loads; U2 Reset View keeps the soft preset", mpr)
 
         # ---- U15 case picker ------------------------------------------------------------------
         def case_picker():

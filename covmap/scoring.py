@@ -305,8 +305,8 @@ class Scorer:
             r["flagged"] = True
         else:
             r["reader"] = action
-        if note:
-            r["note"] = note
+        if isinstance(note, str):  # "" removes the note, no note keeps it
+            r["note"] = note or None
 
     # ---- accumulation -------------------------------------------------------------
     def _apply(self, plane: Plane, dwell: float, oi, u, v, f, q) -> None:
@@ -619,7 +619,8 @@ class Scorer:
         return {"t_ms": now_ms if now_ms is not None else self.last_t,
                 "summary": self._summary(statuses, int(seen.sum()) / total if total else 0.0),
                 "statuses": dict(zip(self.case.organ_keys, statuses)),
-                "coverage": {k: round(float(x), 4) for k, x in zip(self.case.organ_keys, cov)}}
+                # rounded down, so a fraction under a threshold never shows as reaching it
+                "coverage": {k: math.floor(float(x) * 1e4 + 1e-9) / 1e4 for k, x in zip(self.case.organ_keys, cov)}}
 
 
 def timeline(case, events: list[dict], frames: int = 40, **params) -> dict:

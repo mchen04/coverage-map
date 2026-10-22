@@ -85,7 +85,7 @@ function logAction(layer: ReaderLayer, action: string, note?: string | null): Re
   }
   const next: ReaderLayer =
     action === 'flag' ? { ...layer, flagged: true } : { ...layer, reader: action as ReaderLayer['reader'] };
-  return note ? { ...next, note } : next;
+  return typeof note === 'string' ? { ...next, note: note || null } : next; // "" removes the note
 }
 
 /**
@@ -192,7 +192,7 @@ function applyAction(layer: ReaderLayer, action: ReaderAction, note?: string | n
     case 'na':
       return { ...layer, reader: 'na' };
     case 'flag':
-      return { ...layer, flagged: true, note: note ?? layer.note ?? null };
+      return { ...layer, flagged: true, note: typeof note === 'string' ? note || null : layer.note ?? null };
     default:
       return { ...NO_READER };
   }
@@ -1771,8 +1771,8 @@ export default class CoverageService extends PubSubService {
       return;
     }
     const fields: Record<string, unknown> = { organ: key, action };
-    if (note) {
-      fields.note = note;
+    if (typeof note === 'string') {
+      fields.note = note; // "" removes the note, no note keeps it
     }
     const ev = this.enqueue('annotation', fields);
     if (!ev) {
@@ -1809,7 +1809,7 @@ export default class CoverageService extends PubSubService {
       this.annotate(key, next.reader);
     }
     if (next.flagged && (!base.flagged || next.note !== base.note)) {
-      this.annotate(key, 'flag', next.note);
+      this.annotate(key, 'flag', next.note ?? (base.note ? '' : null));
     }
     this.flush();
   }

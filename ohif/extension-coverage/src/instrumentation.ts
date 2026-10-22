@@ -11,6 +11,7 @@
  * buffer edges.
  */
 import {
+  cache,
   Enums,
   eventTarget,
   getEnabledElement,
@@ -95,6 +96,19 @@ function firstImageId(vp: any): string | null {
   }
 }
 
+/** A planar volume viewport whose volume is not fully loaded: its planes show partial pixel data. */
+export function volumeLoading(vp: any): boolean {
+  if (!isPlanarVolume(vp)) {
+    return false;
+  }
+  try {
+    const vol: any = cache.getVolume(vp.getVolumeId());
+    return !vol || (vol.loadStatus != null && !vol.loadStatus.loaded);
+  } catch {
+    return true;
+  }
+}
+
 export function readViewState(vp: any): ViewState | null {
   const stack = isStack(vp);
   if (!stack && !isPlanarVolume(vp)) {
@@ -169,6 +183,9 @@ export function allViewports(): any[] {
   return (getRenderingEngines() ?? []).flatMap(e => e.getViewports());
 }
 
+/** Dedupe signature of a viewport whose volume is loading (hidden already sent). */
+const LOADING = 'loading';
+
 export class ViewTracker {
   private attached = new Map<string, { element: HTMLElement; listener: Listener }>();
   private last = new Map<string, string>();
@@ -187,6 +204,7 @@ export class ViewTracker {
     this.running = true;
     eventTarget.addEventListener(Enums.Events.ELEMENT_ENABLED, this.handleEnabled);
     eventTarget.addEventListener(Enums.Events.ELEMENT_DISABLED, this.handleDisabled);
+    eventTarget.addEventListener(Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED, this.handleVolumeLoaded);
     allViewports().forEach(vp => this.attach(vp.element, vp.id));
   }
 
@@ -197,6 +215,7 @@ export class ViewTracker {
     this.running = false;
     eventTarget.removeEventListener(Enums.Events.ELEMENT_ENABLED, this.handleEnabled);
     eventTarget.removeEventListener(Enums.Events.ELEMENT_DISABLED, this.handleDisabled);
+    eventTarget.removeEventListener(Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED, this.handleVolumeLoaded);
     [...this.attached.keys()].forEach(id => this.detach(id));
     this.last.clear();
   }
@@ -219,6 +238,15 @@ export class ViewTracker {
     const entry = this.attached.get(viewportId);
     const vp = entry ? getEnabledElement(entry.element as HTMLDivElement)?.viewport : getViewport(viewportId);
     if (!vp) {
+      return;
+    }
+    if (volumeLoading(vp)) {
+      // no credit for planes of a volume still streaming in: close the viewport's previous
+      // state once; the render after loading completes is captured
+      if (this.last.get(viewportId) !== LOADING) {
+        this.last.set(viewportId, LOADING);
+        this.onDisabled(viewportId);
+      }
       return;
     }
     let state: ViewState | null = null;
@@ -270,6 +298,10 @@ export class ViewTracker {
   private handleEnabled = (evt: Event) => {
     const { element, viewportId } = (evt as CustomEvent).detail ?? {};
     this.attach(element, viewportId);
+  };
+
+  private handleVolumeLoaded = () => {
+    this.attached.forEach((_, id) => this.capture(id));
   };
 
   private handleDisabled = (evt: Event) => {

@@ -159,9 +159,24 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+RULES = ("min_dwell_ms", "reviewed_threshold", "skipped_threshold")
+
+
+def _check_rules(a) -> None:
+    """Rule values out of range are usage errors, refused before the command runs."""
+    if any(getattr(a, k, None) is not None for k in RULES):
+        from covmap.scoring import make_params
+
+        try:
+            make_params(**{k: getattr(a, k) for k in RULES})
+        except ValueError as e:
+            raise UsageError(f"covmap {a.cmd}: {e}") from None
+
+
 def main(argv=None) -> int:
     try:
         a = build_parser().parse_args(argv)
+        _check_rules(a)
     except UsageError as e:
         _emit({"ok": False, "cmd": None, "error": f"usage: {e}"})
         return 2

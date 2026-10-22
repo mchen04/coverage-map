@@ -123,7 +123,8 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   `{"kind": "annotation", "organ": "<key>", "action": "done" | "na" | "flag" | "clear", "note": "..."}`
   (`done` = the reader attests review of an organ the measurement does not show as reviewed;
   `na` = not applicable, e.g. absent/out of scope; `flag` = suspicious segmentation/outline;
-  `clear` removes that organ's annotations) and
+  `clear` removes that organ's annotations; a `note` replaces the organ's note, `""` removes it
+  and no `note` keeps it) and
   `{"kind": "finish", "confirmed": true|false, "remaining": ["<key>", ...]}`.
   A confirmed `finish` also ends every open display state at its `t_ms`, exactly like
   `{"kind": "hidden", "viewport": "*"}`: the image on screen when the reader confirms is

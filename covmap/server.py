@@ -25,6 +25,7 @@ import mimetypes
 import os
 import re
 import secrets
+import sys
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
@@ -439,9 +440,12 @@ class App:
             if events:
                 s.events.extend(events)
                 s.tally(events)
-            if lead is not None:
-                s.meta["clock_lead_ms"] = round(lead, 1)
-                await self.run(s.save_meta)
+            if lead is not None:  # the batch is applied: a failed write keeps the lead in memory
+                s.meta["clock_lead_ms"] = round(lead, 1)  # (saved with the next meta write)
+                try:
+                    await self.run(s.save_meta)
+                except OSError as e:
+                    print(f"covmap: session {s.id}: clock lead not saved: {e}", file=sys.stderr)
             s.last_now = now
             if now_ms is not None:
                 s.last_now_ms = now_ms if s.last_now_ms is None else max(s.last_now_ms, now_ms)

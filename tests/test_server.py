@@ -944,6 +944,34 @@ def test_failed_log_append_is_not_applied(env, monkeypatch):
     assert cov["events"]["total"] == 4 and [e["seq"] for e in log] == [0, 1, 2, 3]
 
 
+def test_failed_clock_lead_write_keeps_the_applied_batch(env, monkeypatch):
+    """The clock lead is saved after the batch is applied and logged: a failed write keeps the
+    lead in memory and the POST succeeds (a 500 would claim the batch was not applied)."""
+    import covmap.server as server
+
+    vol = env.vol
+    real, calls = server.Session.save_meta, []
+
+    def full_once(self):
+        calls.append(self.id)
+        if len(calls) == 1:
+            raise OSError(28, "No space left on device")
+        real(self)
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        with monkeypatch.context() as m:
+            m.setattr(server.Session, "save_meta", full_once)
+            r = await c.post(f"/api/sessions/{sid}/events",
+                             json={"events": _to(sid, read_pass(vol, range(3), 0, 0)), "now_ms": 400})
+        return sid, r.status, await _json(r)
+
+    sid, status, cov = run_client(_cfg(env, clock_tolerance_ms=5000.0), fn)
+    log = (env.data / "sessions" / f"{sid}.jsonl").read_text().splitlines()
+    assert status == 200 and calls and cov["events"]["total"] == 3 and len(log) == 3
+    assert cov["session_info"]["last_now_ms"] == 400
+
+
 def test_recent_readings_of_a_case(env):
     vol = env.vol
 
