@@ -87,7 +87,9 @@ A displayed VOI `(wc, ww)` in HU classifies to at most one class:
 | `bone` | 1000–4500 | 150 to 1000 | Bone 2500/480 |
 | `soft` | 100–700 | −50 to 150 | Soft tissue 400/40, Liver 150/90, Mediastinum 350/50 |
 
-Anything else (e.g. Brain 80/40, full-range) is `other` and qualifies no organ.
+Anything else (e.g. Brain 80/40, full-range) is `other` and qualifies no organ. Coverage Map
+targets body CT: head organs (`brain`, `skull`) exist only in the catalog, neither shipped case
+contains them, and the Brain preset is deliberately neutral, so head CT is not supported.
 Organ `windows` lists the classes that qualify it: lungs `["lung"]`, bones `["bone"]`,
 soft organs `["soft"]`, trachea `["lung","soft"]`.
 
@@ -193,7 +195,7 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
 | `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
 | `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
-| `GET /dicom-web/*`, `/wado*` | reverse proxy to Orthanc (`http://127.0.0.1:8042`) |
+| `GET`/`HEAD` `/dicom-web/*`, `/wado` | read-only reverse proxy to Orthanc (`http://127.0.0.1:8042`); other methods 405, `.`/`..` segments 400; the server answers only loopback `Host` headers |
 | `GET /render.html`, `/render/*` | standalone vtk.js organ-map page used by `covmap render` |
 | `GET /*` | OHIF dist (`$COVMAP_OHIF_DIST`), SPA fallback to `index.html` |
 
