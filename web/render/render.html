@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Coverage Map organ render (research use only)</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #070a14;
+        color: #c9cfdb;
+        font: 12px system-ui, sans-serif;
+      }
+      #map {
+        position: relative;
+      }
+      #err {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        color: #ff8080;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" data-testid="covmap-render-map"></div>
+    <div id="err"></div>
+    <script src="/render/render.js"></script>
+  </body>
+</html>

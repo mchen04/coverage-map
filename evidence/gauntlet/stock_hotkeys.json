@@ -1,0 +1,6 @@
+{
+ "probe": "stock OHIF v3.13.13 (unmodified build), pancreas-0051, headless Chromium ANGLE Metal on the mini; number keys pressed over the viewport; VOI read from the Cornerstone viewport",
+ "date": "2026-10-21",
+ "result": {"1": {"wc": 39.5, "ww": 399}, "2": {"wc": -600.5, "ww": 1499}, "3": {"wc": 89.5, "ww": 149}, "4": {"wc": 479.5, "ww": 2499}, "5": {"wc": 479.5, "ww": 2499}},
+ "reading": "Stock hotkey 3 (labelled CT bone) applies the Liver preset W150/L90 and 4 applies Bone W2500/L480; 5 changes nothing. The gauntlet sets windows through OHIF's setViewportWindowLevel command on both builds, so this does not affect gauntlet results; the coverage mode defines its own keys (1 soft, 2 lung, 3 bone, 4 liver, 5 brain)."
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@covmap/mode-coverage",
+  "version": "0.1.0",
+  "description": "Coverage Map mode: basic viewer layout with the coverage panel on the right (research use only)",
+  "license": "MIT",
+  "private": true,
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "keywords": [
+    "ohif-mode"
+  ],
+  "peerDependencies": {
+    "@ohif/core": "workspace:*",
+    "@ohif/mode-basic": "workspace:*",
+    "@covmap/extension-coverage": "workspace:*"
+  },
+  "dependencies": {
+    "@babel/runtime": "7.29.7"
+  }
+}
