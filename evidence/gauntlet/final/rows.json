@@ -1,0 +1,3681 @@
+[
+ {
+  "case": "lidc-0001",
+  "scenario": "full_read",
+  "truth_skips": {},
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 80.28,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.86
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.8
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.6
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.47112499875948
+   },
+   "open": {
+    "open_s": 0.429,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.full_read.events.jsonl",
+   "session": "s-20261021-210437-a8ffb9",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 81.82,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.73
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 27.37
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.71
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.54616698459722
+   },
+   "open": {
+    "open_s": 0.447,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "window_skip_lung",
+  "truth_skips": {
+   "lung_left": "skipped",
+   "lung_right": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 54.99,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.68
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 27.3
+     }
+    ],
+    "wheel_ticks": 264,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.497833001893
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.window_skip_lung.events.jsonl",
+   "session": "s-20261021-210723-68772d",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 53.27,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.61
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.65
+     }
+    ],
+    "wheel_ticks": 264,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.43533401028253
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "window_skip_bone",
+  "truth_skips": {
+   "cervical_spine": "skipped",
+   "lumbar_spine": "skipped",
+   "ribs_left": "skipped",
+   "ribs_right": "skipped",
+   "shoulder_left": "skipped",
+   "shoulder_right": "skipped",
+   "sternum": "skipped",
+   "thoracic_spine": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "cervical_spine",
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "shoulder_left",
+    "shoulder_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "cervical_spine",
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "shoulder_left",
+    "shoulder_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "cervical_spine",
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "shoulder_left",
+    "shoulder_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "cervical_spine",
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "shoulder_left",
+    "shoulder_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 53.65,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.9
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.73
+     }
+    ],
+    "wheel_ticks": 264,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.26733299298212
+   },
+   "open": {
+    "open_s": 0.427,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.window_skip_bone.events.jsonl",
+   "session": "s-20261021-210916-e69d2a",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "cervical_spine",
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "shoulder_left",
+    "shoulder_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 53.35,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.64
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.7
+     }
+    ],
+    "wheel_ticks": 264,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.52225000970066
+   },
+   "open": {
+    "open_s": 0.447,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "region_skip_left_lung",
+  "truth_skips": {
+   "lung_left": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 102.06,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.11
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 48.31
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.62
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 266,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.36512500653043
+   },
+   "open": {
+    "open_s": 0.437,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.region_skip_left_lung.events.jsonl",
+   "session": "s-20261021-211108-3e0515",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 103.11,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.79
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 48.46
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.84
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 266,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.4977080009412
+   },
+   "open": {
+    "open_s": 0.43,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "dwell_skip_lung",
+  "truth_skips": {
+   "lung_left": "skipped",
+   "lung_right": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 61.15,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.15
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "flick": true,
+      "s": 6.6,
+      "ms_per_slice": 49.6
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 27.38
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     15.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.38750000228174
+   },
+   "open": {
+    "open_s": 0.437,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.dwell_skip_lung.events.jsonl",
+   "session": "s-20261021-211438-bdb9be",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 60.14,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.81
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "flick": true,
+      "s": 6.62,
+      "ms_per_slice": 49.8
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.69
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     15.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.53254199726507
+   },
+   "open": {
+    "open_s": 0.43,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "slice_skip_caudal",
+  "truth_skips": {
+   "aorta": "partial",
+   "colon": "skipped",
+   "duodenum": "skipped",
+   "esophagus": "partial",
+   "heart": "partial",
+   "inferior_vena_cava": "skipped",
+   "kidney_left": "skipped",
+   "kidney_right": "skipped",
+   "liver": "skipped",
+   "lumbar_spine": "skipped",
+   "lung_left": "partial",
+   "lung_right": "partial",
+   "pancreas": "skipped",
+   "ribs_left": "partial",
+   "ribs_right": "partial",
+   "small_bowel": "skipped",
+   "spleen": "skipped",
+   "sternum": "partial",
+   "stomach": "skipped",
+   "thoracic_spine": "partial"
+  },
+  "truth_baseline_complete": false,
+  "coverage_sim": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ]
+  },
+  "coverage_browser": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ]
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 44.75,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 73,
+      "s": 14.93
+     },
+     {
+      "window": "lung",
+      "steps": 73,
+      "s": 14.87
+     },
+     {
+      "window": "bone",
+      "steps": 73,
+      "s": 14.93
+     }
+    ],
+    "wheel_ticks": 216,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.39812499587424
+   },
+   "open": {
+    "open_s": 0.431,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.slice_skip_caudal.events.jsonl",
+   "session": "s-20261021-211644-77694c",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 73,
+   "complete": false,
+   "unviewed_ranges": [
+    [
+     0,
+     59
+    ]
+   ]
+  },
+  "stock_ohif": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "esophagus",
+    "heart",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "lung_left",
+    "lung_right",
+    "pancreas",
+    "ribs_left",
+    "ribs_right",
+    "small_bowel",
+    "spleen",
+    "sternum",
+    "stomach",
+    "thoracic_spine"
+   ],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 73,
+    "complete": false,
+    "unviewed_ranges": [
+     [
+      0,
+      59
+     ]
+    ]
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 43.84,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 73,
+      "s": 14.59
+     },
+     {
+      "window": "lung",
+      "steps": 73,
+      "s": 14.65
+     },
+     {
+      "window": "bone",
+      "steps": 73,
+      "s": 14.58
+     }
+    ],
+    "wheel_ticks": 216,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.55062499293126
+   },
+   "open": {
+    "open_s": 0.431,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "partial_lung",
+  "truth_skips": {
+   "lung_left": "partial",
+   "lung_right": "partial"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 64.64,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 27.2
+     },
+     {
+      "window": "lung",
+      "steps": 52,
+      "s": 10.5
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.91
+     }
+    ],
+    "wheel_ticks": 315,
+    "wheel_misses": 0,
+    "api_jumps": 2,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.36958298576064
+   },
+   "open": {
+    "open_s": 0.431,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.partial_lung.events.jsonl",
+   "session": "s-20261021-211817-e4899e",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 63.79,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 26.81
+     },
+     {
+      "window": "lung",
+      "steps": 52,
+      "s": 10.38
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.59
+     }
+    ],
+    "wheel_ticks": 315,
+    "wheel_misses": 0,
+    "api_jumps": 2,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.4279999905266
+   },
+   "open": {
+    "open_s": 0.43,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "organ_skip_spleen",
+  "truth_skips": {
+   "spleen": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "spleen"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "spleen"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 105.23,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 52.04
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.58
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.6
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 184,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.47975000622682
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.organ_skip_spleen.events.jsonl",
+   "session": "s-20261021-212030-72dc07",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 105.93,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 52.34
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.94
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.63
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 184,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.508958988823
+   },
+   "open": {
+    "open_s": 0.43,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "lidc-0001",
+  "scenario": "organ_skip_kidney_left",
+  "truth_skips": {
+   "kidney_left": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "kidney_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "kidney_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 109.36,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 55.41
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.85
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 27.08
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 208,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.34975000587292
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.organ_skip_kidney_left.events.jsonl",
+   "session": "s-20261021-212406-3659c9",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 133,
+   "viewed": 133,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 133,
+    "viewed": 133,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 109.04,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 133,
+      "s": 55.42
+     },
+     {
+      "window": "lung",
+      "steps": 133,
+      "s": 26.92
+     },
+     {
+      "window": "bone",
+      "steps": 133,
+      "s": 26.69
+     }
+    ],
+    "wheel_ticks": 396,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 208,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.49533400149085
+   },
+   "open": {
+    "open_s": 0.445,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 133,
+     "idx": 0,
+     "sop": "1.3.6.1.4.1.14519.5.2.1.6279.6001.262721256650280657946440242654",
+     "voi": {
+      "wc": -600,
+      "ww": 1600
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      13.6484375,
+      7.948440500000004,
+      -10
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "full_read",
+  "truth_skips": {},
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 112.2,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.94
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.12
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.13
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.44808300142176
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.full_read.events.jsonl",
+   "session": "s-20261021-212751-fe182e",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 111.91,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.36
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.16
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.38
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.512499993667
+   },
+   "open": {
+    "open_s": 0.429,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "window_skip_lung",
+  "truth_skips": {
+   "lung_left": "skipped",
+   "lung_right": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 74.34,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.26
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.06
+     }
+    ],
+    "wheel_ticks": 368,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.4214580024127
+   },
+   "open": {
+    "open_s": 0.482,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.window_skip_lung.events.jsonl",
+   "session": "s-20261021-213140-9ea66e",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 74.35,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.18
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.15
+     }
+    ],
+    "wheel_ticks": 368,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.53370900265872
+   },
+   "open": {
+    "open_s": 0.429,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "window_skip_bone",
+  "truth_skips": {
+   "lumbar_spine": "skipped",
+   "ribs_left": "skipped",
+   "ribs_right": "skipped",
+   "sternum": "skipped",
+   "thoracic_spine": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 74.67,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.42
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.23
+     }
+    ],
+    "wheel_ticks": 368,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.3839580079075
+   },
+   "open": {
+    "open_s": 0.427,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.window_skip_bone.events.jsonl",
+   "session": "s-20261021-213413-1a51f9",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lumbar_spine",
+    "ribs_left",
+    "ribs_right",
+    "sternum",
+    "thoracic_spine"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 74.56,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.33
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.22
+     }
+    ],
+    "wheel_ticks": 368,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.51079200627282
+   },
+   "open": {
+    "open_s": 0.429,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "region_skip_left_lung",
+  "truth_skips": {
+   "lung_left": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 141.88,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.28
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 67.47
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.11
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 370,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.4455840010196
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.region_skip_left_lung.events.jsonl",
+   "session": "s-20261021-213647-d03312",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 140.67,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.5
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 66.04
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.11
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 370,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.16254200297408
+   },
+   "open": {
+    "open_s": 0.428,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "dwell_skip_lung",
+  "truth_skips": {
+   "lung_left": "skipped",
+   "lung_right": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 86.75,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 39.31
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "flick": true,
+      "s": 9.03,
+      "ms_per_slice": 48.8
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 38.38
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     15.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.42941600829363
+   },
+   "open": {
+    "open_s": 0.456,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.dwell_skip_lung.events.jsonl",
+   "session": "s-20261021-214134-c8e159",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 85.22,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.22
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "flick": true,
+      "s": 9.03,
+      "ms_per_slice": 48.8
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 38.96
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     15.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.2501250039786
+   },
+   "open": {
+    "open_s": 0.429,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "slice_skip_caudal",
+  "truth_skips": {
+   "aorta": "partial",
+   "colon": "partial",
+   "duodenum": "partial",
+   "inferior_vena_cava": "partial",
+   "kidney_left": "partial",
+   "kidney_right": "partial",
+   "lumbar_spine": "partial",
+   "small_bowel": "partial"
+  },
+  "truth_baseline_complete": false,
+  "coverage_sim": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "lumbar_spine",
+    "small_bowel"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "lumbar_spine",
+    "small_bowel"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "small_bowel",
+    "spleen",
+    "stomach"
+   ]
+  },
+  "coverage_browser": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "lumbar_spine",
+    "small_bowel"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "lumbar_spine",
+    "small_bowel"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "small_bowel",
+    "spleen",
+    "stomach"
+   ]
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 88.8,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 142,
+      "s": 28.57
+     },
+     {
+      "window": "lung",
+      "steps": 142,
+      "s": 30.26
+     },
+     {
+      "window": "bone",
+      "steps": 142,
+      "s": 29.96
+     }
+    ],
+    "wheel_ticks": 423,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.22554198792204
+   },
+   "open": {
+    "open_s": 0.447,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.slice_skip_caudal.events.jsonl",
+   "session": "s-20261021-214431-4b1846",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 143,
+   "complete": false,
+   "unviewed_ranges": [
+    [
+     142,
+     183
+    ]
+   ]
+  },
+  "stock_ohif": {
+   "caught": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "lumbar_spine",
+    "small_bowel"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "any_overlap": [
+    "aorta",
+    "colon",
+    "duodenum",
+    "inferior_vena_cava",
+    "kidney_left",
+    "kidney_right",
+    "liver",
+    "lumbar_spine",
+    "small_bowel",
+    "spleen",
+    "stomach"
+   ],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 143,
+    "complete": false,
+    "unviewed_ranges": [
+     [
+      142,
+      183
+     ]
+    ]
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 88.94,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 142,
+      "s": 29.59
+     },
+     {
+      "window": "lung",
+      "steps": 142,
+      "s": 29.64
+     },
+     {
+      "window": "bone",
+      "steps": 142,
+      "s": 29.7
+     }
+    ],
+    "wheel_ticks": 423,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.44287501648068
+   },
+   "open": {
+    "open_s": 0.53,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "partial_lung",
+  "truth_skips": {
+   "lung_left": "partial",
+   "lung_right": "partial"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "lung_left",
+    "lung_right"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 83.18,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 38.57
+     },
+     {
+      "window": "lung",
+      "steps": 36,
+      "s": 7.36
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.24
+     }
+    ],
+    "wheel_ticks": 403,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.08787501999177
+   },
+   "open": {
+    "open_s": 0.457,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.partial_lung.events.jsonl",
+   "session": "s-20261021-214734-868dfe",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "lung_left",
+    "lung_right"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 81.2,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 37.01
+     },
+     {
+      "window": "lung",
+      "steps": 36,
+      "s": 7.17
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.01
+     }
+    ],
+    "wheel_ticks": 403,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 0,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.09812501072884
+   },
+   "open": {
+    "open_s": 0.499,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "organ_skip_spleen",
+  "truth_skips": {
+   "spleen": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "spleen"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "spleen"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 2037.57,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 1960.46
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 38.69
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 38.41
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 12426,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.0883749946952
+   },
+   "open": {
+    "open_s": 0.482,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.organ_skip_spleen.events.jsonl",
+   "session": "s-20261021-215024-f0e729",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "spleen"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 2033.95,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 1959.8
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.19
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 36.96
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 0,
+    "frames": 12426,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 153.0104170087725
+   },
+   "open": {
+    "open_s": 0.483,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ },
+ {
+  "case": "pancreas-0051",
+  "scenario": "organ_skip_kidney_left",
+  "truth_skips": {
+   "kidney_left": "skipped"
+  },
+  "truth_baseline_complete": true,
+  "coverage_sim": {
+   "caught": [
+    "kidney_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model_sim": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "coverage_browser": {
+   "caught": [
+    "kidney_left"
+   ],
+   "missed": [],
+   "false_alarms": [],
+   "scenario_alert": true,
+   "status_mismatch": [],
+   "exact": true
+  },
+  "per_image_model": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": []
+  },
+  "browser_run": {
+   "run": {
+    "run_s": 238.18,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 162.62
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.54
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 38.01
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 920,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 152.36325000296347
+   },
+   "open": {
+    "open_s": 0.536,
+    "tour_dismissed": false,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1197,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.organ_skip_kidney_left.events.jsonl",
+   "session": "s-20261021-225820-af34f3",
+   "console_errors": []
+  },
+  "browser_stock_tracker_in_coverage_build": {
+   "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+   "images": 185,
+   "viewed": 185,
+   "complete": true,
+   "unviewed_ranges": []
+  },
+  "stock_ohif": {
+   "caught": [],
+   "missed": [
+    "kidney_left"
+   ],
+   "false_alarms": [],
+   "scenario_alert": false,
+   "any_overlap": [],
+   "tracker": {
+    "source": "OHIF v3.13.13 cornerstone viewedDataService (built-in, default viewedDwellMs=0)",
+    "images": 185,
+    "viewed": 185,
+    "complete": true,
+    "unviewed_ranges": []
+   }
+  },
+  "stock_run": {
+   "run": {
+    "run_s": 237.99,
+    "passes": [
+     {
+      "window": "soft",
+      "steps": 185,
+      "s": 163.75
+     },
+     {
+      "window": "lung",
+      "steps": 185,
+      "s": 37.09
+     },
+     {
+      "window": "bone",
+      "steps": 185,
+      "s": 37.14
+     }
+    ],
+    "wheel_ticks": 552,
+    "wheel_misses": 0,
+    "api_jumps": 1,
+    "frames": 920,
+    "dwell_ms_requested_vs_observed": [
+     150.0,
+     150.0,
+     150.0
+    ],
+    "observed_dwell_ms_median": 152.72849999018945
+   },
+   "open": {
+    "open_s": 0.525,
+    "tour_dismissed": true,
+    "state": {
+     "viewportId": "default",
+     "type": "stack",
+     "n": 185,
+     "idx": 0,
+     "sop": "1.2.826.0.1.3680043.2.1125.1.82468291552122319586581197565322615",
+     "voi": {
+      "wc": 145.5,
+      "ww": 2339
+     },
+     "canvas": [
+      1275,
+      942
+     ],
+     "parallelScale": 180,
+     "focalPoint": [
+      179.6484375,
+      -179.6484375,
+      -184
+     ]
+    }
+   },
+   "console_errors": []
+  }
+ }
+]
