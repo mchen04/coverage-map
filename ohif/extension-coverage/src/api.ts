@@ -1,4 +1,5 @@
 import { fetchMeshes } from '@covmap/organ-map';
+import type { InBrowserServer } from './inBrowser';
 import type {
   CaseInfo,
   Coverage,
@@ -17,12 +18,16 @@ export type ApiError = Error & { status?: number; body?: Record<string, unknown>
 
 /** Thin client for the covmap HTTP API (docs/SPEC.md "HTTP API"). Same origin. */
 export class CovmapApi {
-  constructor(public readonly root: string = '/api') {
+  constructor(public readonly root: string = '/api', private readonly local?: InBrowserServer) {
     this.root = root.replace(/\/$/, '');
   }
 
+  private request(url: string, init?: RequestInit): Promise<Response> {
+    return this.local ? this.local.fetch(url, init) : fetch(url, init);
+  }
+
   private async json<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${this.root}${path}`, init);
+    const res = await this.request(`${this.root}${path}`, init);
     if (!res.ok) {
       const err = new Error(`${init?.method ?? 'GET'} ${path} -> ${res.status}`) as ApiError;
       err.status = res.status;
@@ -80,7 +85,7 @@ export class CovmapApi {
 
   /** The session's accepted event log (JSONL), parsed; unparsable lines are skipped. */
   async eventLog(id: string): Promise<Array<Record<string, any>>> {
-    const res = await fetch(`${this.root}/sessions/${encodeURIComponent(id)}/events.jsonl`);
+    const res = await this.request(`${this.root}/sessions/${encodeURIComponent(id)}/events.jsonl`);
     if (!res.ok) {
       throw Object.assign(new Error(`GET events.jsonl -> ${res.status}`), { status: res.status });
     }
@@ -126,8 +131,13 @@ export class CovmapApi {
   }
 
   beacon(session: string, events: unknown[], nowMs: number): boolean {
-    const blob = new Blob([JSON.stringify({ events, now_ms: nowMs })], { type: 'application/json' });
-    return navigator.sendBeacon?.(`${this.root}/sessions/${encodeURIComponent(session)}/events`, blob) ?? false;
+    const url = `${this.root}/sessions/${encodeURIComponent(session)}/events`;
+    const body = JSON.stringify({ events, now_ms: nowMs });
+    if (this.local) {
+      this.local.fetch(url, { method: 'POST', body }).catch(() => {});
+      return true;
+    }
+    return navigator.sendBeacon?.(url, new Blob([body], { type: 'application/json' })) ?? false;
   }
 
   organs(caseId: string) {
@@ -139,7 +149,13 @@ export class CovmapApi {
   }
 
   meshBase(caseId: string) {
-    return `${this.root}/cases/${encodeURIComponent(caseId)}`;
+    return this.local ? this.local.meshBase(caseId) : `${this.root}/cases/${encodeURIComponent(caseId)}`;
+  }
+
+  viewerUrl(caseId: string, studyUid: string) {
+    return this.local
+      ? this.local.viewerUrl(caseId, studyUid)
+      : `/coverage?StudyInstanceUIDs=${encodeURIComponent(studyUid)}`;
   }
 
   meshes(caseId: string) {
@@ -168,5 +184,21 @@ export class CovmapApi {
 
   exportUrl(session: string, format: 'jsonl' | 'json' | 'csv') {
     return `${this.root}/sessions/${encodeURIComponent(session)}/export?format=${format}`;
+  }
+
+  async download(session: string, format: 'jsonl' | 'json' | 'csv') {
+    const url = this.exportUrl(session, format);
+    const a = document.createElement('a');
+    if (!this.local) {
+      a.href = url;
+      a.download = '';
+      a.click();
+      return;
+    }
+    const res = await this.local.fetch(url);
+    a.href = URL.createObjectURL(await res.blob());
+    a.download = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? `${session}.${format}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60_000);
   }
 }
