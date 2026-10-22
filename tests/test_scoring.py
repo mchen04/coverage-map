@@ -522,6 +522,28 @@ def test_incremental_table_equals_recount_and_provisional_equals_closing(case, v
     assert sc.seen_counts.tolist() == [o["seen_voxels"] for o in final["organs"]]
 
 
+@pytest.mark.parametrize("min_dwell", [0.0, 0.001])
+def test_min_dwell_zero_batch_equals_incremental(case, vol, min_dwell):
+    """Seen = a qualifying display with qualifying dwell >= min_dwell_ms, so 0 means "any
+    qualifying display". The batch path (one full pass after a big flush) and the live path
+    (state table kept by deltas from an all-zero start) must agree, with no negative cells."""
+    from covmap.scoring import QUAL
+
+    evs, t_end = _random_mixed_events(case, vol, 240, 3)
+    evs = evs + [end(vol, t_end, 10_001)]
+    batch = Scorer(case, min_dwell_ms=min_dwell).add(evs)  # >= 64 pending planes: full pass
+    live = Scorer(case, min_dwell_ms=min_dwell)
+    for i in range(0, len(evs), 6):
+        live.add(evs[i:i + 6], now_ms=evs[min(i + 5, len(evs) - 1)]["t_ms"] + 37.0)
+        assert (live.table >= 0).all(), i
+    assert np.array_equal(live.table, live._full_table())
+    assert live.coverage()["organs"] == batch["organs"]
+    seen = ((live.flags & QUAL) != 0) & (live.qdwell >= min_dwell)
+    want = np.bincount(case.vord[seen], minlength=len(case.organs)).tolist()
+    assert [o["seen_voxels"] for o in batch["organs"]] == want
+    assert 0 < sum(want) < case.n_vox  # not vacuous: some voxels never had a qualifying display
+
+
 @pytest.mark.parametrize("shape", [(9, 64, 32), (7, 50, 44)])
 def test_case_voxel_index_matches_nonzero(tmp_path, shape):
     from covmap.casedata import Case

@@ -1,5 +1,6 @@
 """App server (docs/SPEC.md "HTTP API"): case data, live scoring sessions, a streaming
-reverse proxy to Orthanc for DICOMweb/WADO, and the static OHIF build with SPA fallback.
+read-only (GET/HEAD) reverse proxy to Orthanc for DICOMweb/WADO, and the static OHIF build
+with SPA fallback. Only loopback Host headers are answered (DNS-rebinding guard).
 
 Scoring runs in a thread pool (numpy releases the GIL) under a per-session lock, so
 event batches of one session apply in order while proxy traffic keeps flowing.
@@ -24,6 +25,7 @@ import os
 import re
 import secrets
 import time
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,6 +33,7 @@ from pathlib import Path
 import aiohttp
 from aiohttp import web
 from multidict import CIMultiDict
+from yarl import URL
 
 from covmap import paths
 from covmap.casedata import organ_outline, read_json
@@ -287,16 +290,18 @@ class App:
     async def set_rules(self, s: Session, body) -> dict:
         if not isinstance(body, dict):
             raise ApiError(400, "body must be an object")
-        rules = dict(s.params)
-        for k in ("min_dwell_ms", "reviewed_threshold", "skipped_threshold"):
-            if k in body:
-                rules[k] = body[k]
-        rules = {k: v for k, v in rules.items() if v is not None}
-        try:
-            make_params(**rules)
-        except (TypeError, ValueError) as e:
-            raise ApiError(400, str(e))
         async with s.lock:
+            # merge into the current rules under the lock: overlapping partial updates
+            # (different keys) must not overwrite each other
+            rules = dict(s.params)
+            for k in ("min_dwell_ms", "reviewed_threshold", "skipped_threshold"):
+                if k in body:
+                    rules[k] = body[k]
+            rules = {k: v for k, v in rules.items() if v is not None}
+            try:
+                make_params(**rules)
+            except (TypeError, ValueError) as e:
+                raise ApiError(400, str(e))
             await self._ready(s)
             s.scorer = await self.run(self._rescore, s, rules)
             s.meta["rules"] = rules or None
@@ -496,15 +501,42 @@ async def _body(request):
 
 
 # ---- proxy ----------------------------------------------------------------------------
+# Read-only (GET/HEAD) DICOMweb and WADO-URI; OHIF never writes (dicomUploadEnabled false).
+DICOMWEB_PREFIX, WADO_PATH = "/dicom-web/", "/wado"
+
+
+def _upstream_target(request) -> str:
+    """Orthanc path + query: the fixed prefix plus the raw tail of this request. A dot
+    segment ('.' / '..') in the tail at any level of percent-decoding, with '\\' read as
+    '/', is refused, so no request can leave the prefix on Orthanc (its root REST API has
+    /patients, /tools/shutdown, ...)."""
+    path, sep, query = request.raw_path.partition("?")
+    if path == WADO_PATH:
+        prefix, tail = WADO_PATH, ""
+    elif path.startswith(DICOMWEB_PREFIX):
+        prefix, tail = DICOMWEB_PREFIX, path[len(DICOMWEB_PREFIX):]
+    else:  # e.g. an encoded prefix that only matched the route after decoding
+        raise ApiError(400, "proxied paths must start with /dicom-web/ or be /wado")
+    level = tail
+    for _ in range(4):
+        if any(seg in (".", "..") for seg in level.replace("\\", "/").split("/")):
+            raise ApiError(400, "dot segments are not allowed in proxied paths")
+        decoded = urllib.parse.unquote(level)
+        if decoded == level:
+            break
+        level = decoded
+    else:
+        raise ApiError(400, "too many levels of percent-encoding in proxied path")
+    return prefix + tail + sep + query
+
+
 async def proxy(request):
     a = _app(request)
-    url = a.cfg.orthanc.rstrip("/") + request.raw_path
+    url = URL(a.cfg.orthanc.rstrip("/") + _upstream_target(request), encoded=True)
     headers = CIMultiDict((k, v) for k, v in request.headers.items()
                           if k.lower() not in HOP_BY_HOP | {"host", "content-length"})
-    data = await request.read() if request.body_exists else None
     try:
-        async with a.client.request(request.method, url, headers=headers, data=data,
-                                    allow_redirects=False) as up:
+        async with a.client.request(request.method, url, headers=headers, allow_redirects=False) as up:
             resp = web.StreamResponse(status=up.status, reason=up.reason)
             for k, v in up.headers.items():
                 if k.lower() not in HOP_BY_HOP:
@@ -572,6 +604,29 @@ async def static(request):
 
 
 # ---- app ------------------------------------------------------------------------------
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+_HOST_RE = re.compile(r"^(?:\[(?P<v6>[0-9A-Fa-f:.]+)\]|(?P<name>[^\[\]:/]+))(?::\d{1,5})?$")
+
+
+def host_allowed(host: str | None) -> bool:
+    """Loopback Host headers only, any port (127.0.0.1, localhost, [::1]; the ssh tunnel
+    sends 127.0.0.1:8765). A page that rebinds its own DNS name to 127.0.0.1 still sends that
+    name, so it can neither read the API nor drive the Orthanc proxy. No Host at all (not a
+    browser) is allowed."""
+    if host is None:
+        return True
+    m = _HOST_RE.match(host)
+    return bool(m) and (m["v6"] or m["name"]).lower() in LOOPBACK_HOSTS
+
+
+@web.middleware
+async def loopback_host_only(request, handler):
+    if not host_allowed(request.headers.get("Host")):
+        return _json({"ok": False, "error": "Host not allowed (use 127.0.0.1, localhost or [::1])"},
+                     status=403)
+    return await handler(request)
+
+
 @web.middleware
 async def errors(request, handler):
     try:
@@ -588,7 +643,7 @@ async def errors(request, handler):
 
 def make_app(cfg: Config | None = None, **overrides) -> web.Application:
     cfg = cfg or Config(**overrides)
-    app = web.Application(client_max_size=MAX_BODY, middlewares=[errors])
+    app = web.Application(client_max_size=MAX_BODY, middlewares=[loopback_host_only, errors])
     state = App(cfg)
     app[APP_KEY] = state
 
@@ -624,8 +679,8 @@ def make_app(cfg: Config | None = None, **overrides) -> web.Application:
     r.add_get("/api/sessions/{id}/timeline", get_timeline)
     r.add_get("/api/sessions/{id}/export", export)
     r.add_route("*", "/api/{tail:.*}", api_not_found)
-    r.add_route("*", "/dicom-web/{tail:.*}", proxy)
-    r.add_route("*", "/wado{tail:.*}", proxy)
+    r.add_get("/dicom-web/{tail:.*}", proxy)  # GET and HEAD only; other methods: 405
+    r.add_get(WADO_PATH, proxy)
     r.add_get("/render.html", render_static)
     r.add_get("/render/{tail:.*}", render_static)
     r.add_get("/", root)

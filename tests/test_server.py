@@ -246,6 +246,27 @@ def test_concurrent_posts(env):
     run_client(_cfg(env), fn)
 
 
+def test_concurrent_partial_rules_keep_every_update(env):
+    """A partial rules POST is merged into the session's current rules under the session
+    lock, so overlapping updates of different keys are never lost."""
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        for i in range(8):
+            m, r = 100.0 + i, 0.8 + i / 100
+            resps = await asyncio.gather(c.post(f"/api/sessions/{sid}/rules", json={"min_dwell_ms": m}),
+                                         c.post(f"/api/sessions/{sid}/rules", json={"reviewed_threshold": r}))
+            assert [x.status for x in resps] == [200, 200]
+            p = (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["params"]
+            assert (p["min_dwell_ms"], p["reviewed_threshold"]) == (m, r), i
+            meta = json.loads((env.data / "sessions" / f"{sid}.json").read_text())
+            assert meta["rules"] == {"min_dwell_ms": m, "reviewed_threshold": r}, i
+        # an invalid merge is still a 400 and changes nothing
+        await _json(await c.post(f"/api/sessions/{sid}/rules", json={"skipped_threshold": 0.95}), 400)
+        p = (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["params"]
+        assert p["skipped_threshold"] == 0.05 and p["min_dwell_ms"] == 107.0
+    run_client(_cfg(env), fn)
+
+
 # ---- demo and static ------------------------------------------------------------------
 def test_demo_root_and_static(env):
     async def fn(c):
@@ -301,6 +322,7 @@ def test_starts_without_dist_or_cases(env, tmp_path):
 # ---- proxy ----------------------------------------------------------------------------
 BIG = np.random.default_rng(0).integers(0, 256, 5 * 1024 * 1024 + 123, dtype=np.uint8).tobytes()
 BOUNDARY = "covmap-test-boundary-123"
+HITS = web.AppKey("hits", list)  # (method, raw path) of every request the fake Orthanc got
 
 
 def _upstream_app():
@@ -329,12 +351,39 @@ def _upstream_app():
     async def wado(request):
         return web.Response(body=b"DICM" * 10, content_type="application/dicom")
 
-    app = web.Application(client_max_size=64 * 1024 * 1024)
+    async def orthanc_root(request):  # the rest of Orthanc's REST API (/patients, /tools/shutdown...)
+        if request.path.startswith("/dicom-web/"):
+            raise web.HTTPNotFound()
+        return web.json_response({"root": request.path})
+
+    hits = []
+
+    @web.middleware
+    async def record(request, handler):
+        hits.append((request.method, request.raw_path))
+        return await handler(request)
+
+    app = web.Application(client_max_size=64 * 1024 * 1024, middlewares=[record])
+    app[HITS] = hits
     app.router.add_get("/system", system)
     app.router.add_get("/dicom-web/studies/1/series/2/instances/3/frames/1", frames)
     app.router.add_route("*", "/dicom-web/studies", echo)
     app.router.add_get("/wado", wado)
+    app.router.add_route("*", "/{tail:.*}", orthanc_root)
     return app
+
+
+async def _raw(server, target: str, method: str = "GET", host: str | None = None) -> tuple[int, bytes]:
+    """Send a request line verbatim (no client-side path normalization); (status, body)."""
+    reader, writer = await asyncio.open_connection(server.host, server.port)
+    host = f"{server.host}:{server.port}" if host is None else host
+    writer.write(f"{method} {target} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n"
+                 f"Content-Length: 0\r\n\r\n".encode())
+    await writer.drain()
+    data = await reader.read()
+    writer.close()
+    head, _, body = data.partition(b"\r\n\r\n")
+    return int(head.split(b" ", 2)[1]), body
 
 
 def test_proxy(env):
@@ -355,11 +404,6 @@ def test_proxy(env):
                 assert r.status == 200 and f"boundary={BOUNDARY}" in r.headers["Content-Type"]
                 body = await r.read()
                 assert BIG in body and body.startswith(f"--{BOUNDARY}".encode())
-                post = BIG[:3_000_000]
-                e = await _json(await c.post("/dicom-web/studies", data=post,
-                                             headers={"Content-Type": "application/dicom"}))
-                assert e["len"] == len(post) and e["sha"] == hashlib.sha256(post).hexdigest()
-                assert e["content_type"] == "application/dicom" and e["method"] == "POST"
                 r = await c.get("/wado?requestType=WADO&studyUID=1")
                 assert r.status == 200 and r.headers["Content-Type"] == "application/dicom"
                 assert await r.read() == b"DICM" * 10
@@ -369,11 +413,63 @@ def test_proxy(env):
                 results = await asyncio.gather(*[c.get("/dicom-web/studies/1/series/2/instances/3/frames/1")
                                                  for _ in range(6)])
                 assert [len(await x.read()) for x in results] == [len(body)] * 6
+                # the real browser through the ssh tunnel / other loopback spellings
+                for host in ("127.0.0.1:8765", "localhost:8765", "LOCALHOST", "[::1]:8765"):
+                    status, body = await _raw(c.server, "/dicom-web/studies?limit=1", host=host)
+                    assert status == 200 and json.loads(body)["path"] == "/dicom-web/studies", host
+                    status, _ = await _raw(c.server, "/api/health", host=host)
+                    assert status == 200, host
         finally:
             await up.close()
+        assert all(m in ("GET", "HEAD") and (p.startswith(("/dicom-web/", "/system")) or p.split("?")[0] == "/wado")
+                   for m, p in up.app[HITS]), up.app[HITS]
         async with TestClient(TestServer(make_app(_cfg(env, orthanc="http://127.0.0.1:9")))) as c:
             r = await c.get("/dicom-web/studies")
             assert r.status == 502 and not (await r.json())["ok"]
+    asyncio.run(main())
+
+
+def test_proxy_only_forwards_reads_under_its_prefixes(env):
+    """The DICOMweb / WADO proxy is GET/HEAD only, anchored to /dicom-web/ and /wado, never
+    lets a dot segment (raw, percent-encoded, double-encoded, or with a backslash) through to
+    Orthanc's root REST API, and refuses foreign Host headers (DNS rebinding)."""
+    async def main():
+        up = TestServer(_upstream_app())
+        await up.start_server()
+        hits = up.app[HITS]
+        try:
+            async with TestClient(TestServer(make_app(_cfg(env, orthanc=str(up.make_url("")).rstrip("/"))))) as c:
+                for method in ("POST", "PUT", "DELETE", "PATCH"):
+                    assert (await c.request(method, "/dicom-web/studies", data=b"x")).status == 405, method
+                    assert (await c.request(method, "/wado?requestType=WADO", data=b"x")).status == 405, method
+                assert (await c.post("/tools/shutdown")).status == 405
+                assert hits == []
+                for target in ("/dicom-web/../patients/x", "/dicom-web/%2e%2e/patients/x",
+                               "/dicom-web/%2E%2E/patients/x", "/dicom-web/..%2Fpatients/x",
+                               "/dicom-web/..%2fpatients/x", "/dicom-web/..%5Cpatients/x",
+                               "/dicom-web/studies/..%5C..%5Ctools/shutdown", "/dicom-web/studies/%2e%2e/%2e%2e/system",
+                               "/dicom-web/%252e%252e/patients/x", "/dicom-web/./studies", "/dicom-web/studies/.",
+                               "/dicom-web/studies/..", "/dicom-web/.%2e/patients", "/dicom-web/%2e./patients",
+                               "/dicom%2Dweb/studies"):
+                    for method, want in (("GET", 400), ("HEAD", 400), ("POST", 405)):
+                        status, _ = await _raw(c.server, target, method)
+                        assert status == want, (method, target, status)
+                assert hits == []
+                for target in ("/wadoXYZ", "/wado/../patients", "/wado/x", "/wado%2F..%2Fpatients"):
+                    status, body = await _raw(c.server, target)  # not proxied: the SPA's index.html
+                    assert status == 200 and body == b"<html>ohif</html>", target
+                assert hits == []
+                for host in ("evil.example", "evil.example:8765", "127.0.0.1.evil.example:8765",
+                             "localhost.evil.example", "10.0.0.5:8765", "[::2]:8765", "127.0.0.1:x"):
+                    status, _ = await _raw(c.server, "/dicom-web/studies", host=host)
+                    assert status == 403, host
+                    status, _ = await _raw(c.server, "/api/health", host=host)
+                    assert status == 403, host
+                assert hits == []
+                assert (await c.get("/dicom-web/studies")).status == 200  # still proxies normal reads
+                assert hits == [("GET", "/dicom-web/studies")]
+        finally:
+            await up.close()
     asyncio.run(main())
 
 

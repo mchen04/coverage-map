@@ -10,7 +10,8 @@ over all labeled organ voxels:
 * ``flags``  - QUAL / NONQUAL: displayed in-region under a qualifying / non-qualifying
   window; PLANE: its plane was displayed at all (region or not).
 
-A voxel is seen when ``qdwell >= min_dwell_ms``; unseen voxels get the first matching
+A voxel is seen when it had a qualifying display (QUAL) and ``qdwell >= min_dwell_ms``
+(so ``min_dwell_ms = 0`` means any qualifying display); unseen voxels get the first matching
 reason of short_dwell (QUAL), wrong_window (NONQUAL), out_of_region (PLANE),
 never_displayed. Open states are credited provisionally up to ``now_ms`` on temporary
 copies of the touched voxels only. Voxel centres are at integer indices; a voxel is
@@ -43,7 +44,7 @@ REASONS = ("short_dwell", "wrong_window", "out_of_region", "never_displayed")
 QUAL, NONQUAL, PLANE = 1, 2, 4
 # flags -> reason code 1..4 (index into REASONS + 1); 0 is reserved for "seen"
 _REASON_CODE = np.array([4, 1, 2, 1, 3, 1, 2, 1], np.uint8)
-SEEN = 8  # state bit next to the flags: qdwell >= min_dwell_ms
+SEEN = 8  # state bit next to the flags: QUAL and qdwell >= min_dwell_ms
 N_STATES = 16
 # state -> reason-code column (0 seen, 1..4 REASONS), as a 16 x 5 one-hot matrix
 _STATE_TO_CODE = np.zeros((N_STATES, 5), np.int64)
@@ -304,7 +305,14 @@ class Scorer:
             q += add
 
     def _state(self, f, q) -> np.ndarray:
-        return f | ((q >= self.params["min_dwell_ms"]).view(np.uint8) << 3)
+        """Voxel state ``flags | seen << 3``; seen = a qualifying display (QUAL) with
+        qdwell >= min_dwell_ms. qdwell only grows together with QUAL, so for min_dwell_ms > 0
+        the dwell test implies QUAL; at 0 seen is exactly QUAL (never "everything", which
+        would also break the incremental table that starts from all-zero states)."""
+        m = self.params["min_dwell_ms"]
+        if m > 0:
+            return f | ((q >= m).view(np.uint8) << 3)
+        return f | ((f & QUAL) << 3)
 
     def _delta(self, oi, s_old, s_new) -> np.ndarray | None:
         """(n_org, 16) change of the state table when voxels of organs ``oi`` go s_old -> s_new."""

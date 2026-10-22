@@ -134,7 +134,7 @@ not committed).
 
 Per organ voxel the scorer accumulates qualifying dwell: the sum over display states whose
 plane contains the voxel, whose visible rectangle contains it, and whose window class is in
-the organ's `windows`. A voxel is **seen** when qualifying dwell ≥ `min_dwell_ms`.
+the organ's `windows`. A voxel is **seen** when it had a qualifying display and qualifying dwell ≥ `min_dwell_ms`.
 
 `coverage = seen voxels / organ voxels`. Status: `reviewed` (green) if coverage ≥
 `reviewed_threshold`; `skipped` (gray) if coverage < `skipped_threshold`; else `partial`
