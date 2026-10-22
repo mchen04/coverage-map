@@ -1,0 +1,34 @@
+{
+ "argv": [
+  "python",
+  "-m",
+  "covmap",
+  "orthanc-load",
+  "--case",
+  "pancreas-0051"
+ ],
+ "exit": 0,
+ "wall_s": 0.195,
+ "stdout_is_one_json_object": true,
+ "stdout": {
+  "case": "pancreas-0051",
+  "orthanc": "http://127.0.0.1:8042",
+  "study_uid": "1.2.826.0.1.3680043.2.1125.1.26661117508834397948676763221432807",
+  "series_uid": "1.2.826.0.1.3680043.2.1125.1.77419915248783746629465382576486048",
+  "files": 185,
+  "uploaded": null,
+  "skipped_upload": true,
+  "instances_before": 185,
+  "dicomweb_instances": 185,
+  "dicomweb_series_query": "http://127.0.0.1:8042/dicom-web/series?SeriesInstanceUID=1.2.826.0.1.3680043.2.1125.1.77419915248783746629465382576486048",
+  "timings_s": {
+   "upload_s": 0.0,
+   "verify_s": 0.059,
+   "total_s": 0.158
+  },
+  "ok": true,
+  "cmd": "orthanc-load",
+  "elapsed_s": 0.169
+ },
+ "stderr_tail": ""
+}

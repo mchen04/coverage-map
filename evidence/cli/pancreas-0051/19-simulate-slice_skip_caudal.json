@@ -1,0 +1,54 @@
+{
+ "argv": [
+  "python",
+  "-m",
+  "covmap",
+  "simulate",
+  "--case",
+  "pancreas-0051",
+  "--scenario",
+  "slice_skip_caudal",
+  "--out",
+  "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/slice_skip_caudal.jsonl"
+ ],
+ "exit": 0,
+ "wall_s": 0.209,
+ "stdout_is_one_json_object": true,
+ "stdout": {
+  "case": "pancreas-0051",
+  "scenario": "slice_skip_caudal",
+  "source": "simulated",
+  "seed": 0,
+  "out": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/slice_skip_caudal.jsonl",
+  "truth": "/Users/michaelchen/coverage-map-work/evidence/cli-e2e/pancreas-0051/work/slice_skip_caudal.jsonl.truth.json",
+  "events": 427,
+  "duration_ms": 63900.0,
+  "intended_skips": [
+   "aorta",
+   "colon",
+   "duodenum",
+   "inferior_vena_cava",
+   "kidney_left",
+   "kidney_right",
+   "lumbar_spine",
+   "small_bowel"
+  ],
+  "expected": {
+   "aorta": "partial",
+   "inferior_vena_cava": "partial",
+   "kidney_left": "partial",
+   "kidney_right": "partial",
+   "duodenum": "partial",
+   "small_bowel": "partial",
+   "colon": "partial",
+   "lumbar_spine": "partial",
+   "*": "reviewed"
+  },
+  "baseline_expected_complete": false,
+  "description": "The caudal 43 of 185 slices (k 142..184, 23%) are never displayed; all other slices are read in soft, lung and bone windows.",
+  "ok": true,
+  "cmd": "simulate",
+  "elapsed_s": 0.185
+ },
+ "stderr_tail": ""
+}

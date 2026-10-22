@@ -82,7 +82,7 @@ scripts/mini.sh --heavy -- bash scripts/stock_ohif.sh    # unmodified OHIF basel
 scripts/mini.sh -- bash scripts/services.sh start         # Orthanc, Coverage Map (8765), stock OHIF (8766)
 scripts/mini.sh -- python -m covmap fetch --case pancreas-0051
 scripts/mini.sh -- python -m covmap orthanc-load --case pancreas-0051
-scripts/mini.sh --heavy -- python -m covmap segment --case pancreas-0051   # ~7 GB peak
+scripts/mini.sh --heavy=8 -- python -m covmap segment --case pancreas-0051   # ~7 GB peak
 scripts/mini.sh -- python e2e/make_sample.py --case pancreas-0051  # the sample reading, recorded in OHIF
 scripts/mini.sh --heavy -- python -m pytest -q
 ```

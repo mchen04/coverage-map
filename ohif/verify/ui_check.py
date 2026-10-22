@@ -2516,8 +2516,9 @@ def main() -> int:
                           sorted({v["id"] for v in failed_vols if v}))
             need(all(v and v["frames"] < v["of"] for v in failed_vols), f"no frame failed: {failed_vols}")
             need(not failed_views, f"{len(failed_views)} volume planes recorded with frames that failed to load")
-            # J4-1: the series' images decached and all but the first 40 frames held back, so the MPR
-            # volume renders part loaded (gray slices): no plane is recorded until its volume has loaded
+            # J4-1: the series' images decached and frames after the first 40 held back (the prefetch
+            # pool stalls on the first few held), so the MPR volume renders part loaded (gray slices):
+            # no plane is recorded until its volume has loaded
             held, gate = [], {"open": False, "passed": 0}
 
             def hold(route):

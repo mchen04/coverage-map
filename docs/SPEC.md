@@ -219,10 +219,10 @@ does not have it.
 `GET …/coverage` and the `json`/`csv` exports report the session as the reader last saw it:
 while display states are open (no `end`, `hidden "*"` or confirmed `finish` since), the
 coverage provisional at the latest POST's `now_ms`, equal to that POST's response
-(`"provisional": true`, `"t_ms"` = that `now_ms` in log time, i.e. plus `t_offset_ms`); otherwise, or when that POST carried no
-`now_ms` (or none came since the server started), the committed coverage. Replaying the log
-(`covmap replay`) credits closed display states only, so it equals the export once the
-session is closed (e.g. after a confirmed finish).
+(`"provisional": true`, `"t_ms"` = that `now_ms` in log time, i.e. plus `t_offset_ms`);
+otherwise, or when that POST carried no `now_ms` (or none came since the server started),
+the committed coverage. Replaying the log (`covmap replay`) credits closed display states
+only, so it equals the export once the session is closed (e.g. after a confirmed finish).
 
 `unseen` values are fractions of organ voxels. Each organ also carries the reader layer
 `"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured

@@ -36,17 +36,17 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 80.28,
+    "run_s": 80.36,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.86
+      "s": 27.03
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.8
+      "s": 26.71
      },
      {
       "window": "bone",
@@ -63,10 +63,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.47112499875948
+    "observed_dwell_ms_median": 153.36287498939782
    },
    "open": {
-    "open_s": 0.429,
+    "open_s": 0.453,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -90,8 +90,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.full_read.events.jsonl",
-   "session": "s-20261021-210437-a8ffb9",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.full_read.events.jsonl",
+   "session": "s-20261022-040545-117f26",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -117,12 +117,12 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 81.82,
+    "run_s": 81.55,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.73
+      "s": 27.55
      },
      {
       "window": "lung",
@@ -132,7 +132,7 @@
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.71
+      "s": 26.62
      }
     ],
     "wheel_ticks": 396,
@@ -144,10 +144,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.54616698459722
+    "observed_dwell_ms_median": 153.4806250128895
    },
    "open": {
-    "open_s": 0.447,
+    "open_s": 0.459,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -226,17 +226,17 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 54.99,
+    "run_s": 55.75,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.68
+      "s": 27.41
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 27.3
+      "s": 28.33
      }
     ],
     "wheel_ticks": 264,
@@ -247,10 +247,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.497833001893
+    "observed_dwell_ms_median": 153.37612500297837
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.431,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -274,8 +274,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.window_skip_lung.events.jsonl",
-   "session": "s-20261021-210723-68772d",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.window_skip_lung.events.jsonl",
+   "session": "s-20261022-040831-c734b8",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -304,17 +304,17 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 53.27,
+    "run_s": 53.47,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.61
+      "s": 26.88
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.65
+      "s": 26.59
      }
     ],
     "wheel_ticks": 264,
@@ -325,10 +325,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.43533401028253
+    "observed_dwell_ms_median": 153.5373330116272
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.443,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -437,17 +437,17 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 53.65,
+    "run_s": 53.63,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.9
+      "s": 26.85
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.73
+      "s": 26.77
      }
     ],
     "wheel_ticks": 264,
@@ -458,10 +458,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.26733299298212
+    "observed_dwell_ms_median": 153.44962498056702
    },
    "open": {
-    "open_s": 0.427,
+    "open_s": 0.428,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -485,8 +485,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.window_skip_bone.events.jsonl",
-   "session": "s-20261021-210916-e69d2a",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.window_skip_bone.events.jsonl",
+   "session": "s-20261022-041025-6d879b",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -521,17 +521,17 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 53.35,
+    "run_s": 53.2,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.64
+      "s": 26.61
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.7
+      "s": 26.59
      }
     ],
     "wheel_ticks": 264,
@@ -542,10 +542,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.52225000970066
+    "observed_dwell_ms_median": 153.53354197577573
    },
    "open": {
-    "open_s": 0.447,
+    "open_s": 0.43,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -619,22 +619,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 102.06,
+    "run_s": 101.83,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.11
+      "s": 26.85
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 48.31
+      "s": 48.2
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.62
+      "s": 26.76
      }
     ],
     "wheel_ticks": 396,
@@ -646,10 +646,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.36512500653043
+    "observed_dwell_ms_median": 153.43795798253268
    },
    "open": {
-    "open_s": 0.437,
+    "open_s": 0.431,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -673,8 +673,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.region_skip_left_lung.events.jsonl",
-   "session": "s-20261021-211108-3e0515",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.region_skip_left_lung.events.jsonl",
+   "session": "s-20261022-041217-13761d",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -702,22 +702,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 103.11,
+    "run_s": 101.6,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.79
+      "s": 26.69
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 48.46
+      "s": 48.3
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.84
+      "s": 26.6
      }
     ],
     "wheel_ticks": 396,
@@ -729,10 +729,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.4977080009412
+    "observed_dwell_ms_median": 153.21712498553097
    },
    "open": {
-    "open_s": 0.43,
+    "open_s": 0.432,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -811,24 +811,24 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 61.15,
+    "run_s": 60.82,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.15
+      "s": 27.26
      },
      {
       "window": "lung",
       "steps": 133,
       "flick": true,
-      "s": 6.6,
-      "ms_per_slice": 49.6
+      "s": 6.65,
+      "ms_per_slice": 50.0
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 27.38
+      "s": 26.89
      }
     ],
     "wheel_ticks": 396,
@@ -840,10 +840,10 @@
      15.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.38750000228174
+    "observed_dwell_ms_median": 153.2012920069974
    },
    "open": {
-    "open_s": 0.437,
+    "open_s": 0.451,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -867,8 +867,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.dwell_skip_lung.events.jsonl",
-   "session": "s-20261021-211438-bdb9be",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.dwell_skip_lung.events.jsonl",
+   "session": "s-20261022-041545-065c05",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -897,24 +897,24 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 60.14,
+    "run_s": 60.52,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.81
+      "s": 26.63
      },
      {
       "window": "lung",
       "steps": 133,
       "flick": true,
-      "s": 6.62,
-      "ms_per_slice": 49.8
+      "s": 6.64,
+      "ms_per_slice": 50.0
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.69
+      "s": 27.22
      }
     ],
     "wheel_ticks": 396,
@@ -926,10 +926,10 @@
      15.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.53254199726507
+    "observed_dwell_ms_median": 153.49749999586493
    },
    "open": {
-    "open_s": 0.43,
+    "open_s": 0.497,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -1140,22 +1140,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 44.75,
+    "run_s": 45.6,
     "passes": [
      {
       "window": "soft",
       "steps": 73,
-      "s": 14.93
+      "s": 15.17
      },
      {
       "window": "lung",
       "steps": 73,
-      "s": 14.87
+      "s": 15.22
      },
      {
       "window": "bone",
       "steps": 73,
-      "s": 14.93
+      "s": 15.2
      }
     ],
     "wheel_ticks": 216,
@@ -1167,10 +1167,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.39812499587424
+    "observed_dwell_ms_median": 153.42070799670182
    },
    "open": {
-    "open_s": 0.431,
+    "open_s": 0.433,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -1194,8 +1194,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.slice_skip_caudal.events.jsonl",
-   "session": "s-20261021-211644-77694c",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.slice_skip_caudal.events.jsonl",
+   "session": "s-20261022-041751-e189c6",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -1273,22 +1273,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 43.84,
+    "run_s": 44.85,
     "passes": [
      {
       "window": "soft",
       "steps": 73,
-      "s": 14.59
+      "s": 15.31
      },
      {
       "window": "lung",
       "steps": 73,
-      "s": 14.65
+      "s": 14.84
      },
      {
       "window": "bone",
       "steps": 73,
-      "s": 14.58
+      "s": 14.68
      }
     ],
     "wheel_ticks": 216,
@@ -1300,10 +1300,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.55062499293126
+    "observed_dwell_ms_median": 153.5272079927381
    },
    "open": {
-    "open_s": 0.431,
+    "open_s": 0.434,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -1382,22 +1382,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 64.64,
+    "run_s": 65.56,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 27.2
+      "s": 27.3
      },
      {
       "window": "lung",
       "steps": 52,
-      "s": 10.5
+      "s": 10.8
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.91
+      "s": 27.44
      }
     ],
     "wheel_ticks": 315,
@@ -1409,10 +1409,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.36958298576064
+    "observed_dwell_ms_median": 153.38137501385063
    },
    "open": {
-    "open_s": 0.431,
+    "open_s": 0.434,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -1436,8 +1436,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.partial_lung.events.jsonl",
-   "session": "s-20261021-211817-e4899e",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.partial_lung.events.jsonl",
+   "session": "s-20261022-041926-4ec549",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -1466,22 +1466,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 63.79,
+    "run_s": 65.71,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 26.81
+      "s": 27.72
      },
      {
       "window": "lung",
       "steps": 52,
-      "s": 10.38
+      "s": 10.7
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.59
+      "s": 27.28
      }
     ],
     "wheel_ticks": 315,
@@ -1493,10 +1493,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.4279999905266
+    "observed_dwell_ms_median": 153.54154098895378
    },
    "open": {
-    "open_s": 0.43,
+    "open_s": 0.448,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -1570,22 +1570,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 105.23,
+    "run_s": 107.21,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 52.04
+      "s": 52.65
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.58
+      "s": 27.46
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.6
+      "s": 27.09
      }
     ],
     "wheel_ticks": 396,
@@ -1597,10 +1597,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.47975000622682
+    "observed_dwell_ms_median": 153.43958299490623
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.432,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -1624,8 +1624,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.organ_skip_spleen.events.jsonl",
-   "session": "s-20261021-212030-72dc07",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.organ_skip_spleen.events.jsonl",
+   "session": "s-20261022-042142-5e880a",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -1653,22 +1653,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 105.93,
+    "run_s": 106.22,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 52.34
+      "s": 52.61
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.94
+      "s": 26.88
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.63
+      "s": 26.72
      }
     ],
     "wheel_ticks": 396,
@@ -1680,10 +1680,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.508958988823
+    "observed_dwell_ms_median": 153.48408298450522
    },
    "open": {
-    "open_s": 0.43,
+    "open_s": 0.445,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -1757,22 +1757,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 109.36,
+    "run_s": 109.78,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 55.41
+      "s": 56.32
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.85
+      "s": 26.72
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 27.08
+      "s": 26.72
      }
     ],
     "wheel_ticks": 396,
@@ -1784,10 +1784,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.34975000587292
+    "observed_dwell_ms_median": 153.41141700628214
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.435,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -1811,8 +1811,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/lidc-0001.organ_skip_kidney_left.events.jsonl",
-   "session": "s-20261021-212406-3659c9",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/lidc-0001.organ_skip_kidney_left.events.jsonl",
+   "session": "s-20261022-042520-051eaf",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -1840,22 +1840,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 109.04,
+    "run_s": 109.28,
     "passes": [
      {
       "window": "soft",
       "steps": 133,
-      "s": 55.42
+      "s": 56.03
      },
      {
       "window": "lung",
       "steps": 133,
-      "s": 26.92
+      "s": 26.63
      },
      {
       "window": "bone",
       "steps": 133,
-      "s": 26.69
+      "s": 26.6
      }
     ],
     "wheel_ticks": 396,
@@ -1867,10 +1867,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.49533400149085
+    "observed_dwell_ms_median": 153.57741600018926
    },
    "open": {
-    "open_s": 0.445,
+    "open_s": 0.432,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -1934,22 +1934,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 112.2,
+    "run_s": 113.21,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.94
+      "s": 37.73
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.12
+      "s": 37.83
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.13
+      "s": 37.63
      }
     ],
     "wheel_ticks": 552,
@@ -1961,10 +1961,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.44808300142176
+    "observed_dwell_ms_median": 153.37741698022
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.427,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -1988,8 +1988,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.full_read.events.jsonl",
-   "session": "s-20261021-212751-fe182e",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.full_read.events.jsonl",
+   "session": "s-20261022-042906-c44f24",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -2015,22 +2015,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 111.91,
+    "run_s": 112.78,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.36
+      "s": 37.71
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.16
+      "s": 37.86
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.38
+      "s": 37.2
      }
     ],
     "wheel_ticks": 552,
@@ -2042,7 +2042,7 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.512499993667
+    "observed_dwell_ms_median": 153.49354199133813
    },
    "open": {
     "open_s": 0.429,
@@ -2124,17 +2124,17 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 74.34,
+    "run_s": 74.63,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.26
+      "s": 37.34
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.06
+      "s": 37.28
      }
     ],
     "wheel_ticks": 368,
@@ -2145,10 +2145,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.4214580024127
+    "observed_dwell_ms_median": 153.43495798879303
    },
    "open": {
-    "open_s": 0.482,
+    "open_s": 0.429,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -2172,8 +2172,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.window_skip_lung.events.jsonl",
-   "session": "s-20261021-213140-9ea66e",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.window_skip_lung.events.jsonl",
+   "session": "s-20261022-043257-64e9a0",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -2202,17 +2202,17 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 74.35,
+    "run_s": 74.18,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.18
+      "s": 37.07
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.15
+      "s": 37.09
      }
     ],
     "wheel_ticks": 368,
@@ -2223,10 +2223,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.53370900265872
+    "observed_dwell_ms_median": 153.2904579944443
    },
    "open": {
-    "open_s": 0.429,
+    "open_s": 0.443,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -2320,17 +2320,17 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 74.67,
+    "run_s": 77.99,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.42
+      "s": 39.21
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.23
+      "s": 38.76
      }
     ],
     "wheel_ticks": 368,
@@ -2341,10 +2341,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.3839580079075
+    "observed_dwell_ms_median": 153.3268329803832
    },
    "open": {
-    "open_s": 0.427,
+    "open_s": 0.473,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -2368,8 +2368,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.window_skip_bone.events.jsonl",
-   "session": "s-20261021-213413-1a51f9",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.window_skip_bone.events.jsonl",
+   "session": "s-20261022-043530-268689",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -2401,17 +2401,17 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 74.56,
+    "run_s": 77.49,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.33
+      "s": 38.4
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.22
+      "s": 39.08
      }
     ],
     "wheel_ticks": 368,
@@ -2422,10 +2422,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.51079200627282
+    "observed_dwell_ms_median": 153.5557089955546
    },
    "open": {
-    "open_s": 0.429,
+    "open_s": 0.467,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -2499,22 +2499,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 141.88,
+    "run_s": 144.91,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.28
+      "s": 39.77
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 67.47
+      "s": 67.06
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.11
+      "s": 38.07
      }
     ],
     "wheel_ticks": 552,
@@ -2526,10 +2526,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.4455840010196
+    "observed_dwell_ms_median": 153.26929098227993
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.436,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -2553,8 +2553,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.region_skip_left_lung.events.jsonl",
-   "session": "s-20261021-213647-d03312",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.region_skip_left_lung.events.jsonl",
+   "session": "s-20261022-043811-168b9e",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -2582,22 +2582,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 140.67,
+    "run_s": 145.87,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.5
+      "s": 39.89
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 66.04
+      "s": 67.41
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.11
+      "s": 38.55
      }
     ],
     "wheel_ticks": 552,
@@ -2609,10 +2609,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.16254200297408
+    "observed_dwell_ms_median": 153.51941698463634
    },
    "open": {
-    "open_s": 0.428,
+    "open_s": 0.467,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -2691,24 +2691,24 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 86.75,
+    "run_s": 87.14,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 39.31
+      "s": 39.93
      },
      {
       "window": "lung",
       "steps": 185,
       "flick": true,
-      "s": 9.03,
-      "ms_per_slice": 48.8
+      "s": 8.96,
+      "ms_per_slice": 48.4
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 38.38
+      "s": 38.24
      }
     ],
     "wheel_ticks": 552,
@@ -2720,10 +2720,10 @@
      15.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.42941600829363
+    "observed_dwell_ms_median": 153.31954197608866
    },
    "open": {
-    "open_s": 0.456,
+    "open_s": 0.452,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -2747,8 +2747,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.dwell_skip_lung.events.jsonl",
-   "session": "s-20261021-214134-c8e159",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.dwell_skip_lung.events.jsonl",
+   "session": "s-20261022-044306-90f9c1",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -2777,24 +2777,24 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 85.22,
+    "run_s": 84.94,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.22
+      "s": 39.33
      },
      {
       "window": "lung",
       "steps": 185,
       "flick": true,
-      "s": 9.03,
-      "ms_per_slice": 48.8
+      "s": 8.61,
+      "ms_per_slice": 46.5
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 38.96
+      "s": 37.0
      }
     ],
     "wheel_ticks": 552,
@@ -2806,10 +2806,10 @@
      15.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.2501250039786
+    "observed_dwell_ms_median": 153.22308300528675
    },
    "open": {
-    "open_s": 0.429,
+    "open_s": 0.488,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -2942,22 +2942,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 88.8,
+    "run_s": 86.79,
     "passes": [
      {
       "window": "soft",
       "steps": 142,
-      "s": 28.57
+      "s": 28.95
      },
      {
       "window": "lung",
       "steps": 142,
-      "s": 30.26
+      "s": 28.47
      },
      {
       "window": "bone",
       "steps": 142,
-      "s": 29.96
+      "s": 29.36
      }
     ],
     "wheel_ticks": 423,
@@ -2969,10 +2969,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.22554198792204
+    "observed_dwell_ms_median": 152.60929201031104
    },
    "open": {
-    "open_s": 0.447,
+    "open_s": 0.519,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -2996,8 +2996,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.slice_skip_caudal.events.jsonl",
-   "session": "s-20261021-214431-4b1846",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.slice_skip_caudal.events.jsonl",
+   "session": "s-20261022-044603-f9d6a3",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -3054,22 +3054,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 88.94,
+    "run_s": 85.81,
     "passes": [
      {
       "window": "soft",
       "steps": 142,
-      "s": 29.59
+      "s": 28.74
      },
      {
       "window": "lung",
       "steps": 142,
-      "s": 29.64
+      "s": 28.51
      },
      {
       "window": "bone",
       "steps": 142,
-      "s": 29.7
+      "s": 28.54
      }
     ],
     "wheel_ticks": 423,
@@ -3081,10 +3081,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.44287501648068
+    "observed_dwell_ms_median": 153.01770900259726
    },
    "open": {
-    "open_s": 0.53,
+    "open_s": 0.447,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -3163,22 +3163,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 83.18,
+    "run_s": 82.45,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 38.57
+      "s": 37.77
      },
      {
       "window": "lung",
       "steps": 36,
-      "s": 7.36
+      "s": 7.21
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.24
+      "s": 37.45
      }
     ],
     "wheel_ticks": 403,
@@ -3190,10 +3190,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.08787501999177
+    "observed_dwell_ms_median": 152.99754199804738
    },
    "open": {
-    "open_s": 0.457,
+    "open_s": 0.463,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -3217,8 +3217,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.partial_lung.events.jsonl",
-   "session": "s-20261021-214734-868dfe",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.partial_lung.events.jsonl",
+   "session": "s-20261022-044901-00ef0f",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -3247,22 +3247,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 81.2,
+    "run_s": 81.24,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 37.01
+      "s": 36.97
      },
      {
       "window": "lung",
       "steps": 36,
-      "s": 7.17
+      "s": 7.23
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.01
+      "s": 37.04
      }
     ],
     "wheel_ticks": 403,
@@ -3274,10 +3274,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.09812501072884
+    "observed_dwell_ms_median": 152.83874998567626
    },
    "open": {
-    "open_s": 0.499,
+    "open_s": 0.53,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -3351,22 +3351,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 2037.57,
+    "run_s": 2041.02,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 1960.46
+      "s": 1966.69
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 38.69
+      "s": 37.12
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 38.41
+      "s": 37.2
      }
     ],
     "wheel_ticks": 552,
@@ -3378,10 +3378,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.0883749946952
+    "observed_dwell_ms_median": 153.2703330158256
    },
    "open": {
-    "open_s": 0.482,
+    "open_s": 0.45,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -3405,8 +3405,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.organ_skip_spleen.events.jsonl",
-   "session": "s-20261021-215024-f0e729",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.organ_skip_spleen.events.jsonl",
+   "session": "s-20261022-045150-ec2ad5",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -3434,22 +3434,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 2033.95,
+    "run_s": 2032.18,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 1959.8
+      "s": 1958.36
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.19
+      "s": 37.23
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 36.96
+      "s": 36.59
      }
     ],
     "wheel_ticks": 552,
@@ -3461,10 +3461,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 153.0104170087725
+    "observed_dwell_ms_median": 153.0750829842873
    },
    "open": {
-    "open_s": 0.483,
+    "open_s": 0.485,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
@@ -3538,22 +3538,22 @@
   },
   "browser_run": {
    "run": {
-    "run_s": 238.18,
+    "run_s": 236.82,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 162.62
+      "s": 162.21
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.54
+      "s": 37.31
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 38.01
+      "s": 37.27
      }
     ],
     "wheel_ticks": 552,
@@ -3565,10 +3565,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 152.36325000296347
+    "observed_dwell_ms_median": 152.58758299751207
    },
    "open": {
-    "open_s": 0.536,
+    "open_s": 0.471,
     "tour_dismissed": false,
     "state": {
      "viewportId": "default",
@@ -3592,8 +3592,8 @@
      ]
     }
    },
-   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final/browser/pancreas-0051.organ_skip_kidney_left.events.jsonl",
-   "session": "s-20261021-225820-af34f3",
+   "events_path": "/Users/michaelchen/coverage-map-work/evidence/gauntlet/final-17df1f5/browser/pancreas-0051.organ_skip_kidney_left.events.jsonl",
+   "session": "s-20261022-055948-6bda15",
    "console_errors": []
   },
   "browser_stock_tracker_in_coverage_build": {
@@ -3621,22 +3621,22 @@
   },
   "stock_run": {
    "run": {
-    "run_s": 237.99,
+    "run_s": 236.63,
     "passes": [
      {
       "window": "soft",
       "steps": 185,
-      "s": 163.75
+      "s": 162.25
      },
      {
       "window": "lung",
       "steps": 185,
-      "s": 37.09
+      "s": 37.08
      },
      {
       "window": "bone",
       "steps": 185,
-      "s": 37.14
+      "s": 37.28
      }
     ],
     "wheel_ticks": 552,
@@ -3648,10 +3648,10 @@
      150.0,
      150.0
     ],
-    "observed_dwell_ms_median": 152.72849999018945
+    "observed_dwell_ms_median": 152.87566700135358
    },
    "open": {
-    "open_s": 0.525,
+    "open_s": 0.547,
     "tour_dismissed": true,
     "state": {
      "viewportId": "default",
