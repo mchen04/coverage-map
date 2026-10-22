@@ -288,16 +288,19 @@ def test_session_info_everywhere_and_export_origin(env):
         created = info.pop("created")
         assert isinstance(created, str) and created[:4].isdigit()
         assert info == {"session": sid, "case": CASE, "label": "info", "from_sample": None, "sample_events": 0,
-                        "finished": False, "events": 0, "last_seq": None, "last_t_ms": None, "rules": {},
+                        "finished": False, "events": 0, "last_seq": None, "last_t_ms": None, "last_now_ms": None,
+                        "rules": {},
                         "t_offset_ms": 0.0, "seq_offset": 0, "last_view": None}
         evs = _to(sid, read_pass(vol, range(10), 0, 0) + [finish(vol, 1600, 10, confirmed=False)])
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs, "now_ms": 1700}))
         info = await _json(await c.get(f"/api/sessions/{sid}"))
         assert cov["session_info"] == info
         assert (info["events"], info["last_seq"], info["last_t_ms"], info["finished"]) == (11, 10, 1600.0, False)
+        assert info["last_now_ms"] == 1700  # a takeover continues after it (C23)
         cov = await _json(await c.post(f"/api/sessions/{sid}/events",
                                        json={"events": _to(sid, [finish(vol, 1800, 11), end(vol, 1900, 12)])}))
         assert cov["session_info"]["finished"] and cov["session_info"]["last_seq"] == 12
+        assert cov["session_info"]["last_now_ms"] == 1700  # kept (the highest) when a POST has no now_ms
         cov = await _json(await c.post(f"/api/sessions/{sid}/rules", json={"min_dwell_ms": 100}))
         assert cov["session_info"]["rules"] == {"min_dwell_ms": 100}
         info = await _json(await c.get(f"/api/sessions/{sid}"))
@@ -318,6 +321,10 @@ def test_session_info_everywhere_and_export_origin(env):
         cov = await _json(await c.post(f"/api/sessions/{sid2}/events", json={"events": live}))
         info = cov["session_info"]
         assert (info["sample_events"], info["events"], info["last_seq"], info["last_t_ms"]) == (n, n + 2, 1, 500.0)
+        assert info["last_now_ms"] is None  # that POST carried no now_ms
+        cov = await _json(await c.post(f"/api/sessions/{sid2}/events", json={"events": [], "now_ms": 650}))
+        info = cov["session_info"]
+        assert (info["last_t_ms"], info["last_now_ms"]) == (500.0, 650)  # client numbering, not the sample shift
         assert "from_sample" not in json.loads((env.data / "sessions" / f"{sid2}.jsonl").read_text().splitlines()[n])
         r = await c.get(f"/api/sessions/{sid2}/export", params={"format": "csv"})
         assert r.headers["Content-Disposition"] == f'attachment; filename="{sid2}-from-sample.csv"'
@@ -326,9 +333,9 @@ def test_session_info_everywhere_and_export_origin(env):
         out.update({sid: await _json(await c.get(f"/api/sessions/{sid}")), sid2: info})
     run_client(_cfg(env), fn)
 
-    async def rehydrate(c):  # rebuilt from the log and meta by a fresh server
+    async def rehydrate(c):  # rebuilt from the log and meta by a fresh server (now_ms is not logged)
         for sid, info in out.items():
-            assert await _json(await c.get(f"/api/sessions/{sid}")) == info
+            assert await _json(await c.get(f"/api/sessions/{sid}")) == {**info, "last_now_ms": None}
     run_client(_cfg(env), rehydrate)
 
 
@@ -892,7 +899,8 @@ def test_recent_readings_of_a_case(env):
     async def fn(c):
         sids = [(await _json(await c.post("/api/sessions", json={"case": CASE, "label": f"r{i}"})))["session"]
                 for i in range(3)]
-        evs = read_pass(vol, [3, 4], 0, 0) + [finish(vol, 400, 2)]
+        # confirmed, then the Finish sheet opened again and backed out of: still finished (T1)
+        evs = read_pass(vol, [3, 4], 0, 0) + [finish(vol, 400, 2), finish(vol, 450, 3, confirmed=False)]
         await _json(await c.post(f"/api/sessions/{sids[1]}/events", json={"events": _to(sids[1], evs)}))
         await _json(await c.get(f"/api/sessions/{sids[1]}/coverage"))
         return sids, await _json(await c.get(f"/api/sessions?case={CASE}&limit=3")), \
@@ -902,7 +910,7 @@ def test_recent_readings_of_a_case(env):
     assert listed["case"] == CASE and [x["session"] for x in listed["sessions"]] == sids[::-1]
     newest, read, _ = listed["sessions"]
     assert newest == {**newest, "label": "r2", "events": 0, "last_t_ms": None, "finished": False}
-    assert read == {**read, "label": "r1", "events": 3, "last_t_ms": 400, "finished": True}
+    assert read == {**read, "label": "r1", "events": 4, "last_t_ms": 450, "finished": True}
     assert missing.status == 400 and other["sessions"] == []
 
     async def cold(c):  # a fresh server reads the same from the logs, without scoring

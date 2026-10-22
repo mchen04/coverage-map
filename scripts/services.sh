@@ -11,14 +11,26 @@ mkdir -p "$MINI_WORK/logs" "$MINI_WORK/run"
 start_one() {  # name port dist
   local name=$1 port=$2 dist=$3 pid="$MINI_WORK/run/$1.pid"
   if [[ -f $pid ]] && kill -0 "$(cat "$pid")" 2>/dev/null; then echo "$name already running (pid $(cat "$pid"))"; return; fi
-  (cd "$here" && COVMAP_OHIF_DIST="$dist" nohup python -m covmap serve --port "$port" < /dev/null > "$MINI_WORK/logs/$name.log" 2>&1 & echo $! > "$pid")
+  # a health answer now would come from some other server, and the new one could not bind
+  if curl -s -m 2 "http://127.0.0.1:$port/api/health" >/dev/null; then echo "$name: port $port is in use; not started" >&2; return 1; fi
+  # exec: the recorded pid is the server itself, not a subshell that a stop would orphan it from
+  (cd "$here" && exec env COVMAP_OHIF_DIST="$dist" nohup python -m covmap serve --port "$port") \
+    < /dev/null > "$MINI_WORK/logs/$name.log" 2>&1 &
+  echo $! > "$pid"
   for _ in $(seq 1 100); do curl -sf "http://127.0.0.1:$port/api/health" >/dev/null && break; sleep 0.2; done
+  if ! kill -0 "$(cat "$pid")" 2>/dev/null; then echo "$name exited:" >&2; tail -3 "$MINI_WORK/logs/$name.log" >&2; return 1; fi
   echo "$name: $(curl -s "http://127.0.0.1:$port/api/health")"
 }
 
 stop_one() {
-  local pid="$MINI_WORK/run/$1.pid"
-  if [[ -f $pid ]]; then kill "$(cat "$pid")" 2>/dev/null || true; rm -f "$pid"; echo "$1 stopped"; fi
+  local pid="$MINI_WORK/run/$1.pid" p
+  [[ -f $pid ]] || return 0
+  p=$(cat "$pid")
+  kill "$p" 2>/dev/null || true
+  # the graceful shutdown can take 5 s (open connections): wait, so a restart can bind the port
+  for _ in $(seq 1 50); do kill -0 "$p" 2>/dev/null || break; sleep 0.2; done
+  kill -9 "$p" 2>/dev/null || true
+  rm -f "$pid"; echo "$1 stopped"
 }
 
 case "${1:-status}" in

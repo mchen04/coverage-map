@@ -7,9 +7,9 @@
   {
    "check": "open coverage mode: first image, case lookup, session, map ready, soft window, title",
    "ok": true,
-   "s": 0.66,
+   "s": 0.83,
    "detail": {
-    "open_s": 0.64,
+    "open_s": 0.82,
     "viewer": {
      "viewportId": "default",
      "type": "stack",
@@ -33,16 +33,16 @@
     },
     "marks_ms": {
      "first": [
-      477.7000000178814
+      598.5
      ],
      "map": [
-      590.0999999940395
+      713.6999999880791
      ],
      "hooks": {
-      "first": 477.7000000178814,
-      "map": 590.0999999940395,
+      "first": 598.5,
+      "map": 713.6999999880791,
       "caseId": "pancreas-0051",
-      "sessionId": "s-20261021-232008-889e70"
+      "sessionId": "s-20261022-001818-ee6e5c"
      }
     },
     "voi": {
@@ -132,7 +132,7 @@
   {
    "check": "R6 first-use hint on a fresh browser; no page scroll with it at 1280x800; dismissed and remembered",
    "ok": true,
-   "s": 2.16,
+   "s": 2.19,
    "detail": {
     "text": "Scroll the CT; organs turn green once shown in their window \u00b7 N next gap\n\u00d7",
     "height_px": {
@@ -208,7 +208,7 @@
   {
    "check": "U6 axial stack shown radiologically (anterior up, patient right on screen left), true corners recorded",
    "ok": true,
-   "s": 0.41,
+   "s": 0.43,
    "detail": {
     "corners_lps": [
      [
@@ -243,21 +243,22 @@
    "ok": true,
    "s": 2.1,
    "detail": {
-    "posts_in_2.1s": 5,
+    "posts_in_2.1s": 6,
     "gaps_ms": [
-     398,
-     407,
+     410,
+     394,
+     401,
      399,
-     401
+     397
     ]
    }
   },
   {
    "check": "wheel-scroll reading with soft (1) and lung (2) hotkey windows",
    "ok": true,
-   "s": 50.59,
+   "s": 50.93,
    "detail": {
-    "s": 50.6,
+    "s": 50.9,
     "wheel_ticks": 272,
     "api_jumps": 2,
     "statuses": {
@@ -278,7 +279,7 @@
   {
    "check": "U7 window hint in a non-counting window; active preset highlighted",
    "ok": true,
-   "s": 0.23,
+   "s": 0.22,
    "detail": {
     "hint": "Brain window: counts for no organ \u2014 press 1 soft, 2 lung, 3 bone",
     "active_after_key": {
@@ -290,7 +291,7 @@
   {
    "check": "U20/U11 rows floor the % (never shows the threshold early); hints '34% unseen \u00b7 reason'",
    "ok": true,
-   "s": 0.78,
+   "s": 0.76,
    "detail": {
     "partial_rows": [
      [
@@ -349,7 +350,7 @@
   {
    "check": "R4 organ names never truncated by the unseen hint (1440x900, 1280x800)",
    "ok": true,
-   "s": 2.15,
+   "s": 2.17,
    "detail": {
     "1440x900": {
      "rows": 21,
@@ -531,10 +532,10 @@
     ],
     "example": {
      "v": 1,
-     "session": "s-20261021-232008-889e70",
+     "session": "s-20261022-001818-ee6e5c",
      "case": "pancreas-0051",
      "seq": 144,
-     "t_ms": 30307.1,
+     "t_ms": 30430.8,
      "kind": "view",
      "viewport": "default",
      "vp_type": "stack",
@@ -582,7 +583,7 @@
   {
    "check": "3D map hover shows organ name and %",
    "ok": true,
-   "s": 12.07,
+   "s": 11.48,
    "detail": {
     "organs_hovered": 10,
     "examples": [
@@ -596,7 +597,7 @@
   {
    "check": "U1 click gray/yellow organ in 3D map -> the server's gap slice in the organ window",
    "ok": true,
-   "s": 0.46,
+   "s": 1.03,
    "detail": {
     "clicked": "lung_right",
     "status": "partial",
@@ -628,7 +629,7 @@
   {
    "check": "U1 Next gap jumps to remaining organs at the server's gap slice with the organ window",
    "ok": true,
-   "s": 1.12,
+   "s": 1.1,
    "detail": [
     {
      "key": "lung_left",
@@ -665,7 +666,7 @@
   {
    "check": "S1 a jump shows the whole organ: N at the fit keeps pan and zoom; zoomed 4x and panned away, N pans and zooms out to show all of it on the gap slice (canvas and recorded view), flips and window kept",
    "ok": true,
-   "s": 4.58,
+   "s": 4.54,
    "detail": {
     "at_fit": {
      "organ": "sternum",
@@ -746,7 +747,7 @@
   {
    "check": "U1/U2/R5 organ row click -> gap slice; detail shows extent and still-to-read in viewer image numbers 'of N (viewer n/N)', matching the viewer's (n/N) counter",
    "ok": true,
-   "s": 0.46,
+   "s": 0.42,
    "detail": {
     "key": "liver",
     "gap": {
@@ -784,7 +785,7 @@
   {
    "check": "U9/U17 row actions done / N/A / flag (note focused, in view) post annotation events; 24px buttons",
    "ok": true,
-   "s": 0.99,
+   "s": 1.0,
    "detail": {
     "done": "lumbar_spine",
     "na": "ribs_left",
@@ -889,7 +890,7 @@
   {
    "check": "hotkeys D / A / G toggle reader state of the selected organ",
    "ok": true,
-   "s": 0.5,
+   "s": 0.51,
    "detail": {
     "organ": "liver",
     "sequence": [
@@ -914,7 +915,7 @@
   {
    "check": "U3/U13 map: A/P/R/L views + side labels, drag keeps model centred, picking after rotation, hide reviewed, N/A legend",
    "ok": true,
-   "s": 14.49,
+   "s": 14.07,
    "detail": {
     "views": {
      "back": {
@@ -1138,7 +1139,7 @@
   {
    "check": "O toggles the selected organ outline (SVG, redrawn on slice change, banner below the marker)",
    "ok": true,
-   "s": 0.59,
+   "s": 0.58,
    "detail": {
     "organ": "liver",
     "path_chars": 1957,
@@ -1159,7 +1160,7 @@
   {
    "check": "hotkeys 1-5 set exact W/L (soft, lung, bone, liver, brain)",
    "ok": true,
-   "s": 0.11,
+   "s": 0.1,
    "detail": {
     "1": [
      40,
@@ -1186,7 +1187,7 @@
   {
    "check": "U8/U19/U22 Finish: list, decisions, jump, Go back, Esc, Confirm -> finish events + summary",
    "ok": true,
-   "s": 0.62,
+   "s": 0.57,
    "detail": {
     "listed": 12,
     "jumped_to": "aorta",
@@ -1219,7 +1220,7 @@
     ],
     "decisions": null,
     "server_finished": {
-     "t_ms": 94941.1,
+     "t_ms": 94845.1,
      "confirmed": true,
      "remaining": [
       "aorta",
@@ -1269,20 +1270,20 @@
    }
   },
   {
-   "check": "C13 finished follows the last finish event: Confirm, then F + Go back / Esc un-finishes at once (chip, server), Confirm again",
+   "check": "T1 a confirmed finish stays: Confirm, then F + Go back / Esc keeps the chip, the server's finished state and at_finish; Confirm again replaces it",
    "ok": true,
-   "s": 1.19,
+   "s": 1.79,
    "detail": {
     "steps": {
      "go-back": {
-      "server": false,
-      "chip": 0,
-      "reconfirmed": true
+      "server": true,
+      "chip": 1,
+      "reconfirmed_t_ms": 95644.2
      },
      "escape": {
-      "server": false,
-      "chip": 0,
-      "reconfirmed": true
+      "server": true,
+      "chip": 1,
+      "reconfirmed_t_ms": 96491.4
      }
     },
     "finish_events": [
@@ -1299,7 +1300,7 @@
   {
    "check": "S7 Finish sheet at 1280x800: 'Your decisions' visible above the buttons, not clipped; Confirm",
    "ok": true,
-   "s": 2.48,
+   "s": 2.5,
    "detail": {
     "dec": {
      "top": 620.984375,
@@ -1334,18 +1335,18 @@
   {
    "check": "Export JSONL / JSON / CSV downloads",
    "ok": true,
-   "s": 0.18,
+   "s": 0.19,
    "detail": {
     "jsonl": {
-     "file": "s-20261021-232008-889e70.jsonl",
-     "bytes": 197955
+     "file": "s-20261022-001818-ee6e5c.jsonl",
+     "bytes": 197956
     },
     "json": {
-     "file": "s-20261021-232008-889e70.coverage.json",
-     "bytes": 10721
+     "file": "s-20261022-001818-ee6e5c.coverage.json",
+     "bytes": 10747
     },
     "csv": {
-     "file": "s-20261021-232008-889e70.csv",
+     "file": "s-20261022-001818-ee6e5c.csv",
      "bytes": 1853
     }
    }
@@ -1353,7 +1354,7 @@
   {
    "check": "U12 rules: min 0, empty rejected, custom marker, Restore defaults; re-scores the session",
    "ok": true,
-   "s": 0.62,
+   "s": 0.54,
    "detail": {
     "empty_dwell_error": "Min dwell must be a number of milliseconds, 0 or more.",
     "at_400ms": {
@@ -1387,7 +1388,7 @@
       "sternum"
      ],
      "finished": {
-      "t_ms": 97924.1,
+      "t_ms": 98412.4,
       "confirmed": true,
       "remaining": [
        "aorta",
@@ -1548,7 +1549,7 @@
     "frame_marks": [
      {
       "index": 0,
-      "t_ms": 0,
+      "t_ms": 0.1,
       "shown": {
        "left": 21,
        "na": [],
@@ -1566,7 +1567,7 @@
      },
      {
       "index": 24,
-      "t_ms": 61483.32307692307,
+      "t_ms": 61759.11538461538,
       "shown": {
        "left": 15,
        "na": [],
@@ -1584,7 +1585,7 @@
      },
      {
       "index": 39,
-      "t_ms": 99910.4,
+      "t_ms": 100358.5,
       "shown": {
        "left": 12,
        "na": [
@@ -1615,7 +1616,7 @@
   {
    "check": "U4/U10/C6 Start from sample while scrolling: confirm, labelled as your reading, source shown, clean seq/clock",
    "ok": true,
-   "s": 2.08,
+   "s": 2.06,
    "detail": {
     "sample": {
      "name": "partial-reading",
@@ -1623,7 +1624,7 @@
      "source": "browser-scripted",
      "events": 236
     },
-    "session": "s-20261021-232152-4672dc",
+    "session": "s-20261022-002001-7a0511",
     "label": "Your reading, started from sample: partial reading",
     "origin": "sample events: scripted automated reading (not a human) \u00b7 236",
     "summary": {
@@ -1652,20 +1653,20 @@
      "finished": null
     },
     "prefilled": 236,
-    "live_after": 36,
+    "live_after": 37,
     "first_live": {
      "seq": 236,
-     "t_ms": 47088.600000000006,
+     "t_ms": 47088.5,
      "kind": "view"
     },
     "scripted_scroll_ticks": 38,
     "c6": {
-     "live_events": 36,
+     "live_events": 37,
      "seq": [
       236,
-      271
+      272
      ],
-     "first_t_ms": 0.3,
+     "first_t_ms": 0.2,
      "kinds": [
       "view"
      ]
@@ -1677,26 +1678,26 @@
   {
    "check": "U10/U24/C6 New reading (confirm, and the __covmap.newReading hook) while scrolling: seq 0, t~0, no leaks",
    "ok": true,
-   "s": 2.66,
+   "s": 2.64,
    "detail": {
-    "old": "s-20261021-232152-4672dc",
-    "new": "s-20261021-232154-7679d2",
+    "old": "s-20261022-002001-7a0511",
+    "new": "s-20261022-002003-16176d",
     "list_scroll_before": 247,
     "scripted_scroll_ticks": 34,
     "c6_menu": {
-     "live_events": 33,
+     "live_events": 34,
      "seq": [
       0,
-      32
+      33
      ],
      "first_t_ms": 0.1,
      "kinds": [
       "view"
      ]
     },
-    "old_events": 274,
+    "old_events": 275,
     "old_last": "end",
-    "hook": "s-20261021-232155-6a73bb",
+    "hook": "s-20261022-002004-32875e",
     "c6_hook": {
      "live_events": 33,
      "seq": [
@@ -1709,7 +1710,7 @@
      ]
     },
     "hook_old_closed": {
-     "old_events": 34,
+     "old_events": 35,
      "old_last": "end"
     }
    }
@@ -1717,148 +1718,148 @@
   {
    "check": "S5/S2/S6 Session > Recent readings: lists the case's other readings newest first (time, events, finished), opens one where it left off (seq/clock continue); reading on after its finish shows 'Finished at a% \u00b7 reading continued (now b%)'; back through the list",
    "ok": true,
-   "s": 2.68,
+   "s": 2.7,
    "detail": {
     "listed": [
      {
-      "id": "s-20261021-232154-7679d2",
+      "id": "s-20261022-002003-16176d",
       "finished": "0",
-      "text": "Live readingtoday 11:21 PM \u00b7 34 events"
+      "text": "Live readingtoday 12:20 AM \u00b7 35 events"
      },
      {
-      "id": "s-20261021-232152-4672dc",
+      "id": "s-20261022-002001-7a0511",
       "finished": "0",
-      "text": "Your reading, started from sample: partial readingtoday 11:21 PM \u00b7 274 events"
+      "text": "Your reading, started from sample: partial readingtoday 12:20 AM \u00b7 275 events"
      },
      {
-      "id": "s-20261021-232008-889e70",
+      "id": "s-20261022-001818-ee6e5c",
       "finished": "1",
-      "text": "Live reading \u00b7 \u2713 finishedtoday 11:20 PM \u00b7 410 events"
+      "text": "Live reading \u00b7 \u2713 finishedtoday 12:18 AM \u00b7 410 events"
      },
      {
-      "id": "s-20261021-231959-9c32a5",
+      "id": "s-20261022-001606-fd36bd",
       "finished": "0",
-      "text": "Live readingtoday 11:19 PM \u00b7 3 events"
+      "text": "Live readingtoday 12:16 AM \u00b7 26 events"
      },
      {
-      "id": "s-20261021-231632-29a3dc",
+      "id": "s-20261022-001554-7f7553",
       "finished": "0",
-      "text": "Live readingtoday 11:16 PM \u00b7 71 events"
+      "text": "Live readingtoday 12:15 AM \u00b7 48 events"
      },
      {
-      "id": "s-20261021-231620-53554d",
+      "id": "s-20261022-001542-fb0510",
       "finished": "0",
-      "text": "Live readingtoday 11:16 PM \u00b7 45 events"
+      "text": "Live readingtoday 12:15 AM \u00b7 45 events"
      },
      {
-      "id": "s-20261021-231556-823ab7",
+      "id": "s-20261022-001518-e4bf39",
       "finished": "0",
-      "text": "Live readingtoday 11:15 PM \u00b7 37 events"
+      "text": "Live readingtoday 12:15 AM \u00b7 41 events"
      },
      {
-      "id": "s-20261021-231542-c65ce7",
+      "id": "s-20261022-001504-251fc1",
       "finished": "1",
-      "text": "Live reading \u00b7 \u2713 finishedtoday 11:15 PM \u00b7 63 events"
+      "text": "Live reading \u00b7 \u2713 finishedtoday 12:15 AM \u00b7 63 events"
      },
      {
-      "id": "s-20261021-231541-0a5348",
+      "id": "s-20261022-001503-1c0521",
       "finished": "0",
-      "text": "Live readingtoday 11:15 PM \u00b7 34 events"
+      "text": "Live readingtoday 12:15 AM \u00b7 34 events"
      }
     ],
     "server": [
      {
-      "session": "s-20261021-232155-6a73bb",
+      "session": "s-20261022-002004-32875e",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:21:55-0700",
+      "created": "2026-10-22T00:20:04-0700",
       "events": 33,
-      "last_t_ms": 799.9,
+      "last_t_ms": 810.7,
       "finished": false
      },
      {
-      "session": "s-20261021-232154-7679d2",
+      "session": "s-20261022-002003-16176d",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:21:54-0700",
-      "events": 34,
-      "last_t_ms": 1144.6,
+      "created": "2026-10-22T00:20:03-0700",
+      "events": 35,
+      "last_t_ms": 1149.7,
       "finished": false
      },
      {
-      "session": "s-20261021-232152-4672dc",
+      "session": "s-20261022-002001-7a0511",
       "label": "Your reading, started from sample: partial reading",
       "from_sample": "partial-reading",
-      "created": "2026-10-21T23:21:52-0700",
-      "events": 274,
-      "last_t_ms": 1995.800000000003,
+      "created": "2026-10-22T00:20:01-0700",
+      "events": 275,
+      "last_t_ms": 1981.0,
       "finished": false
      },
      {
-      "session": "s-20261021-232008-889e70",
+      "session": "s-20261022-001818-ee6e5c",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:20:08-0700",
+      "created": "2026-10-22T00:18:18-0700",
       "events": 410,
-      "last_t_ms": 103226.9,
+      "last_t_ms": 103679.2,
       "finished": true
      },
      {
-      "session": "s-20261021-231959-9c32a5",
+      "session": "s-20261022-001606-fd36bd",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:19:59-0700",
-      "events": 3,
-      "last_t_ms": 368.3,
+      "created": "2026-10-22T00:16:06-0700",
+      "events": 26,
+      "last_t_ms": 12731.6,
       "finished": false
      },
      {
-      "session": "s-20261021-231632-29a3dc",
+      "session": "s-20261022-001554-7f7553",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:16:32-0700",
-      "events": 71,
-      "last_t_ms": 22266.9,
+      "created": "2026-10-22T00:15:54-0700",
+      "events": 48,
+      "last_t_ms": 12318.6,
       "finished": false
      },
      {
-      "session": "s-20261021-231620-53554d",
+      "session": "s-20261022-001542-fb0510",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:16:20-0700",
+      "created": "2026-10-22T00:15:42-0700",
       "events": 45,
-      "last_t_ms": 11521.7,
+      "last_t_ms": 11517.0,
       "finished": false
      },
      {
-      "session": "s-20261021-231556-823ab7",
+      "session": "s-20261022-001518-e4bf39",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:15:56-0700",
-      "events": 37,
-      "last_t_ms": 16501.1,
+      "created": "2026-10-22T00:15:18-0700",
+      "events": 41,
+      "last_t_ms": 23661.5,
       "finished": false
      },
      {
-      "session": "s-20261021-231542-c65ce7",
+      "session": "s-20261022-001504-251fc1",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:15:42-0700",
+      "created": "2026-10-22T00:15:04-0700",
       "events": 63,
-      "last_t_ms": 11091.0,
+      "last_t_ms": 11207.3,
       "finished": true
      },
      {
-      "session": "s-20261021-231541-0a5348",
+      "session": "s-20261022-001503-1c0521",
       "label": "live reading (OHIF)",
       "from_sample": null,
-      "created": "2026-10-21T23:15:41-0700",
+      "created": "2026-10-22T00:15:03-0700",
       "events": 34,
-      "last_t_ms": 1149.6,
+      "last_t_ms": 1152.4,
       "finished": false
      }
     ],
-    "reopened": "s-20261021-232008-889e70",
+    "reopened": "s-20261022-001818-ee6e5c",
     "last_view": {
      "sop": "1.2.826.0.1.3680043.2.1125.1.79192767960451891791004828896145174",
      "k": 157,
@@ -1889,15 +1890,15 @@
      "old_events": 34,
      "old_last": "end"
     },
-    "back_to": "s-20261021-232155-6a73bb"
+    "back_to": "s-20261022-002004-32875e"
    }
   },
   {
    "check": "R1 Finish at the confirm moment: an organ read just past 90% on its last image is not listed, Confirm; JSON/CSV exports (mid-reading and finished) match the screen, CSV == JSON, same after reload",
    "ok": true,
-   "s": 6.98,
+   "s": 6.95,
    "detail": {
-    "session": "s-20261021-232155-6a73bb",
+    "session": "s-20261022-002004-32875e",
     "organ": "heart",
     "slices": 19,
     "steps_image_cov": [
@@ -2014,8 +2015,8 @@
       "finished": null
      },
      "files": {
-      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-mid-reading-pancreas-0051.json",
-      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-mid-reading-pancreas-0051.csv"
+      "json": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-mid-reading-pancreas-0051.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-mid-reading-pancreas-0051.csv"
      }
     },
     "finished": {
@@ -2052,7 +2053,7 @@
        "sternum"
       ],
       "finished": {
-       "t_ms": 6492.7,
+       "t_ms": 6485.0,
        "confirmed": true,
        "remaining": [
         "esophagus",
@@ -2113,15 +2114,15 @@
       "seen_voxels": 67299
      },
      "files": {
-      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-finished-pancreas-0051.json",
-      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-finished-pancreas-0051.csv"
+      "json": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-finished-pancreas-0051.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-finished-pancreas-0051.csv"
      }
     },
     "after_reload": {
      "provisional": true,
      "files": {
-      "json": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-after-reload-pancreas-0051.json",
-      "csv": "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-after-reload-pancreas-0051.csv"
+      "json": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-after-reload-pancreas-0051.json",
+      "csv": "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-after-reload-pancreas-0051.csv"
      },
      "restored_view": {
       "type": "stack",
@@ -2138,15 +2139,15 @@
   {
    "check": "U10/R2/R3/S6 reload resumes the case's session (seq/t continue) at its last image and window; events counter = session total; 'Resumed \u00b7 Start new reading\u2026'",
    "ok": true,
-   "s": 3.22,
+   "s": 3.18,
    "detail": {
-    "session": "s-20261021-232155-6a73bb",
+    "session": "s-20261022-002004-32875e",
     "events_before_reload": 56,
     "events_after": 61,
     "identical_resends_logged": 0,
     "resumed_chip": "Resumed \u00b7 Start new reading\u2026",
     "continued_from": 56,
-    "new_after_quick": "s-20261021-232209-f32fd1",
+    "new_after_quick": "s-20261022-002018-82b576",
     "r2": {
      "left": {
       "type": "stack",
@@ -2193,12 +2194,14 @@
   {
    "check": "C12 two tabs on one case: one records (Web Lock), the other shows 'open in another tab' and records nothing; Record here takes over both ways; server ignored.other == 0, organs counted",
    "ok": true,
-   "s": 10.09,
+   "s": 10.48,
    "detail": {
-    "session": "s-20261021-232209-f32fd1",
+    "session": "s-20261022-002018-82b576",
     "read_in_A": "liver",
     "read_in_B": "colon",
     "read_in_A_again": "pancreas",
+    "A_last_image_held_ms": 3550,
+    "A_shown_before_takeover_ms": 3069,
     "seen_voxels": {
      "liver": 63155,
      "colon": 14501,
@@ -2210,9 +2213,9 @@
      "other": 0,
      "conflict": 0
     },
-    "events": 10,
+    "events": 12,
     "seq_gaps": [],
-    "tab_B_posts": 11,
+    "tab_B_posts": 13,
     "tab_B_refusal_toast": 1,
     "banner": "This reading is open in another tab \u2014 not recording here until that tab closes\nRecord here"
    }
@@ -2220,10 +2223,10 @@
   {
    "check": "C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, no duplicates",
    "ok": true,
-   "s": 1.15,
+   "s": 1.17,
    "detail": {
-    "events_before": 10,
-    "events_after": 13,
+    "events_before": 12,
+    "events_after": 15,
     "resyncs": 1,
     "ignored": {
      "oblique": 0,
@@ -2232,35 +2235,35 @@
      "conflict": 0
     },
     "last_seqs": [
-     7,
-     8,
      9,
      10,
      11,
-     12
+     12,
+     13,
+     14
     ]
    }
   },
   {
    "check": "S3 two tabs: the recording tab closes, the waiting tab records by itself (no click), continuing after the closed tab's last event; no conflicts",
    "ok": true,
-   "s": 4.63,
+   "s": 4.69,
    "detail": {
-    "session": "s-20261021-232209-f32fd1",
+    "session": "s-20261022-002018-82b576",
     "read_in_B": "heart",
     "read_in_A_after": "duodenum",
-    "takeover_s": 0.42,
+    "takeover_s": 0.41,
     "banner": "This reading is open in another tab \u2014 not recording here until that tab closesRecord here",
     "b_close_events": [
      [
-      16,
+      19,
       "end"
      ]
     ],
     "a_first": {
-     "seq": 17,
-     "t_ms": 6709.2,
-     "kind": "view"
+     "seq": 20,
+     "t_ms": 13855.6,
+     "kind": "hidden"
     },
     "ignored": {
      "oblique": 0,
@@ -2269,14 +2272,14 @@
      "conflict": 0
     },
     "identical_resends_logged": 0,
-    "events": 20,
-    "a_events_after": 3
+    "events": 24,
+    "a_events_after": 4
    }
   },
   {
    "check": "U6 radiological display kept after OHIF Reset View and viewport.resetCamera(); framing after a reset shows the same region as without the flip",
    "ok": true,
-   "s": 5.7,
+   "s": 5.67,
    "detail": {
     "default_corners": [
      [
@@ -2382,7 +2385,7 @@
   {
    "check": "S4 OHIF Reset View resets pan/zoom and keeps the bone preset (next image too); a custom window in no class says 'Custom window: counts for no organ', one in a class 'counts as bone (B)'",
    "ok": true,
-   "s": 2.06,
+   "s": 2.1,
    "detail": {
     "window_after_reset": [
      480,
@@ -2407,7 +2410,7 @@
   {
    "check": "U6 scoring identical with and without the radiological flip (Reset View, then the same scripted reading; 2 sessions)",
    "ok": true,
-   "s": 23.3,
+   "s": 23.36,
    "detail": {
     "images": [
      73,
@@ -2415,7 +2418,7 @@
     ],
     "flip_needed_for_this_case": true,
     "radiological": {
-     "session": "s-20261021-232233-8b79b5",
+     "session": "s-20261022-002043-ed4911",
      "radiological_corners": true,
      "flip": [
       false,
@@ -2425,7 +2428,7 @@
      "all_views_radiological": true
     },
     "acquisition": {
-     "session": "s-20261021-232245-4d4737",
+     "session": "s-20261022-002055-b197f7",
      "radiological_corners": false,
      "flip": [
       false,
@@ -2439,21 +2442,23 @@
    }
   },
   {
-   "check": "visibilitychange hidden -> hidden event; visible -> state re-emitted",
+   "check": "visibilitychange hidden -> hidden event; visible -> state re-emitted; C24 a new reading started while hidden records no view until shown",
    "ok": true,
-   "s": 1.02,
+   "s": 3.76,
    "detail": {
     "hidden": {
      "v": 1,
-     "session": "s-20261021-232245-4d4737",
+     "session": "s-20261022-002055-b197f7",
      "case": "pancreas-0051",
      "seq": 44,
-     "t_ms": 11247.3,
+     "t_ms": 11282.5,
      "kind": "hidden",
      "viewport": "*",
      "source": "ohif"
     },
-    "views_after": 1
+    "views_after": 1,
+    "new_reading_hidden": "s-20261022-002107-642591",
+    "views_once_shown": 1
    }
   },
   {
@@ -2477,47 +2482,51 @@
       ],
       [
        "stomach",
-       "68% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "liver",
-       "72% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "aorta",
-       "82% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "inferior_vena_cava",
-       "74% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "spleen",
-       "44% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "pancreas",
-       "22% unseen \u00b7 never shown"
+       "never shown"
+      ],
+      [
+       "gallbladder",
+       "never shown"
       ],
       [
        "kidney_left",
-       "54% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "kidney_right",
-       "59% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "duodenum",
-       "84% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "colon",
-       "89% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "small_bowel",
-       "95% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "lung_right",
@@ -2586,10 +2595,10 @@
     "hidden_on_disable": 1,
     "example": {
      "v": 1,
-     "session": "s-20261021-232245-4d4737",
+     "session": "s-20261022-002107-642591",
      "case": "pancreas-0051",
-     "seq": 49,
-     "t_ms": 13689.7,
+     "seq": 6,
+     "t_ms": 4125.4,
      "kind": "view",
      "viewport": "mpr-axial",
      "vp_type": "volume",
@@ -2637,15 +2646,15 @@
   {
    "check": "U15/R2 case picker: lists cases, opens the other, returning resumes this case's reading at its last image and window",
    "ok": true,
-   "s": 2.0,
+   "s": 2.03,
    "detail": {
     "cases": [
      "lidc-0001",
      "pancreas-0051"
     ],
     "went_to": "lidc-0001",
-    "other_session": "s-20261021-232305-62ebca",
-    "resumed": "s-20261021-232245-4d4737",
+    "other_session": "s-20261022-002118-d139aa",
+    "resumed": "s-20261022-002107-642591",
     "r2": {
      "left": {
       "type": "stack",
@@ -2752,47 +2761,51 @@
       ],
       [
        "stomach",
-       "68% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "liver",
-       "72% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "aorta",
-       "82% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "inferior_vena_cava",
-       "74% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "spleen",
-       "44% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "pancreas",
-       "22% unseen \u00b7 never shown"
+       "never shown"
+      ],
+      [
+       "gallbladder",
+       "never shown"
       ],
       [
        "kidney_left",
-       "54% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "kidney_right",
-       "59% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "duodenum",
-       "84% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "colon",
-       "89% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "small_bowel",
-       "95% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "lung_right",
@@ -2899,47 +2912,51 @@
       ],
       [
        "stomach",
-       "68% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "liver",
-       "72% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "aorta",
-       "82% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "inferior_vena_cava",
-       "74% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "spleen",
-       "44% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "pancreas",
-       "22% unseen \u00b7 never shown"
+       "never shown"
+      ],
+      [
+       "gallbladder",
+       "never shown"
       ],
       [
        "kidney_left",
-       "54% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "kidney_right",
-       "59% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "duodenum",
-       "84% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "colon",
-       "89% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "small_bowel",
-       "95% unseen \u00b7 never shown"
+       "never shown"
       ],
       [
        "lung_right",
@@ -2980,7 +2997,7 @@
   {
    "check": "stock /viewer mode unchanged (no panel, no instrumentation, stock hotkeys)",
    "ok": true,
-   "s": 3.06,
+   "s": 3.11,
    "detail": {
     "covmap_panel": 0,
     "window.__covmap": "undefined",
@@ -2991,7 +3008,7 @@
   {
    "check": "/ opens the demo case in coverage mode",
    "ok": true,
-   "s": 0.41,
+   "s": 0.43,
    "detail": {
     "landed": "http://127.0.0.1:8765/coverage?StudyInstanceUIDs=1.2.826.0.1.3680043.2.1125.1.26661117508834397948676763221432807"
    }
@@ -3003,7 +3020,7 @@
    "text": "Failed to load resource: the server responded with a status of 409 (Conflict)",
    "check": "C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, no duplicates",
    "at": {
-    "url": "http://127.0.0.1:8765/api/sessions/s-20261021-232209-f32fd1/events",
+    "url": "http://127.0.0.1:8765/api/sessions/s-20261022-002018-82b576/events",
     "line": 0,
     "column": 0,
     "lineNumber": 0,
@@ -3015,7 +3032,7 @@
    "text": "Unable to preventDefault inside passive event listener invocation.",
    "check": "MPR volume viewports are instrumented (vp_type volume, 3 normals)",
    "at": {
-    "url": "http://127.0.0.1:8765/app.bundle.b6d84495ff5ca118.js",
+    "url": "http://127.0.0.1:8765/app.bundle.cc238702172db1dc.js",
     "line": 24,
     "column": 0,
     "lineNumber": 24,
@@ -3024,71 +3041,71 @@
   }
  ],
  "console_warnings": {
-  "covmap: seq conflict (409); continuing after the server's last event: 1 events renumbered from seq 10": 1
+  "covmap: seq conflict (409); continuing after the server's last event: 1 events renumbered from seq 12": 1
  },
- "event_posts": 608,
+ "event_posts": 624,
  "screenshots": [
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-01-initial-1440x900.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r6-first-use-1280x800.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u06-radiological.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-02-after-reading.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-03-panel-after-reading.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-04-map-after-reading.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u07-window-hint.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r4-names-1440x900.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r4-names-1280x800.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-05-map-hover.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-06-after-map-click.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s1-a-zoomed-panned.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s1-b-after-next-gap.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u01-u02-row-detail.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r5-numbering.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u09-flag-note-focus.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-07-row-actions.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-back.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-right.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-left.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-front.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-dragged.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u03-map-hide-reviewed.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u13-map-na-legend.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-08-outline.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-08b-outline-full.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-09-finish-dialog.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-10-finished-summary.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-c13-after-go-back.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s7-finish-1280x800.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-11-rules-applied.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-12-replay-start.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-13-replay-mid.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-replay-last-frame.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-replay-rules-disabled.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-14a-sample-list.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u10-confirm.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-14-sample-loaded.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s5-recent-list-a-open-earlier.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s2-finished-continued.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s5-recent-list-b-back.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-a-read-past-90.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-b-finish-dialog.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-c-after-confirm.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r1-d-after-reload.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r2-r3-resumed-last-view.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u10-resumed.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-c12-tabB-not-recording.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-c12-tabA-after-takeover.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s3-a-tabA-waiting.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s3-b-tabA-recording-again.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u06-after-reset-view.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s4-a-reset-view-bone.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s4-b-custom-no-class.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-s4-c-custom-bone.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-15-1280x800.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-16-mpr.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u15-case-list.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-u15-other-case.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-r2-case-switch-back.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-18-final-1440x900.png",
-  "/Users/michaelchen/coverage-map-work/evidence/c-useit-r3-fixes/pancreas-0051/c-17-stock-viewer.png"
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-01-initial-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r6-first-use-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u06-radiological.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-02-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-03-panel-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-04-map-after-reading.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u07-window-hint.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r4-names-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r4-names-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-05-map-hover.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-06-after-map-click.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s1-a-zoomed-panned.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s1-b-after-next-gap.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u01-u02-row-detail.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r5-numbering.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u09-flag-note-focus.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-07-row-actions.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-right.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-left.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-front.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-dragged.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u03-map-hide-reviewed.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u13-map-na-legend.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-08-outline.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-08b-outline-full.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-09-finish-dialog.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-10-finished-summary.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-t1-after-go-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s7-finish-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-11-rules-applied.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-12-replay-start.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-13-replay-mid.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-replay-last-frame.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-replay-rules-disabled.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-14a-sample-list.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u10-confirm.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-14-sample-loaded.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s5-recent-list-a-open-earlier.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s2-finished-continued.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s5-recent-list-b-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-a-read-past-90.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-b-finish-dialog.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-c-after-confirm.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r1-d-after-reload.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r2-r3-resumed-last-view.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u10-resumed.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-c12-tabB-not-recording.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-c12-tabA-after-takeover.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s3-a-tabA-waiting.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s3-b-tabA-recording-again.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u06-after-reset-view.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s4-a-reset-view-bone.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s4-b-custom-no-class.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-s4-c-custom-bone.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-15-1280x800.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-16-mpr.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u15-case-list.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-u15-other-case.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-r2-case-switch-back.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-18-final-1440x900.png",
+  "/Users/michaelchen/coverage-map-work/evidence/ui-check-fix-r2d/pancreas-0051/c-17-stock-viewer.png"
  ]
 }

@@ -131,7 +131,9 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   confirm. View events after it start new states as usual; `confirmed: false` ends nothing.
   Coverage keeps what a confirmed finish confirmed in `finished.at_finish` (`reviewed`,
   `partial`, `skipped`, `voxel_coverage`, per-organ `statuses` at its `t_ms`), so reading on
-  after the confirm never rewrites it.
+  after the confirm never rewrites it. A confirmed finish stays: a later `confirmed: false`
+  (the reader backed out of the Finish sheet) is logged but leaves `finished` as it was; only
+  another confirmed finish replaces it.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -219,10 +221,11 @@ session is closed (e.g. after a confirmed finish).
 `"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
 `status` never changes because of annotations. `summary` adds `attested` (reader done on a
 non-reviewed organ), `not_applicable`, `flagged`, and `remaining` (keys of organs that are not
-reviewed and not marked done/na — the finish list), plus `finished` (last finish event or null; `at_finish` after a confirmed one). `baseline` is the per-image viewed/unviewed
-model (`covmap/baseline.py`): an image counts as viewed when it was displayed in any
-viewport for any duration under any window and zoom (≥ 1 view event naming it, or a volume
-viewport state whose plane is that acquisition slice). This models the described
+reviewed and not marked done/na — the finish list), plus `finished` (the latest confirmed finish
+with its `at_finish`; before any, the last finish event or null). `baseline` is the per-image
+viewed/unviewed model (`covmap/baseline.py`): an image counts as viewed when it was displayed
+in any viewport for any duration under any window and zoom (≥ 1 view event naming it, or a
+volume viewport state whose plane is that acquisition slice). This models the described
 Synapse/eRAD per-image behaviour; it is not the proprietary product.
 
 ## HTTP API (`covmap serve`, aiohttp, default `127.0.0.1:8765`)
@@ -256,13 +259,16 @@ Session logs persist to `$COVMAP_DATA/sessions/<id>.jsonl`.
 
 Session info (`GET /api/sessions/{id}`, and `session_info` in coverage responses):
 `{"session", "case", "label", "from_sample": name|null, "sample_events": n, "created",
-"finished": bool, "events": n, "last_seq": int|null, "last_t_ms": float|null, "rules": {...},
+"finished": bool, "events": n, "last_seq": int|null, "last_t_ms": float|null,
+"last_now_ms": float|null, "rules": {...},
 "t_offset_ms": x, "seq_offset": n, "last_view": {sop, k, voi: {wc, ww}, window} | null}`.
 `events` counts the whole log, `sample_events` the
 prefilled sample events among them; `last_seq`/`last_t_ms` are the highest live (non-sample)
 `seq`/`t_ms` in the client's own numbering (as POSTed, before the sample shift; null before
-any), so a client can continue its numbering; `t_offset_ms`/`seq_offset` are that shift
-(0 unless started from a sample). `finished` = the last `finish` event was confirmed;
+any), so a client can continue its numbering; `last_now_ms` is the highest `now_ms` POSTed,
+in the same numbering (null before any, or since a server restart);
+`t_offset_ms`/`seq_offset` are that shift
+(0 unless started from a sample). `finished` = a `finish` was confirmed;
 `rules` = the session's rule overrides (`{}` = defaults; effective values are coverage
 `params`). `created` is the server's local time stamp. `last_view` = the latest displayed
 stack image of the case's series in the session (as timeline `view`; null before any), so a
@@ -355,29 +361,34 @@ a one-line research-use note.
   session "Your reading, started from sample: <label>" holding the sample's events first; the
   sample itself is never modified. `localStorage` key `covmap:session:<caseId>` stores
   `{session, label, sample, saved}`; a reload resumes through `GET /api/sessions/{id}`,
-  continuing at `last_seq + 1` and `last_t_ms + 1`, and shows "Resumed · Start new reading…".
+  continuing at `last_seq + 1` and 1 ms after the later of `last_t_ms` and `last_now_ms`,
+  and shows "Resumed · Start new reading…".
   "New reading" asks before ending the current reading. Session ▾ › "Recent readings for this
   case" lists the case's other readings (`GET /api/sessions?case=`, newest first: label, start
   time, events, "✓ finished"); choosing one ends the current session as a switch does and
   continues the chosen one as after a reload (localStorage, `last_view`, `last_seq + 1`).
   On a session switch, recording pauses, the old session's `end` is flushed and the event queue
-  is cleared before the new session's clock starts at its first event. At `pagehide` recording
-  stops, so `end` is the page's last event: the beacon carries the events of a POST still in
-  flight (unless it was sent with keepalive, which outlives the page), then the queue, then
-  `end`; the server drops identical resends, so each event is scored and logged once.
+  is cleared before the new session's clock starts at its first event. A hidden tab records no
+  `view` (also while a reading resumes or switches); shown again, it re-captures the display.
+  At `pagehide` recording stops, so `end` is the page's last event: the beacon carries the
+  events of a POST still in flight (unless it was sent with keepalive, which outlives the
+  page), then the queue, then `end`; the server drops identical resends, so each event is
+  scored and logged once.
 - One recording tab per session. A tab records only while it holds the Web Lock
   `covmap-session-<id>`; another tab on the same session shows "This reading is open in another
   tab — not recording here until that tab closes", follows the session's coverage, and keeps a
   queued request for the lock: when the recording tab closes or leaves the session, it takes
-  over by itself (400 ms later, so the closing tab's beacon lands first) and continues at the
-  server's `last_seq + 1` / `last_t_ms + 1`. Record here takes over at once (steals the lock;
-  the other tab then waits in turn). Without Web Locks (non-secure origins) the server's 409 on
-  a reused `seq` makes the client renumber its queue and resend once.
-- Finished state follows the last `finish` event: Go back or Escape after a confirmed finish
-  clears the "✓ Finished" chip at once, as on the server. Reading on after a confirmed finish
-  is recorded; once the summary differs from `summary.finished.at_finish` the chip reads
-  "✓ Finished at a%" followed by "reading continued (now b%)" (voxel share, with decimals when
-  needed to tell them apart).
+  over by itself (400 ms later, so the closing tab's beacon lands first) and continues as after
+  a reload (`last_seq + 1`, clock after `last_t_ms` / `last_now_ms`). Record here takes over at
+  once (steals the lock; the other tab then waits in turn, sending nothing more). A takeover
+  first logs `hidden '*'`, so what the other tab showed counts until its last `now_ms`. Without
+  Web Locks (non-secure origins) the server's 409 on a reused `seq` makes the client renumber
+  its queue and resend once.
+- Finished state: a confirmed finish shows "✓ Finished" at once and stays, in the panel and on
+  the server; opening Finish again and backing out (Go back, Escape) keeps it, and Confirm again
+  replaces it. Reading on after a confirmed finish is recorded; once the summary differs from
+  `summary.finished.at_finish` the chip reads "✓ Finished at a%" followed by "reading continued
+  (now b%)" (voxel share, with decimals when needed to tell them apart).
 - Replay plays a session's timeline frames, moving the viewer to each frame's `view` and showing
   that frame's statuses, counts and done / N/A / flag marks; it sends `hidden '*'` when it starts,
   records nothing and disables the rules form until it closes, then restores the view.

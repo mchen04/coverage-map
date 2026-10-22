@@ -264,8 +264,11 @@ class Scorer:
         elif kind == "annotation":
             self._annotate(ev)
         elif kind == "finish":
-            self.finished = {"t_ms": ev["t_ms"], "confirmed": ev["confirmed"],
-                             "remaining": list(ev.get("remaining", []))}
+            # a confirmed finish stays: backing out of a later Finish sheet (an unconfirmed finish)
+            # does not undo it; confirming again replaces it
+            if ev["confirmed"] or not (self.finished and self.finished["confirmed"]):
+                self.finished = {"t_ms": ev["t_ms"], "confirmed": ev["confirmed"],
+                                 "remaining": list(ev.get("remaining", []))}
             if ev["confirmed"]:  # the reader confirmed what is on screen: close every open view
                 seg_ev = {"kind": "hidden", "viewport": ALL_VIEWPORTS, "t_ms": ev["t_ms"]}
         for iv in self.segmenter.feed(seg_ev, payload):

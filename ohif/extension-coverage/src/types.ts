@@ -91,6 +91,8 @@ export interface SessionInfo {
   events?: number;
   last_seq: number | null;
   last_t_ms: number | null;
+  /** the highest now_ms POSTed (client numbering; null after a server restart) */
+  last_now_ms?: number | null;
   rules?: Partial<Rules>;
   /** the last stack image of the case series the reader was shown, restored on resume */
   last_view?: StackView | null;

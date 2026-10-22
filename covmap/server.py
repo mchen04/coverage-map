@@ -141,6 +141,7 @@ class Session:
     stats: dict = field(default_factory=lambda: {"events": 0, "sample_events": 0, "last_seq": None,
                                                  "last_t_ms": None})
     last_now: float | None = None  # now_ms of the latest POST (server time base), for the gap target
+    last_now_ms: float | None = None  # highest now_ms POSTed, client numbering (session_info)
 
     @property
     def params(self) -> dict:
@@ -191,7 +192,7 @@ class Session:
                 "from_sample": m.get("from_sample"), "sample_events": st["sample_events"],
                 "created": m.get("created"), "finished": bool(fin and fin.get("confirmed")),
                 "events": st["events"], "last_seq": st["last_seq"], "last_t_ms": st["last_t_ms"],
-                "rules": dict(self.params), "t_offset_ms": m.get("t_offset_ms", 0.0),
+                "last_now_ms": self.last_now_ms, "rules": dict(self.params), "t_offset_ms": m.get("t_offset_ms", 0.0),
                 "seq_offset": m.get("seq_offset", 0),
                 "last_view": self.scorer.last_view if self.scorer is not None else None}
 
@@ -400,6 +401,7 @@ class App:
                 if e["seq"] not in scorer.seqs:
                     fresh.setdefault(e["seq"], e)
             events = list(fresh.values())
+            now_ms = now
             if now is not None:
                 now += s.meta.get("t_offset_ms", 0.0)
             # a batch with new events older than ones already applied (concurrent POSTs, an unload
@@ -426,6 +428,8 @@ class App:
                 s.meta["clock_lead_ms"] = round(lead, 1)
                 await self.run(s.save_meta)
             s.last_now = now
+            if now_ms is not None:
+                s.last_now_ms = now_ms if s.last_now_ms is None else max(s.last_now_ms, now_ms)
             cov["session_info"] = s.info()
         return cov
 
@@ -468,7 +472,8 @@ class App:
                     tmp = Session(s.id, s.case, s.case_dir, s.meta, s.log, s.meta_path)
                     tmp.tally(events)
                     st = tmp.stats
-                    fin = next((e for e in reversed(events) if e.get("kind") == "finish"), None)
+                    # as the scorer: finished once a finish was confirmed
+                    fin = next((e for e in events if e.get("kind") == "finish" and e.get("confirmed")), None)
                 out.append({"session": s.id, "label": s.meta.get("label"), "from_sample": s.meta.get("from_sample"),
                             "created": s.meta.get("created"), "events": st["events"], "last_t_ms": st["last_t_ms"],
                             "finished": bool(fin and fin.get("confirmed"))})

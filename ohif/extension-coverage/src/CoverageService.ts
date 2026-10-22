@@ -394,10 +394,15 @@ export default class CoverageService extends PubSubService {
   }
 
   /** Display events (view, hidden) are not recorded while replay is open or a session is
-   *  switching; reader events always are. Nothing is recorded while another tab records the
-   *  session. */
+   *  switching; reader events always are. A hidden tab displays nothing: no view is recorded
+   *  until it is shown again (then the display is re-captured). Nothing is recorded while
+   *  another tab records the session. */
   private enqueue(kind: CovEvent['kind'], fields: Record<string, unknown>): CovEvent | null {
-    if (!this.writer || (!this.recording && (kind === 'view' || kind === 'hidden'))) {
+    if (
+      !this.writer ||
+      (!this.recording && (kind === 'view' || kind === 'hidden')) ||
+      (kind === 'view' && document.visibilityState === 'hidden')
+    ) {
       return null;
     }
     if (this.t0 === null) {
@@ -1005,6 +1010,9 @@ export default class CoverageService extends PubSubService {
     this.state.otherTab = false;
     this.emit();
     if (!this.state.replay) {
+      // the other tab sent nothing when it let go: its display ends where it last reported
+      this.setRecording(true);
+      this.enqueue('hidden', { viewport: '*' });
       this.resumeRecording();
     }
     await this.flush();
@@ -1019,12 +1027,14 @@ export default class CoverageService extends PubSubService {
     return this.takeOver(true);
   }
 
-  /** Continue a stored session after its last event: anything queued is dropped and the
-   *  displayed state is re-captured. */
+  /** Continue a stored session after the last time the server heard from it (its last event,
+   *  or the last POST's now_ms if later: after Record here, the view the other tab showed
+   *  until then stays open that long): anything queued is dropped and the displayed state is
+   *  re-captured. */
   private continueAfter(info: SessionInfo): void {
     this.queue = [];
     this.seq = (info.last_seq ?? -1) + 1;
-    this.t0 = performance.now() - ((info.last_t_ms ?? 0) + 1);
+    this.t0 = performance.now() - (Math.max(info.last_t_ms ?? 0, info.last_now_ms ?? 0) + 1);
   }
 
   private notifyOtherTab(): void {
@@ -1678,8 +1688,9 @@ export default class CoverageService extends PubSubService {
       .map(o => o.key);
   }
 
-  /** The last finish decision (docs/SPEC.md: finished = the last finish event confirmed):
-   *  this tab's own until the server has it, then the server's. */
+  /** The finish decision (docs/SPEC.md: finished once a finish was confirmed; backing out of
+   *  a later Finish sheet does not undo it): this tab's own until the server has it, then the
+   *  server's. */
   public finished(): { confirmed: boolean } | null {
     if (this.localFinish) {
       return { confirmed: this.localFinish.confirmed };
@@ -1806,8 +1817,9 @@ export default class CoverageService extends PubSubService {
    * Record a finish decision and send it at once. Its t_ms is this moment; the POST that
    * carries it (right after any request in flight) has a fresh now_ms. A confirmed finish
    * closes every displayed view in the record at that t_ms (server), so what the screen showed
-   * at Confirm is what the finish list, the exports and a reload show. Un-finishing after a
-   * Confirm (Go back, Escape) records the display again, so reading on counts.
+   * at Confirm is what the finish list, the exports and a reload show. Going back (Go back,
+   * Escape) after a Confirm keeps the reading finished and records the display again, so
+   * reading on counts.
    */
   public async finish(confirmed: boolean): Promise<void> {
     this.state.finishOpen = false;
@@ -1818,8 +1830,8 @@ export default class CoverageService extends PubSubService {
       this.notifyOtherTab();
       return;
     }
-    // the last finish event decides (Go back after a Confirm un-finishes): shown at once
-    this.localFinish = { confirmed, seq: ev.seq };
+    // shown at once; a confirmed finish stays (Go back after a Confirm does not undo it)
+    this.localFinish = { confirmed: confirmed || wasConfirmed, seq: ev.seq };
     if (wasConfirmed && !confirmed) {
       this.tracker.recaptureAll();
     }
@@ -2179,6 +2191,10 @@ export default class CoverageService extends PubSubService {
   public nextGap(): void {
     if (this.state.replay) {
       this.notify('Replay is read-only. Close replay first.');
+      return;
+    }
+    if (!this.state.sessionId || !this.state.organs.length) {
+      this.notify('Still loading the case: Next gap works once the organ list is shown.');
       return;
     }
     const remaining = this.remaining();

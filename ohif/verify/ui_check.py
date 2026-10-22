@@ -1240,10 +1240,12 @@ def main() -> int:
               finish_flow)
 
         def finish_follows_last():
-            """C13: finished = the last finish event confirmed (SPEC). After a Confirm, F then Go
-            back (or Esc) un-finishes: the chip goes at once, without a reload, and the server agrees."""
+            """T1 (use-it r4): a confirmed finish stays. After a Confirm, F then Go back (or Esc)
+            logs an unconfirmed finish but keeps the chip, the server's finished state and its
+            at_finish; Confirm again replaces it."""
             s = session()
             need(tid("covmap-finished").count() == 1, "not finished before the check")
+            at0 = api.coverage(s)["summary"]["finished"]
             steps = {}
             for how in ("go-back", "escape"):
                 drv.press_key("f")
@@ -1254,18 +1256,18 @@ def main() -> int:
                 else:
                     page.keyboard.press("Escape")
                 dlg.wait_for(state="detached", timeout=3000)
-                tid("covmap-finished").wait_for(state="detached", timeout=1500)  # at once, not after a reload
-                need(tid("covmap-summary").get_attribute("data-finished") == "0", f"summary still finished after {how}")
-                if how == "go-back":
-                    shot("c13-after-go-back", tid("covmap-panel"))
                 flush()
-                page.wait_for_timeout(200)
+                page.wait_for_timeout(500)
+                need(tid("covmap-finished").count() == 1, f"chip gone after {how}")
+                need(tid("covmap-summary").get_attribute("data-finished") == "1", f"summary not finished after {how}")
+                if how == "go-back":
+                    shot("t1-after-go-back", tid("covmap-panel"))
                 srv = api.coverage(s)["summary"]["finished"]
-                need(srv and srv["confirmed"] is False, f"server finished after {how}: {srv}")
-                need(cov()["summary"]["finished"]["confirmed"] is False, "client coverage still confirmed")
-                need(tid("covmap-finished").count() == 0, f"chip back after the server reply ({how})")
+                need(srv and srv["confirmed"] is True and srv["t_ms"] == at0["t_ms"]
+                     and srv["at_finish"] == at0["at_finish"], f"server finished changed after {how}: {srv}")
+                need(api.info(s)["finished"] is True, f"session_info not finished after {how}")
                 steps[how] = {"server": srv["confirmed"], "chip": tid("covmap-finished").count()}
-                # Confirm again: the chip returns, and the server says finished
+                # Confirm again: still finished, the newer confirm replaces the record
                 drv.press_key("f")
                 dlg.wait_for(timeout=3000)
                 tid("covmap-confirm-finish").click()
@@ -1273,14 +1275,15 @@ def main() -> int:
                 flush()
                 page.wait_for_timeout(200)
                 srv = api.coverage(s)["summary"]["finished"]
-                need(srv and srv["confirmed"] is True, f"server not finished after Confirm: {srv}")
+                need(srv and srv["confirmed"] is True and srv["t_ms"] > at0["t_ms"], f"Confirm again not recorded: {srv}")
                 need(tid("covmap-finished").count() == 1, "chip gone after the server confirmed")
-                steps[how]["reconfirmed"] = srv["confirmed"]
+                steps[how]["reconfirmed_t_ms"] = srv["t_ms"]
+                at0 = srv
             fin = [e["confirmed"] for e in api.events(s) if e["kind"] == "finish"]
             need(fin[-5:] == [True, False, True, False, True], f"finish events {fin}")
             return {"steps": steps, "finish_events": fin}
-        C.run("C13 finished follows the last finish event: Confirm, then F + Go back / Esc un-finishes at once "
-              "(chip, server), Confirm again", finish_follows_last)
+        C.run("T1 a confirmed finish stays: Confirm, then F + Go back / Esc keeps the chip, the server's finished "
+              "state and at_finish; Confirm again replaces it", finish_follows_last)
 
         def finish_small():
             """S7: at 1280x800 the Finish sheet's 'Your decisions' block keeps its height above the
@@ -1856,6 +1859,7 @@ def main() -> int:
             neutral()
             x = unread(seen_now(s))
             read_in(page, drv, x)
+            a_shown = time.monotonic()  # A keeps showing its last image (brain window) from here on
             need(seen_now(s)[x] > 0, f"tab A's reading of {x} not counted")
             # tab B opens the same case: it resumes the same session but must not record it
             b_posts: list[str] = []
@@ -1899,9 +1903,23 @@ def main() -> int:
                      "tab B marked done while not recording")
                 toast_b = pb.get_by_text('Press "Record here" to record in this tab').count()
                 # switch to tab B and take over
+                n_before = len(api.events(s))
+                stolen = time.monotonic()
                 pb.bring_to_front()
                 pb.locator('[data-testid="covmap-record-here"]').click()
                 pb.wait_for_function("() => window.__covmap.writer === true", timeout=10000)
+                # C23: A's last image counts until the takeover (B's clock continues after A's last
+                # now_ms), not ~1 ms (after A's last event)
+                pb.evaluate("() => window.__covmap.flush()")
+                pb.wait_for_timeout(300)
+                evs_t = api.events(s)
+                a_view = [e for e in evs_t[:n_before] if e["kind"] == "view"][-1]
+                closer = evs_t[evs_t.index(a_view) + 1] if evs_t.index(a_view) + 1 < len(evs_t) else None
+                need(closer is not None, "nothing after tab A's last view once B took over")
+                held_ms = closer["t_ms"] - a_view["t_ms"]
+                wall_ms = (stolen - a_shown) * 1000
+                need(held_ms >= wall_ms - 1500, f"tab A's last image counted {held_ms:.0f} ms of the "
+                     f"{wall_ms:.0f} ms it was shown before Record here")
                 banner_b.wait_for(state="detached", timeout=3000)
                 page.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
                 tid("covmap-other-tab").wait_for(timeout=3000)
@@ -1946,6 +1964,7 @@ def main() -> int:
             need(ts == sorted(ts), "t_ms not monotonic across the takeovers")
             gaps_ = [(a_, b_) for a_, b_ in zip(seqs, seqs[1:]) if b_ != a_ + 1]
             return {"session": s, "read_in_A": x, "read_in_B": y, "read_in_A_again": z,
+                    "A_last_image_held_ms": round(held_ms), "A_shown_before_takeover_ms": round(wall_ms),
                     "seen_voxels": {k: sv[k] for k in (x, y, z)}, "ignored": ign, "events": len(evs),
                     "seq_gaps": gaps_, "tab_B_posts": len(b_posts), "tab_B_refusal_toast": toast_b,
                     "banner": text}
@@ -2245,8 +2264,26 @@ def main() -> int:
             need(h and h[-1]["viewport"] == "*", f"no hidden event: {h}")
             after = [e for e in evs if e["seq"] > h[-1]["seq"] and e["kind"] == "view"]
             need(after, "no view event re-emitted after becoming visible")
-            return {"hidden": h[-1], "views_after": len(after)}
-        C.run("visibilitychange hidden -> hidden event; visible -> state re-emitted", hidden)
+            # C24: a tab hidden while a new reading starts records no view until it is shown
+            page.evaluate("""() => { Object.defineProperty(document, 'visibilityState', {value: 'hidden', configurable: true});
+                                    document.dispatchEvent(new Event('visibilitychange')); }""")
+            s_new = page.evaluate("() => window.__covmap.newReading()")
+            page.wait_for_timeout(1500)
+            flush()
+            page.wait_for_timeout(300)
+            while_hidden = [e for e in api.events(s_new) if e["kind"] == "view"]
+            page.evaluate("""() => { Object.defineProperty(document, 'visibilityState', {value: 'visible', configurable: true});
+                                    document.dispatchEvent(new Event('visibilitychange')); }""")
+            page.wait_for_timeout(600)
+            flush()
+            page.wait_for_timeout(300)
+            shown = [e for e in api.events(s_new) if e["kind"] == "view"]
+            need(not while_hidden, f"new reading recorded {len(while_hidden)} views while the tab was hidden")
+            need(shown, "the new reading recorded no view once the tab was shown")
+            return {"hidden": h[-1], "views_after": len(after), "new_reading_hidden": s_new,
+                    "views_once_shown": len(shown)}
+        C.run("visibilitychange hidden -> hidden event; visible -> state re-emitted; C24 a new reading started "
+              "while hidden records no view until shown", hidden)
 
         # ---- 1280x800 -------------------------------------------------------------------------
         def small():

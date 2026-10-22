@@ -348,6 +348,12 @@ def test_confirmed_finish_closes_open_views(case, vol):
     # reading on after the confirm changes coverage; the record keeps what was confirmed
     assert cov["summary"]["voxel_coverage"] > confirmed["voxel_coverage"]
     assert cov["summary"]["finished"]["at_finish"] == confirmed
+    # backing out of the Finish sheet later (unconfirmed finish) keeps the confirmed finish (T1);
+    # only another confirm replaces it
+    kept = sc.add([finish(vol, 800, 5, confirmed=False)])["summary"]["finished"]
+    assert kept["confirmed"] and kept["t_ms"] == 500 and kept["at_finish"] == confirmed
+    again = sc.add([finish(vol, 900, 6)])["summary"]["finished"]
+    assert again["t_ms"] == 900 and again["at_finish"]["voxel_coverage"] == cov["summary"]["voxel_coverage"]
 
 
 def test_last_view_is_the_latest_displayed_stack_image(case, vol):
