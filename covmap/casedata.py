@@ -232,7 +232,16 @@ class Case:
         self._offsets = {0: off}
         self._vk = None
         self._perm: dict[int, tuple] = {}
+        self._organ_idx: dict[int, np.ndarray] = {}
         self._lock = threading.Lock()
+
+    def organ_index(self, o: int) -> np.ndarray:
+        """Flat indices (sorted, int32) of organ ordinal ``o``'s voxels, built on first use;
+        slice-major, so slice k's voxels are the k-th run of ``organ_slice_counts[o]``."""
+        idx = self._organ_idx.get(o)
+        if idx is None:  # idempotent: a concurrent first use just builds it twice
+            idx = self._organ_idx[o] = np.flatnonzero(self.vord == o).astype(np.int32)
+        return idx
 
     @property
     def vk(self) -> np.ndarray:

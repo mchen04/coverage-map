@@ -20,6 +20,7 @@ import csv
 from collections import OrderedDict
 import io
 import json
+import math
 import mimetypes
 import os
 import re
@@ -52,6 +53,24 @@ mimetypes.add_type("text/javascript", ".mjs")
 mimetypes.add_type("application/json", ".map")
 
 
+CLOCK_TOLERANCE_MS = 5000.0
+
+
+def _env_tolerance() -> float | None:
+    v = os.environ.get("COVMAP_CLOCK_TOLERANCE_MS")
+    if v is None:
+        return CLOCK_TOLERANCE_MS
+    if v.strip().lower() in ("", "off", "none"):
+        return None
+    try:
+        tol = float(v)
+    except ValueError:
+        tol = -1.0
+    if not (math.isfinite(tol) and tol >= 0):
+        raise ValueError(f"COVMAP_CLOCK_TOLERANCE_MS must be a number of ms >= 0 or 'off', not {v!r}")
+    return tol
+
+
 @dataclass
 class Config:
     orthanc: str = "http://127.0.0.1:8042"
@@ -63,6 +82,9 @@ class Config:
                                  if os.environ.get("COVMAP_WEB_DIR") else None)
     demo_case: str = field(default_factory=lambda: os.environ.get("COVMAP_DEMO_CASE", "pancreas-0051"))
     cross_origin_isolation: bool = field(default_factory=lambda: os.environ.get("COVMAP_COI") == "1")
+    # live POSTs: a batch with an event t_ms (or now_ms) more than this far ahead of the
+    # session's clock is refused (App._check_clock); None = no clock check
+    clock_tolerance_ms: float | None = field(default_factory=lambda: _env_tolerance())
 
     @property
     def cases_dir(self) -> Path:
@@ -114,6 +136,10 @@ class Session:
     events: list | None = None
     scorer: Scorer | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    # event-log tallies for session_info (kept with ``events``); see ``tally``
+    stats: dict = field(default_factory=lambda: {"events": 0, "sample_events": 0, "last_seq": None,
+                                                 "last_t_ms": None})
+    last_now: float | None = None  # now_ms of the latest POST (server time base), for the gap target
 
     @property
     def params(self) -> dict:
@@ -129,6 +155,43 @@ class Session:
         if not dt and not ds:
             return events
         return [{**e, "t_ms": e["t_ms"] + dt, "seq": e["seq"] + ds} for e in events]
+
+    def created_epoch(self) -> float:
+        """Server wall-clock time the session was created (s since the epoch)."""
+        t = self.meta.get("created_epoch")
+        if t is None:  # sessions from before created_epoch: the second-resolution stamp
+            try:
+                t = time.mktime(time.strptime(self.meta["created"][:19], "%Y-%m-%dT%H:%M:%S"))
+            except (KeyError, TypeError, ValueError):
+                t = 0.0
+        return float(t)
+
+    def tally(self, events: list[dict], reset: bool = False) -> None:
+        """Count logged events; ``last_seq`` / ``last_t_ms`` are the client's own numbering
+        (as POSTed, before the sample shift) of its latest live event, None before any."""
+        st = self.stats
+        if reset:
+            st.update(events=0, sample_events=0, last_seq=None, last_t_ms=None)
+        dt, ds = self.meta.get("t_offset_ms", 0.0), self.meta.get("seq_offset", 0)
+        for e in events:
+            st["events"] += 1
+            if "from_sample" in e:
+                st["sample_events"] += 1
+                continue
+            seq, t = e["seq"] - ds, e["t_ms"] - dt
+            st["last_seq"] = seq if st["last_seq"] is None else max(st["last_seq"], seq)
+            st["last_t_ms"] = t if st["last_t_ms"] is None else max(st["last_t_ms"], t)
+
+    def info(self) -> dict:
+        """session_info (docs/SPEC.md "HTTP API"); call with the scorer loaded."""
+        m, st = self.meta, self.stats
+        fin = self.scorer.finished if self.scorer is not None else None
+        return {"session": self.id, "case": self.case, "label": m.get("label"),
+                "from_sample": m.get("from_sample"), "sample_events": st["sample_events"],
+                "created": m.get("created"), "finished": bool(fin and fin.get("confirmed")),
+                "events": st["events"], "last_seq": st["last_seq"], "last_t_ms": st["last_t_ms"],
+                "rules": dict(self.params), "t_offset_ms": m.get("t_offset_ms", 0.0),
+                "seq_offset": m.get("seq_offset", 0)}
 
 
 class App:
@@ -204,7 +267,7 @@ class App:
         sid = time.strftime("s-%Y%m%d-%H%M%S-") + secrets.token_hex(3)
         self.cfg.sessions_dir.mkdir(parents=True, exist_ok=True)
         meta = {"session": sid, "case": case, "label": label or (sample_meta or {}).get("label"),
-                "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "rules": None,
+                "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "created_epoch": time.time(), "rules": None,
                 "from_sample": sample, "sample": sample_meta, "t_offset_ms": 0.0, "seq_offset": 0}
         if prefill:
             prefill = [{**e, "session": sid, "from_sample": sample} for e in prefill]
@@ -240,6 +303,7 @@ class App:
         drop the scorers of the least recently used idle sessions beyond the limit."""
         if s.scorer is None:
             s.events = await self.run(read_jsonl, s.log) if s.log.exists() else []
+            s.tally(s.events, reset=True)
             s.scorer = await self.run(self._rescore, s, s.params)
             # coronal/sagittal plane indexes in the background (idempotent, built once per case)
             self.pool.submit(s.scorer.case.prepare_planes)
@@ -259,16 +323,55 @@ class App:
             sc.add(s.events, validated=True)
         return sc
 
+    @staticmethod
+    def _check_session_ids(s: Session, events: list[dict]) -> None:
+        """Every event's ``session`` (when present) must be the session of the URL."""
+        foreign = sorted({str(e["session"]) for e in events if e.get("session") not in (None, s.id)})
+        if foreign:
+            raise ApiError(400, f"events of session(s) {foreign[:3]} posted to session {s.id!r}; "
+                                "nothing was applied")
+
+    def _check_clock(self, s: Session, events: list[dict], now: float | None) -> float | None:
+        """Live-POST clock guard (docs/SPEC.md "Reading events"), in the client's clock
+        (before the sample shift). The client may start its clock before the session exists
+        (OHIF starts it when the viewer opens), so the first POST carrying ``now_ms`` pins
+        ``lead = max(0, now_ms - elapsed)``, elapsed = server time since the session was
+        created. A batch is refused (400, nothing applied) when an event's ``t_ms`` is more
+        than ``clock_tolerance_ms`` ahead of ``elapsed + lead`` or of the POST's own
+        ``now_ms``, or when ``now_ms`` is ahead of ``elapsed + lead``: leftover events of an
+        earlier clock would otherwise freeze the scorer clock (time never runs backwards).
+        Returns the lead to pin once the batch is accepted (None: nothing to pin)."""
+        tol = self.cfg.clock_tolerance_ms
+        if tol is None or (not events and now is None):
+            return None
+        elapsed = (time.time() - s.created_epoch()) * 1000.0
+        pinned = s.meta.get("clock_lead_ms")
+        lead = pinned if pinned is not None else (max(0.0, now - elapsed) if now is not None else 0.0)
+        limit = elapsed + lead + tol
+        ev_limit = limit if now is None else min(limit, now + tol)
+        ahead = [e for e in events if e["t_ms"] > ev_limit]
+        if ahead or (now is not None and now > limit):
+            what = (f"event seq {ahead[0]['seq']} t_ms {ahead[0]['t_ms']}" if ahead else f"now_ms {now}")
+            raise ApiError(400, f"{what} is ahead of session {s.id!r}'s clock (accepted up to "
+                                f"{ev_limit if ahead else limit:.0f} ms: time since the session was created"
+                                f" + client lead {lead:.0f} ms + {tol:.0f} ms, events also <= now_ms + "
+                                f"{tol:.0f} ms); nothing was applied")
+        return lead if pinned is None and now is not None else None
+
     async def add_events(self, s: Session, body) -> dict:
         try:
             events, now = parse_post_body(body)
         except EventError as e:
             raise ApiError(400, str(e))
-        events = s.shift(events)
-        if now is not None:
-            now += s.meta.get("t_offset_ms", 0.0)
+        self._check_session_ids(s, events)
+        if any("from_sample" in e for e in events):  # only the server marks sample events
+            events = [{k: v for k, v in e.items() if k != "from_sample"} for e in events]
         async with s.lock:
             scorer = await self._ready(s)
+            lead = self._check_clock(s, events, now)
+            events = s.shift(events)
+            if now is not None:
+                now += s.meta.get("t_offset_ms", 0.0)
             try:
                 cov = await self.run(scorer.add, events, now, validated=True)
             except EventError as e:
@@ -276,11 +379,31 @@ class App:
             if events:
                 await self.run(_write_jsonl, s.log, events)
                 s.events.extend(events)
+                s.tally(events)
+            if lead is not None:
+                s.meta["clock_lead_ms"] = round(lead, 1)
+                await self.run(s.save_meta)
+            s.last_now = now
+            cov["session_info"] = s.info()
         return cov
 
     async def coverage(self, s: Session) -> dict:
         async with s.lock:
-            return await self.run((await self._ready(s)).coverage)
+            cov = await self.run((await self._ready(s)).coverage)
+            cov["session_info"] = s.info()
+            return cov
+
+    async def info(self, s: Session) -> dict:
+        async with s.lock:
+            await self._ready(s)
+            return s.info()
+
+    async def gap(self, s: Session, key: str, now: float | None) -> dict:
+        async with s.lock:
+            scorer = await self._ready(s)
+            if key not in scorer.case.key_index:
+                raise ApiError(404, f"unknown organ {key!r} for case {s.case!r}")
+            return await self.run(scorer.gap, key, s.last_now if now is None else now)
 
     async def events(self, s: Session) -> list[dict]:
         async with s.lock:
@@ -306,7 +429,9 @@ class App:
             s.scorer = await self.run(self._rescore, s, rules)
             s.meta["rules"] = rules or None
             s.save_meta()
-            return await self.run(s.scorer.coverage)
+            cov = await self.run(s.scorer.coverage)
+            cov["session_info"] = s.info()
+            return cov
 
 
 # ---- handlers -------------------------------------------------------------------------
@@ -428,6 +553,29 @@ async def get_coverage(request):
     return _json(await a.coverage(await a.session(request.match_info["id"])))
 
 
+async def get_session(request):
+    a = _app(request)
+    return _json(await a.info(await a.session(request.match_info["id"])))
+
+
+async def get_gap(request):
+    a = _app(request)
+    s = await a.session(request.match_info["id"])
+    key = request.query.get("organ")
+    if not key:
+        raise ApiError(400, "need ?organ=<key>")
+    now = request.query.get("now_ms")
+    if now is not None:
+        try:
+            now = float(now)
+        except ValueError:
+            raise ApiError(400, "now_ms must be a number")
+        if not math.isfinite(now):
+            raise ApiError(400, "now_ms must be finite")
+        now += s.meta.get("t_offset_ms", 0.0)  # client clock -> session time, as for POSTs
+    return _json(await a.gap(s, key, now))
+
+
 async def get_events(request):
     a = _app(request)
     s = await a.session(request.match_info["id"])
@@ -483,8 +631,9 @@ async def export(request):
     if fmt == "json":
         return web.Response(text=json.dumps(cov, indent=1), content_type="application/json",
                             headers={"Content-Disposition": disp.format(f"{s.id}.coverage.json")})
+    name = f"{s.id}-from-sample.csv" if s.meta.get("from_sample") else f"{s.id}.csv"
     return web.Response(text=_csv(cov), content_type="text/csv",
-                        headers={"Content-Disposition": disp.format(f"{s.id}.csv")})
+                        headers={"Content-Disposition": disp.format(name)})
 
 
 async def api_not_found(request):
@@ -672,8 +821,10 @@ def make_app(cfg: Config | None = None, **overrides) -> web.Application:
     r.add_get("/api/cases/{case}/samples", samples)
     r.add_get("/api/cases/{case}/outline", outline)
     r.add_post("/api/sessions", create_session)
+    r.add_get("/api/sessions/{id}", get_session)
     r.add_post("/api/sessions/{id}/events", post_events)
     r.add_get("/api/sessions/{id}/coverage", get_coverage)
+    r.add_get("/api/sessions/{id}/gap", get_gap)
     r.add_get("/api/sessions/{id}/events.jsonl", get_events)
     r.add_post("/api/sessions/{id}/rules", post_rules)
     r.add_get("/api/sessions/{id}/timeline", get_timeline)

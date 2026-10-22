@@ -410,6 +410,14 @@ class Scorer:
                     total = d if total is None else total + d
             return total
         # planes of different axes intersect: work on the union of their voxels
+        union, f0, q0, f, q = self._open_union(groups)
+        return self._delta(c.vord[union].astype(np.intp), self._state(f0, q0), self._state(f, q))
+
+    def _open_union(self, groups: dict):
+        """(union, f0, q0, f, q): the sorted flat indices of all voxels on the grouped open
+        planes, their committed flags/qdwell, and copies with the open states applied."""
+        c = self.case
+
         def gidx(sel):
             return np.arange(sel.start, sel.stop) if isinstance(sel, slice) else sel
 
@@ -425,7 +433,95 @@ class Scorer:
             for plane, dwell in states:
                 self._apply(plane, dwell, oi, u, v, fl, ql)
             f[pos], q[pos] = fl, ql
-        return self._delta(c.vord[union].astype(np.intp), self._state(f0, q0), self._state(f, q))
+        return union, f0, q0, f, q
+
+    # ---- gap target -----------------------------------------------------------------
+    GAP_MIN_FRACTION = 0.02  # a slice joins a gap range when its unseen voxels of the organ
+    # are >= max(1, 2% of the organ's voxels on that slice); edge noise stays out of ranges
+
+    def _unseen_of(self, f: np.ndarray | None, q: np.ndarray) -> np.ndarray:
+        """Unseen mask (no SEEN bit in ``_state``) of voxels with flags ``f`` / qdwell ``q``;
+        at min_dwell_ms > 0 only qdwell is read (qdwell > 0 implies QUAL)."""
+        m = self.params["min_dwell_ms"]
+        return q < m if m > 0 else (f & QUAL) == 0
+
+    def _open_planes(self, now_ms: float) -> list:
+        """[(flat indices, organ ordinals, flags, qdwell)] of the voxels on the open states'
+        planes with those states credited up to ``now_ms`` (copies; nothing is modified)."""
+        open_states = [(iv.payload, iv.dwell_ms) for iv in self.segmenter.provisional(now_ms)
+                       if iv.payload is not None]
+        if not open_states:
+            return []
+        c = self.case
+        groups = self._group(open_states)
+        if len({axis for axis, _ in groups}) > 1:  # intersecting planes: their union
+            union, _, _, f, q = self._open_union(groups)
+            return [(union, c.vord[union], f, q)]
+        out = []
+        for (axis, index), states in groups.items():  # planes of one axis are disjoint
+            sel, u, v = c.plane(axis, index)
+            oi = c.vord[sel].astype(np.intp)
+            f, q = self.flags[sel] | PLANE, self.qdwell[sel].copy()
+            for plane, dwell in states:
+                self._apply(plane, dwell, oi, u, v, f, q)
+            out.append((np.arange(sel.start, sel.stop) if isinstance(sel, slice) else sel, oi, f, q))
+        return out
+
+    def gap(self, key: str, now_ms: float | None = None) -> dict:
+        """Where the organ ``key`` still has unseen voxels (committed state, plus the open
+        states credited up to ``now_ms`` when given): ``k`` = the slice with the most unseen
+        voxels of the organ (ties: nearest to the organ's center_k, then the lower k; None
+        when nothing is unseen), ``ranges`` = maximal runs of slices whose unseen count is
+        >= max(1, GAP_MIN_FRACTION x the organ's voxels on that slice), inclusive k."""
+        c = self.case
+        o = c.key_index[key]  # KeyError: unknown organ
+        organ = c.organs[o]
+        windows = organ.get("windows") or []
+        out = {"organ": key, "k": None, "sop": None, "window": windows[0] if windows else None,
+               "unseen_voxels": 0, "ranges": []}
+        n_k = c.organ_slice_counts[o]
+        nz = np.flatnonzero(n_k)
+        if not nz.size:
+            return out
+        self._current_table()  # apply every closed state
+        k0, k1 = int(nz[0]), int(nz[-1]) + 1
+        off = c._offsets[0][k0:k1 + 1]
+        lo, hi = int(off[0]), int(off[-1])
+        flags = self.params["min_dwell_ms"] <= 0
+        if hi - lo <= 4 * int(c.organ_voxels[o]):  # dense in its slices: the contiguous span
+            unseen = self._unseen_of(self.flags[lo:hi] if flags else None, self.qdwell[lo:hi])
+            np.logical_and(unseen, c.vord[lo:hi] == o, out=unseen)
+            bounds = off - lo
+
+            def where(gi):
+                return gi - lo
+        else:  # sparse (vessels, ribs, ...): gather its own voxels
+            idx = c.organ_index(o)
+            unseen = self._unseen_of(self.flags[idx] if flags else None, self.qdwell[idx])
+            bounds = np.concatenate([[0], np.cumsum(n_k[k0:k1])])
+
+            def where(gi):
+                return np.searchsorted(idx, gi)
+        if now_ms is not None:
+            for gi, oi, f, q in self._open_planes(now_ms):
+                keep = oi == o
+                if keep.any():
+                    unseen[where(gi[keep])] = self._unseen_of(f[keep], q[keep])
+        per_k = np.zeros(n_k.size, np.int64)
+        per_k[k0:k1] = [np.count_nonzero(unseen[a:b]) for a, b in zip(bounds[:-1], bounds[1:])]
+        total = int(per_k.sum())
+        if total:
+            center = organ.get("center_k")
+            if center is None:
+                center = float(np.arange(n_k.size) @ n_k) / max(int(n_k.sum()), 1)
+            cand = np.flatnonzero(per_k == per_k.max())
+            k = int(cand[np.argmin(np.abs(cand - float(center)))])
+            sig = (per_k >= np.maximum(1.0, self.GAP_MIN_FRACTION * n_k)).astype(np.int8)
+            edges = np.diff(np.concatenate([[0], sig, [0]]))
+            a, b = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)
+            out.update(k=k, sop=c.sop_uids[k], unseen_voxels=total,
+                       ranges=[[int(x), int(y) - 1] for x, y in zip(a, b)])
+        return out
 
     # ---- outputs ------------------------------------------------------------------
     def coverage(self, now_ms: float | None = None, *, _t0: float | None = None) -> dict:
@@ -493,7 +589,10 @@ class Scorer:
 
 def timeline(case, events: list[dict], frames: int = 40, **params) -> dict:
     """Coverage snapshots at ``frames`` evenly spaced times over the session, computed in
-    one ordered pass (each frame credits open states up to its time)."""
+    one ordered pass (each frame credits open states up to its time). Each frame's ``view``
+    is the last stack view of this case's series displayed at or before the frame time
+    (``{sop, k, voi: {wc, ww}, window}``; None before the first one), so a replay can show
+    the image the reader was on."""
     t0 = time.perf_counter()
     frames = max(1, min(int(frames), 1000))
     evs = sort_events(events)
@@ -502,12 +601,20 @@ def timeline(case, events: list[dict], frames: int = 40, **params) -> dict:
         return {"frames": [], "timing_ms": {"timeline": 0.0}}
     t_first, t_last = evs[0]["t_ms"], evs[-1]["t_ms"]
     times = np.linspace(t_first, t_last, frames) if frames > 1 else np.array([t_last])
-    out, i = [], 0
+    out, i, view = [], 0, None
+    c = sc.case
     for t in times:
         while i < len(evs) and evs[i]["t_ms"] <= t:
-            sc.feed(evs[i])
+            ev = evs[i]
+            if ev["kind"] == "view" and ev["vp_type"] == "stack" and ev["seq"] not in sc.seqs:
+                k = c.sop_index.get(ev.get("sop"))
+                series = ev.get("series")
+                if k is not None and (series is None or not c.series_uid or series == c.series_uid):
+                    wc, ww = ev["voi"]["wc"], ev["voi"]["ww"]
+                    view = {"sop": ev["sop"], "k": k, "voi": {"wc": wc, "ww": ww}, "window": classify(wc, ww)}
+            sc.feed(ev)
             i += 1
-        out.append(sc.snapshot(float(t)))
+        out.append({**sc.snapshot(float(t)), "view": view})
     return {"case": sc.case.case_id, "session": sc.session, "params": sc.params, "frames": out,
             "timing_ms": {"timeline": round((time.perf_counter() - t0) * 1000, 3)}}
 

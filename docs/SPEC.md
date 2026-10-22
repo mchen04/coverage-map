@@ -132,6 +132,20 @@ POST body to `/api/sessions/{id}/events`: `{"events": [...], "now_ms": 2345.6}`.
 lets live scoring credit the still-open state of each viewport up to now (provisional,
 not committed).
 
+Live POST guards (HTTP only; `covmap replay`, `timeline` and the CLI score logs without
+them). A batch failing a guard is refused whole with 400 and nothing is applied:
+- every event's `session`, when present, must be the session in the URL;
+- clock: the scorer never runs time backwards, so events from an earlier client clock
+  would freeze it. All times are checked in the client's clock (as POSTed, before the
+  sample shift, so sample-started sessions post from `t_ms` 0). `elapsed` = server time
+  since the session was created; the first accepted POST carrying `now_ms` pins the
+  client's lead `max(0, now_ms - elapsed)` (the OHIF client may start its clock while the
+  viewer loads, before the session exists; kept as `clock_lead_ms` in the session meta,
+  0 until pinned). Refused: an event with `t_ms > min(elapsed + lead, now_ms) + tolerance`,
+  or `now_ms > elapsed + lead + tolerance`. Tolerance 5000 ms; `COVMAP_CLOCK_TOLERANCE_MS`
+  sets it, `off` disables the clock check (the session check stays).
+- `from_sample` on posted events is dropped (only the server marks sample events).
+
 ## Scoring (`covmap/scoring.py`)
 
 Per organ voxel the scorer accumulates qualifying dwell: the sum over display states whose
@@ -165,6 +179,10 @@ displayed but the voxel was never inside the visible rectangle), `never_displaye
  "timing_ms": {"score": 0.0}}
 ```
 
+API responses (`POST …/events`, `GET …/coverage`, `POST …/rules`) and the JSON export add
+`"session_info"`, the object of `GET /api/sessions/{id}` (HTTP API); `covmap replay` output
+does not have it.
+
 `unseen` values are fractions of organ voxels. Each organ also carries the reader layer
 `"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
 `status` never changes because of annotations. `summary` adds `attested` (reader done on a
@@ -186,12 +204,14 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/volume` | `volume.json` |
 | `GET /api/cases/{case}/meshes.json`, `/meshes.bin` | mesh files (bin as `application/octet-stream`) |
 | `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
-| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) |
-| `GET /api/sessions/{id}/coverage` | committed coverage JSON |
+| `GET /api/sessions/{id}` | session info (below), 404 if unknown |
+| `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; 400 (nothing applied) for invalid events or a failed live guard ("Reading events") |
+| `GET /api/sessions/{id}/coverage` | committed coverage JSON + `session_info` |
+| `GET /api/sessions/{id}/gap?organ=<key>[&now_ms=]` | where the organ is still unseen (below); 400 without `organ`, 404 unknown organ |
 | `GET /api/sessions/{id}/events.jsonl` | the session's event log |
 | `POST /api/sessions/{id}/rules` `{min_dwell_ms?, reviewed_threshold?, skipped_threshold?}` | re-score the whole session under these research rules; returns coverage JSON |
-| `GET /api/sessions/{id}/timeline?frames=40` | `{frames: [{t_ms, summary, statuses: {key: status}}]}` coverage snapshots for replay |
-| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log, coverage JSON, per-organ CSV (attachment) |
+| `GET /api/sessions/{id}/timeline?frames=40` | `{frames: [{t_ms, summary, statuses: {key: status}, coverage: {key: x}, view}]}` coverage snapshots for replay; `view` = the last stack image of the case's series displayed at or before `t_ms`, `{sop, k, voi: {wc, ww}, window}` (`window` = class of the voi), `null` before the first; volume views, hidden/end, unknown images and resent `seq` do not change it |
+| `GET /api/sessions/{id}/export?format=jsonl|json|csv` | download: event log `<id>.jsonl`, coverage JSON `<id>.coverage.json` (with `session_info`), per-organ CSV `<id>.csv`, or `<id>-from-sample.csv` for a session started from a sample (attachment) |
 | `GET /api/cases/{case}/samples` | preloaded sample reading sessions `[{name, label, source, description, events}]` |
 | `GET /api/cases/{case}/outline?organ=<key>&k=<slice>` | organ contour(s) on slice k: `{contours: [[[r, c], ...], ...]}` image-pixel coords |
 | `GET /api/demo` | `{case, study_uid, url}` the preloaded demo case; `GET /` redirects to it |
@@ -200,6 +220,29 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /*` | OHIF dist (`$COVMAP_OHIF_DIST`), SPA fallback to `index.html` |
 
 Session logs persist to `$COVMAP_DATA/sessions/<id>.jsonl`.
+
+Session info (`GET /api/sessions/{id}`, and `session_info` in coverage responses):
+`{"session", "case", "label", "from_sample": name|null, "sample_events": n, "created",
+"finished": bool, "events": n, "last_seq": int|null, "last_t_ms": float|null, "rules": {...},
+"t_offset_ms": x, "seq_offset": n}`. `events` counts the whole log, `sample_events` the
+prefilled sample events among them; `last_seq`/`last_t_ms` are the highest live (non-sample)
+`seq`/`t_ms` in the client's own numbering (as POSTed, before the sample shift; null before
+any), so a client can continue its numbering; `t_offset_ms`/`seq_offset` are that shift
+(0 unless started from a sample). `finished` = the last `finish` event was confirmed;
+`rules` = the session's rule overrides (`{}` = defaults; effective values are coverage
+`params`). `created` is the server's local time stamp.
+
+Gap target (`GET /api/sessions/{id}/gap?organ=<key>`): `{"organ": key, "k": int|null,
+"sop": str|null, "window": "soft"|"lung"|"bone", "unseen_voxels": n, "ranges": [[k0, k1], ...]}`
+from the current state: committed, plus the open display states credited up to `now_ms`
+(the query `now_ms`, client clock, shifted like POSTs; default the latest POST's `now_ms`
+since the server started; committed only if neither). `unseen_voxels` = the organ's unseen voxels; `k` = the slice
+holding most of them (ties: nearest to the organ's `center_k`, then the lower `k`), `sop`
+its instance, both null when nothing is unseen. `ranges` = maximal runs of consecutive
+slices (inclusive) whose unseen count is ≥ max(1, 2% of the organ's voxels on that slice);
+slices under that (edge noise) are left out of the ranges but still count in
+`unseen_voxels`, so `ranges` can be `[]` while `k` is set. `window` = the organ's first
+qualifying window class (`windows[0]`).
 
 ## CLI (`python -m covmap <cmd>`; every command prints one JSON object to stdout)
 

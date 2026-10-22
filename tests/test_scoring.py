@@ -544,6 +544,141 @@ def test_min_dwell_zero_batch_equals_incremental(case, vol, min_dwell):
     assert 0 < sum(want) < case.n_vox  # not vacuous: some voxels never had a qualifying display
 
 
+def _liver_state(case, sc, unseen_per_k: dict):
+    """White-box: every liver voxel seen, then the first n voxels of slice k unseen."""
+    from covmap.scoring import QUAL
+
+    o = case.key_index["liver"]
+    idx = np.flatnonzero(case.vord == o)  # slice-major: slice k's voxels are a run
+    bounds = np.concatenate([[0], np.cumsum(case.organ_slice_counts[o])])
+    sc.flags[idx] |= QUAL
+    sc.qdwell[idx] = 1000.0
+    for k, n in unseen_per_k.items():
+        sc.qdwell[idx[bounds[k]:bounds[k] + n]] = 0.0
+    return case.organ_slice_counts[o]
+
+
+def test_gap_target_rule(case):
+    n_k = case.organ_slice_counts[case.key_index["liver"]]
+    center = case.organ("liver")["center_k"]
+    sc = Scorer(case)
+    g = sc.gap("liver")  # nothing read: the slice with the most liver voxels, one range
+    ks = np.flatnonzero(n_k)
+    top = np.flatnonzero(n_k == n_k.max())
+    assert g["k"] == int(top[np.argmin(abs(top - center))]) and g["sop"] == case.sop_uids[g["k"]]
+    assert g["window"] == "soft" and g["unseen_voxels"] == int(n_k.sum())
+    assert g["ranges"] == [[int(ks[0]), int(ks[-1])]] and g["organ"] == "liver"
+    # a run of 3 fully unseen slices, a slice with exactly ceil(2%) unseen (kept, its own range),
+    # and a slice just under 2% (edge noise: not a range, still counted)
+    r0 = int(next(k for k in ks if n_k[k] >= 200))
+    c, d = r0 + 4, r0 + 6
+    assert n_k[c] >= 100 and n_k[d] >= 100
+    lo_c, lo_d = math.ceil(0.02 * n_k[c]), math.ceil(0.02 * n_k[d]) - 1
+    sc = Scorer(case)
+    _liver_state(case, sc, {r0: n_k[r0], r0 + 1: n_k[r0 + 1], r0 + 2: n_k[r0 + 2], c: lo_c, d: lo_d})
+    g = sc.gap("liver")
+    run = np.array([n_k[r0], n_k[r0 + 1], n_k[r0 + 2]])
+    best = r0 + np.flatnonzero(run == run.max())
+    assert g["k"] == int(best[np.argmin(abs(best - center))])
+    assert g["ranges"] == [[r0, r0 + 2], [c, c]]
+    assert g["unseen_voxels"] == int(run.sum()) + lo_c + lo_d
+    # ties: nearest to the organ's center, then the lower slice
+    for a, b, want in ((center - 2, center + 3, center - 2), (center + 1, center - 3, center + 1),
+                       (center - 2, center + 2, center - 2)):
+        sc = Scorer(case)
+        _liver_state(case, sc, {a: 20, b: 20})
+        assert sc.gap("liver")["k"] == want, (a, b)
+    sc = Scorer(case)
+    _liver_state(case, sc, {})
+    assert sc.gap("liver") == {"organ": "liver", "k": None, "sop": None, "window": "soft",
+                               "unseen_voxels": 0, "ranges": []}
+    with pytest.raises(KeyError):
+        sc.gap("nope")
+
+
+def test_gap_follows_reading_and_open_state(case, vol):
+    n_k = case.organ_slice_counts[case.key_index["liver"]]
+    ks = [int(k) for k in np.flatnonzero(n_k)]
+    skip = max(ks, key=lambda k: n_k[k])
+    evs = read_pass(vol, [k for k in ks if k != skip], 0, 0)
+    t = len(evs) * 150.0
+    sc = Scorer(case)
+    sc.add(evs + [hidden(vol, t, len(evs))])
+    g = sc.gap("liver")
+    assert (g["k"], g["ranges"], g["unseen_voxels"]) == (skip, [[skip, skip]], int(n_k[skip]))
+    # the reader is on the gap slice now: with now_ms its open state counts (provisionally)
+    sc.add([stack_view(vol, skip, t + 10, len(evs) + 1)], now_ms=t + 10)
+    assert sc.gap("liver")["k"] == skip  # 0 ms so far
+    assert sc.gap("liver", now_ms=t + 200)["k"] is None
+    assert sc.gap("liver")["k"] == skip  # committed state unchanged
+    cov = sc.add([end(vol, t + 300, len(evs) + 2)])
+    assert sc.gap("liver")["k"] is None and by_key(cov)["liver"]["seen_voxels"] == int(n_k.sum())
+
+
+def _gap_reference(case, sc, key):
+    """Brute force: per-slice unseen counts of the organ from the voxel state, then the rule."""
+    from covmap.scoring import QUAL
+
+    o = case.key_index[key]
+    m = sc.params["min_dwell_ms"]
+    seen = sc.qdwell >= m if m > 0 else (sc.flags & QUAL) != 0
+    k_of = np.repeat(np.arange(case.shape[0]), np.diff(case._offsets[0]))
+    per_k = np.bincount(k_of[(case.vord == o) & ~seen], minlength=case.shape[0])
+    n_k = case.organ_slice_counts[o]
+    ks = [k for k in range(len(per_k)) if per_k[k] >= max(1, 0.02 * n_k[k])]
+    ranges = []
+    for k in ks:
+        if ranges and ranges[-1][1] == k - 1:
+            ranges[-1][1] = k
+        else:
+            ranges.append([k, k])
+    c = case.organs[o]["center_k"]
+    best = None
+    if per_k.sum():
+        best = min(range(len(per_k)), key=lambda k: (-per_k[k], abs(k - c), k))
+    return best, int(per_k.sum()), ranges
+
+
+@pytest.mark.parametrize("min_dwell", [80.0, 0.0])
+def test_gap_matches_brute_force_and_closing(case, vol, min_dwell):
+    """Random mixed-axis reading: the gap of every organ equals a brute-force count, and the
+    gap with open states credited at now equals the gap after closing them at now."""
+    evs, _ = _random_mixed_events(case, vol, 180, 5)
+    off = case._offsets[0]
+    span = {o["key"]: off[np.flatnonzero(n)[-1] + 1] - off[np.flatnonzero(n)[0]]
+            for o, n in zip(case.organs, case.organ_slice_counts)}
+    dense = {k: span[k] <= 4 * case.organ_voxels[case.key_index[k]] for k in case.organ_keys}
+    assert set(dense.values()) == {True, False}  # both gap paths (slice span, organ gather)
+    sc = Scorer(case, min_dwell_ms=min_dwell)
+    for i in range(0, len(evs), 30):
+        batch = evs[i:i + 30]
+        now = batch[-1]["t_ms"] + 90.0
+        sc.add(batch, now_ms=now)
+        closed = Scorer(case, min_dwell_ms=min_dwell)
+        closed.add(evs[:i + 30] + [end(vol, now, 10_000)])
+        for key in case.organ_keys:
+            g = sc.gap(key)
+            assert (g["k"], g["unseen_voxels"], g["ranges"]) == _gap_reference(case, sc, key), (i, key)
+            assert sc.gap(key, now_ms=now) == closed.gap(key), (i, key)
+
+
+def test_timeline_frames_carry_the_displayed_view(case, vol):
+    evs = [stack_view(vol, 5, 1000, 0, "soft"), stack_view(vol, 6, 2000, 1, "lung"),
+           view_krc(vol, [(0, 10, 0), (0, 10, 50), (30, 10, 50), (30, 10, 0)], 3000, 2, "bone"),
+           hidden(vol, 4000, 3), stack_view(vol, 7, 5000, 4, "bone", sop="1.2.3.unknown"),
+           stack_view(vol, 9, 5200, 1, "bone"), end(vol, 6000, 5)]
+    tl = timeline(case, evs, frames=11)
+    views = {f["t_ms"]: f["view"] for f in tl["frames"]}
+    lung = {"sop": vol["sop_uids"][6], "k": 6, "voi": evs[1]["voi"], "window": "lung"}
+    assert views[1000.0] == {"sop": vol["sop_uids"][5], "k": 5, "voi": evs[0]["voi"], "window": "soft"}
+    assert views[1500.0]["k"] == 5 and views[2000.0] == lung
+    # volume views, hidden, unknown images and resent seqs do not replace the last stack image
+    assert views[3500.0] == views[4500.0] == views[6000.0] == lung
+    late = timeline(case, [hidden(vol, 0, 0)] + [{**e, "seq": e["seq"] + 1} for e in evs],
+                    frames=13)["frames"]
+    assert late[0]["view"] is None and late[-1]["view"] == lung
+
+
 @pytest.mark.parametrize("shape", [(9, 64, 32), (7, 50, 44)])
 def test_case_voxel_index_matches_nonzero(tmp_path, shape):
     from covmap.casedata import Case

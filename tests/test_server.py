@@ -22,7 +22,7 @@ from aiohttp.test_utils import TestClient, TestServer
 
 from covmap.server import Config, make_app
 from covmap.simulate import plan_events, plan_scenario
-from synth import build_case, end, read_pass, stack_view
+from synth import build_case, end, finish, read_pass, stack_view
 
 CASE = "synth-srv"
 
@@ -62,9 +62,16 @@ def env(tmp_path_factory):
 
 
 def _cfg(env, **kw):
+    # synthetic logs are posted much faster than real time: the live clock guard is tested
+    # on its own (test_live_post_guards)
     base = dict(orthanc="http://127.0.0.1:9", data_dir=env.data, ohif_dist=env.dist, web_dir=env.web,
-                demo_case="pancreas-0051")
+                demo_case="pancreas-0051", clock_tolerance_ms=None)
     return Config(**{**base, **kw})
+
+
+def _to(sid, events):
+    """Synthetic events as the client posts them: stamped with the session id."""
+    return [{**e, "session": sid} for e in events]
 
 
 def run_client(cfg, fn):
@@ -143,11 +150,11 @@ def test_session_lifecycle(env):
         s = await _json(await c.post("/api/sessions", json={"case": CASE, "label": "t1"}))
         sid = s["session"]
         assert s["case"] == CASE and sid.startswith("s-")
-        evs = read_pass(vol, range(K), 0, 0, "soft", source="ohif")
+        evs = _to(sid, read_pass(vol, range(K), 0, 0, "soft", source="ohif") + [end(vol, K * 150, K)])
         cov = await _json(await c.post(f"/api/sessions/{sid}/events",
                                        json={"events": evs[:20], "now_ms": 20 * 150 + 50}))
         assert cov["provisional"] and cov["session"] == sid and cov["events"]["total"] == 20
-        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs[20:] + [end(vol, K * 150, K)]}))
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs[20:]}))
         liver = next(o for o in cov["organs"] if o["key"] == "liver")
         assert liver["status"] == "reviewed"
         committed = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
@@ -171,7 +178,9 @@ def test_session_lifecycle(env):
         # timeline
         tl = await _json(await c.get(f"/api/sessions/{sid}/timeline", params={"frames": 10}))
         assert len(tl["frames"]) == 10 and tl["frames"][-1]["statuses"]["liver"] == "reviewed"
-        assert set(tl["frames"][0]) >= {"t_ms", "summary", "statuses"}
+        assert set(tl["frames"][0]) >= {"t_ms", "summary", "statuses", "view"}
+        assert tl["frames"][-1]["view"] == {"sop": vol["sop_uids"][K - 1], "k": K - 1,
+                                            "voi": {"wc": 40.0, "ww": 400.0}, "window": "soft"}
         await _json(await c.get(f"/api/sessions/{sid}/timeline", params={"frames": 0}), 400)
         # exports
         r = await c.get(f"/api/sessions/{sid}/export", params={"format": "jsonl"})
@@ -218,7 +227,7 @@ def test_samples_and_from_sample(env):
         # the client's own clock and seq restart at 0; the server shifts them after the sample
         k = int(next(o for o in json.loads((env.cdir / "seg" / "organs.json").read_text())["organs"]
                      if o["key"] == "lung_left")["center_k"])
-        live = [stack_view(env.vol, k, 0, 0, "lung", source="ohif"), end(env.vol, 500, 1, source="ohif")]
+        live = _to(sid, [stack_view(env.vol, k, 0, 0, "lung", source="ohif"), end(env.vol, 500, 1, source="ohif")])
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": live}))
         assert cov["events"]["total"] == n + 2 and cov["events"]["ignored"]["other"] == 0
         assert next(o for o in cov["organs"] if o["key"] == "lung_left")["seen_voxels"] > 0
@@ -235,8 +244,8 @@ def test_concurrent_posts(env):
 
     async def fn(c):
         sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
-        batches = [[stack_view(vol, i % 40, i * 1000 + j * 100, i * 10 + j, viewport=f"vp{i}") for j in range(10)]
-                   for i in range(20)]
+        batches = [_to(sid, [stack_view(vol, i % 40, i * 1000 + j * 100, i * 10 + j, viewport=f"vp{i}")
+                             for j in range(10)]) for i in range(20)]
         resps = await asyncio.gather(*[c.post(f"/api/sessions/{sid}/events", json={"events": b}) for b in batches])
         assert all(r.status == 200 for r in resps)
         cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
@@ -265,6 +274,182 @@ def test_concurrent_partial_rules_keep_every_update(env):
         p = (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["params"]
         assert p["skipped_threshold"] == 0.05 and p["min_dwell_ms"] == 107.0
     run_client(_cfg(env), fn)
+
+
+def test_session_info_everywhere_and_export_origin(env):
+    vol = env.vol
+    n = len(env.sample_events)
+    out = {}
+
+    async def fn(c):
+        await _json(await c.get("/api/sessions/s-nope"), 404)
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE, "label": "info"})))["session"]
+        info = await _json(await c.get(f"/api/sessions/{sid}"))
+        created = info.pop("created")
+        assert isinstance(created, str) and created[:4].isdigit()
+        assert info == {"session": sid, "case": CASE, "label": "info", "from_sample": None, "sample_events": 0,
+                        "finished": False, "events": 0, "last_seq": None, "last_t_ms": None, "rules": {},
+                        "t_offset_ms": 0.0, "seq_offset": 0}
+        evs = _to(sid, read_pass(vol, range(10), 0, 0) + [finish(vol, 1600, 10, confirmed=False)])
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs, "now_ms": 1700}))
+        info = await _json(await c.get(f"/api/sessions/{sid}"))
+        assert cov["session_info"] == info
+        assert (info["events"], info["last_seq"], info["last_t_ms"], info["finished"]) == (11, 10, 1600.0, False)
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events",
+                                       json={"events": _to(sid, [finish(vol, 1800, 11), end(vol, 1900, 12)])}))
+        assert cov["session_info"]["finished"] and cov["session_info"]["last_seq"] == 12
+        cov = await _json(await c.post(f"/api/sessions/{sid}/rules", json={"min_dwell_ms": 100}))
+        assert cov["session_info"]["rules"] == {"min_dwell_ms": 100}
+        info = await _json(await c.get(f"/api/sessions/{sid}"))
+        assert (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["session_info"] == info == cov["session_info"]
+        r = await c.get(f"/api/sessions/{sid}/export", params={"format": "json"})
+        assert json.loads(await r.text())["session_info"] == info
+        r = await c.get(f"/api/sessions/{sid}/export", params={"format": "csv"})
+        assert r.headers["Content-Disposition"] == f'attachment; filename="{sid}.csv"'
+        # started from a sample: sample events counted apart, client numbering for the live part
+        s = await _json(await c.post("/api/sessions", json={"case": CASE, "from_sample": "skip-lungs"}))
+        sid2 = s["session"]
+        info = await _json(await c.get(f"/api/sessions/{sid2}"))
+        assert (info["from_sample"], info["sample_events"], info["events"]) == ("skip-lungs", n, n)
+        assert (info["last_seq"], info["last_t_ms"], info["seq_offset"]) == (None, None, n)
+        assert info["t_offset_ms"] == s["t_offset_ms"] and info["label"] == "Lung window skipped"
+        live = _to(sid2, [stack_view(vol, 20, 0, 0, "lung", source="ohif"), end(vol, 500, 1, source="ohif")])
+        live[0]["from_sample"] = "forged"  # only the server marks sample events
+        cov = await _json(await c.post(f"/api/sessions/{sid2}/events", json={"events": live}))
+        info = cov["session_info"]
+        assert (info["sample_events"], info["events"], info["last_seq"], info["last_t_ms"]) == (n, n + 2, 1, 500.0)
+        assert "from_sample" not in json.loads((env.data / "sessions" / f"{sid2}.jsonl").read_text().splitlines()[n])
+        r = await c.get(f"/api/sessions/{sid2}/export", params={"format": "csv"})
+        assert r.headers["Content-Disposition"] == f'attachment; filename="{sid2}-from-sample.csv"'
+        r = await c.get(f"/api/sessions/{sid2}/export", params={"format": "json"})
+        assert json.loads(await r.text())["session_info"] == info
+        out.update({sid: await _json(await c.get(f"/api/sessions/{sid}")), sid2: info})
+    run_client(_cfg(env), fn)
+
+    async def rehydrate(c):  # rebuilt from the log and meta by a fresh server
+        for sid, info in out.items():
+            assert await _json(await c.get(f"/api/sessions/{sid}")) == info
+    run_client(_cfg(env), rehydrate)
+
+
+def test_gap_endpoint(env):
+    from covmap.casedata import load_case
+    from covmap.scoring import Scorer
+
+    vol = env.vol
+    case = load_case(env.cdir)
+    n_k = case.organ_slice_counts[case.key_index["liver"]]
+    ks = [int(k) for k in np.flatnonzero(n_k)]
+    skip = max(ks, key=lambda k: n_k[k])
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        gap = f"/api/sessions/{sid}/gap"
+        await _json(await c.get(gap), 400)
+        await _json(await c.get(gap, params={"organ": "nope"}), 404)
+        await _json(await c.get(gap, params={"organ": "liver", "now_ms": "soon"}), 400)
+        await _json(await c.get(gap, params={"organ": "liver", "now_ms": "inf"}), 400)
+        await _json(await c.get("/api/sessions/s-nope/gap", params={"organ": "liver"}), 404)
+        g = await _json(await c.get(gap, params={"organ": "liver"}))
+        assert g == Scorer(case).gap("liver") and g["unseen_voxels"] == int(n_k.sum())
+        assert g["ranges"] == [[ks[0], ks[-1]]] and g["window"] == "soft" and g["sop"] == vol["sop_uids"][g["k"]]
+        evs = read_pass(vol, [k for k in ks if k != skip], 0, 0)
+        t = len(evs) * 150.0
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": _to(sid, evs + [end(vol, t, len(evs))])}))
+        g = await _json(await c.get(gap, params={"organ": "liver"}))
+        assert (g["k"], g["ranges"], g["unseen_voxels"]) == (skip, [[skip, skip]], int(n_k[skip]))
+        # on the gap slice now: the gap follows the provisional state at the last POST's now_ms
+        await _json(await c.post(f"/api/sessions/{sid}/events",
+                                 json={"events": _to(sid, [stack_view(vol, skip, t + 10, len(evs) + 1)]),
+                                       "now_ms": t + 20}))
+        assert (await _json(await c.get(gap, params={"organ": "liver"})))["k"] == skip
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": [], "now_ms": t + 300}))
+        g = await _json(await c.get(gap, params={"organ": "liver"}))
+        assert (g["k"], g["sop"], g["ranges"], g["unseen_voxels"]) == (None, None, [], 0)
+        assert (await _json(await c.get(gap, params={"organ": "liver", "now_ms": t + 30})))["k"] == skip
+        # sample session: ?now_ms is the client clock, shifted after the sample like POSTs
+        s = await _json(await c.post("/api/sessions", json={"case": CASE, "from_sample": "skip-lungs"}))
+        sid2, key = s["session"], "lung_left"
+        k = max(range(n_k.size), key=lambda i: case.organ_slice_counts[case.key_index[key]][i])
+        await _json(await c.post(f"/api/sessions/{sid2}/events",
+                                 json={"events": _to(sid2, [stack_view(vol, k, 0, 0, "lung")]), "now_ms": 0}))
+        g2 = f"/api/sessions/{sid2}/gap"
+        at0 = await _json(await c.get(g2, params={"organ": key}))
+        at500 = await _json(await c.get(g2, params={"organ": key, "now_ms": 500}))
+        n_lung = int(case.organ_slice_counts[case.key_index[key]][k])
+        assert at0["unseen_voxels"] - at500["unseen_voxels"] == n_lung > 0 and at0["k"] == k != at500["k"]
+    run_client(_cfg(env), fn)
+
+
+def test_live_post_guards(env, monkeypatch):
+    """Live POSTs refuse events of another session and events running ahead of the
+    session's clock (400, nothing applied); sample sessions take the client's own clock."""
+    from covmap import server
+
+    vol = env.vol
+    log = lambda sid: env.data / "sessions" / f"{sid}.jsonl"  # noqa: E731
+
+    async def refused(c, sid, body, needle):
+        r = await c.post(f"/api/sessions/{sid}/events", json=body)
+        assert r.status == 400 and needle in (await r.json())["error"], (r.status, await r.text())
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        other = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        evs = read_pass(vol, range(5), 0, 0)
+        # another session's events, alone or mixed into the batch
+        await refused(c, sid, {"events": _to(other, evs)}, other)
+        await refused(c, sid, {"events": _to(sid, evs[:2]) + _to(other, evs[2:])}, "nothing was applied")
+        # leftover events of an earlier clock posted with this session's now_ms
+        await refused(c, sid, {"events": _to(sid, read_pass(vol, range(5), 60000, 0)), "now_ms": 100}, "ahead")
+        # without now_ms the clock is the time since the session was created
+        await refused(c, sid, {"events": _to(sid, read_pass(vol, range(5), 20000, 0))}, "ahead")
+        info = await _json(await c.get(f"/api/sessions/{sid}"))
+        assert info["events"] == 0 and (not log(sid).exists() or log(sid).read_text() == "")
+        meta = json.loads((env.data / "sessions" / f"{sid}.json").read_text())
+        assert "clock_lead_ms" not in meta
+        # the client started its clock 7 s before the session existed (viewer load): its
+        # first now_ms pins that lead, so its own events are accepted ...
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events",
+                                       json={"events": _to(sid, read_pass(vol, range(5), 7000, 0)), "now_ms": 7800}))
+        assert cov["events"]["total"] == 5
+        lead = json.loads((env.data / "sessions" / f"{sid}.json").read_text())["clock_lead_ms"]
+        assert 7000 < lead <= 7800
+        await _json(await c.post(f"/api/sessions/{sid}/events",
+                                 json={"events": _to(sid, [end(vol, 7900, 5)]), "now_ms": 8000}))
+        # ... and later leftovers (or a now_ms) ahead of elapsed + lead + 5 s are not
+        await refused(c, sid, {"events": _to(sid, [stack_view(vol, 9, 40000, 6)])}, "ahead")
+        await refused(c, sid, {"events": [], "now_ms": 40000}, "now_ms 40000")
+        assert (await _json(await c.get(f"/api/sessions/{sid}")))["events"] == 6
+        assert len(log(sid).read_text().splitlines()) == 6
+        # events without a session field are taken as this session's
+        bare = {k: v for k, v in stack_view(vol, 9, 8100, 6).items() if k != "session"}
+        assert (await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": [bare]})))["events"]["total"] == 7
+        # sample sessions: the client's clock restarts at 0, the server shifts it after the sample
+        s = await _json(await c.post("/api/sessions", json={"case": CASE, "from_sample": "skip-lungs"}))
+        assert s["t_offset_ms"] > 10000
+        live = _to(s["session"], [stack_view(vol, 20, 0, 0, "lung", source="ohif"), end(vol, 400, 1, source="ohif")])
+        cov = await _json(await c.post(f"/api/sessions/{s['session']}/events", json={"events": live, "now_ms": 450}))
+        assert cov["events"]["total"] == len(env.sample_events) + 2 and cov["events"]["ignored"]["other"] == 0
+    run_client(_cfg(env, clock_tolerance_ms=5000.0), fn)
+
+    async def off(c):  # clock check off (synthetic logs posted faster than real time)
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events",
+                                       json={"events": _to(sid, read_pass(vol, range(3), 10**6, 0))}))
+        assert cov["events"]["total"] == 3
+        await refused(c, sid, {"events": _to("s-else", read_pass(vol, range(3), 0, 3))}, "s-else")
+    run_client(_cfg(env, clock_tolerance_ms=None), off)
+
+    for value, want in ((None, 5000.0), ("off", None), ("", None), ("2500", 2500.0)):
+        if value is None:
+            monkeypatch.delenv("COVMAP_CLOCK_TOLERANCE_MS", raising=False)
+        else:
+            monkeypatch.setenv("COVMAP_CLOCK_TOLERANCE_MS", value)
+        assert Config().clock_tolerance_ms == want == server._env_tolerance()
+    monkeypatch.setenv("COVMAP_CLOCK_TOLERANCE_MS", "-1")
+    with pytest.raises(ValueError):
+        Config()
 
 
 # ---- demo and static ------------------------------------------------------------------
@@ -515,13 +700,13 @@ def test_scorer_eviction_and_reload(env, monkeypatch):
         sids = [(await _json(await c.post("/api/sessions", json={"case": CASE})))["session"] for _ in range(3)]
         expected = {}
         for i, sid in enumerate(sids):
-            evs = read_pass(vol, range(i * 10, i * 10 + 10), 0, 0, "soft") + [end(vol, 1500, 10)]
+            evs = _to(sid, read_pass(vol, range(i * 10, i * 10 + 10), 0, 0, "soft") + [end(vol, 1500, 10)])
             expected[sid] = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": evs}))
         assert list(app.live) == [sids[-1]] and app.sessions[sids[0]].scorer is None
         for sid in sids:  # evicted sessions rebuild from their logs with identical results
             cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
             assert cov["organs"] == expected[sid]["organs"] and cov["events"]["total"] == 11
-        more = [stack_view(vol, 35, 2000, 11), end(vol, 2200, 12)]
+        more = _to(sids[0], [stack_view(vol, 35, 2000, 11), end(vol, 2200, 12)])
         cov = await _json(await c.post(f"/api/sessions/{sids[0]}/events", json={"events": more}))
         assert cov["events"]["total"] == 13
     run_client(_cfg(env), fn)
