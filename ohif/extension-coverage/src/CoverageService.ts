@@ -49,6 +49,8 @@ const LOCK_PREFIX = 'covmap-session-';
 /** While another tab records the session: how often this tab re-reads its coverage. */
 const FOLLOW_MS = 2500;
 const OTHER_TAB_HINT = 'This reading is open in another tab. Press "Record here" to record in this tab.';
+/** Shown when a mark or Finish comes while New reading or Recent readings is switching sessions. */
+const SWITCHING_HINT = 'The reading is changing. Try again in a moment.';
 /** When the recording tab closes, the waiting tab takes over this long after the lock is
  *  free, so the closing tab's last batch (its pagehide beacon) is on the server first. */
 const TAKEOVER_SETTLE_MS = 400;
@@ -258,6 +260,8 @@ export default class CoverageService extends PubSubService {
   /** the events of the POST in flight, unless sent with keepalive (sent again with the pagehide beacon) */
   private inflightEvents: CovEvent[] = [];
   private takingOver: Promise<boolean> | null = null;
+  /** startReplay is loading the replay: recording stays paused, also after a takeover meanwhile. */
+  private replayOpening = false;
   /** 409 resyncs since the last accepted batch (one retry; a second stops recording here) */
   private conflicts = 0;
   private followAt = -Infinity;
@@ -396,13 +400,15 @@ export default class CoverageService extends PubSubService {
   }
 
   /** Display events (view, hidden) are not recorded while replay is open or a session is
-   *  switching; reader events always are. A hidden tab displays nothing: no view is recorded
-   *  until it is shown again (then the display is re-captured). Nothing is recorded while
-   *  another tab records the session. */
+   *  switching; reader events are, except while a session is switching (they would land in
+   *  neither reading). A hidden tab displays nothing: no view is recorded until it is shown
+   *  again (then the display is re-captured). Nothing is recorded while another tab records
+   *  the session. */
   private enqueue(kind: CovEvent['kind'], fields: Record<string, unknown>): CovEvent | null {
     if (
       !this.writer ||
       (!this.recording && (kind === 'view' || kind === 'hidden')) ||
+      (this.switching && (kind === 'annotation' || kind === 'finish')) ||
       (kind === 'view' && document.visibilityState === 'hidden')
     ) {
       return null;
@@ -1047,10 +1053,10 @@ export default class CoverageService extends PubSubService {
     this.state.otherTab = false;
     this.emit();
     // the other tab sent nothing when it let go: its display ends where it last reported,
-    // also while the replay is open here (closing the replay resumes recording)
+    // also while the replay is open or opening here (closing the replay resumes recording)
     this.setRecording(true);
     this.enqueue('hidden', { viewport: '*' });
-    if (this.state.replay) {
+    if (this.state.replay || this.replayOpening) {
       this.setRecording(false);
     } else {
       this.resumeRecording();
@@ -1248,8 +1254,10 @@ export default class CoverageService extends PubSubService {
       // back where the reader left off (reload, or a case switch and back), not image 1 in Soft
       await this.showLastView(info.last_view);
     }
-    if (!writer) {
-      this.standBy(); // another tab records this reading
+    if (!this.writer) {
+      if (!this.takingOver) {
+        this.standBy(); // another tab records this reading (and Record here was not pressed meanwhile)
+      }
       return;
     }
     if (info) {
@@ -1469,8 +1477,10 @@ export default class CoverageService extends PubSubService {
       this.switching = false;
       this.setRecording(true);
     }
-    if (!writer) {
-      this.standBy(); // another tab records that reading
+    if (!this.writer) {
+      if (!this.takingOver) {
+        this.standBy(); // another tab records that reading (and Record here was not pressed meanwhile)
+      }
       return sessionId;
     }
     this.tracker.recaptureAll();
@@ -1534,6 +1544,7 @@ export default class CoverageService extends PubSubService {
     this.enqueue('hidden', { viewport: '*' });
     const saved = this.saveView();
     this.setRecording(false);
+    this.replayOpening = true;
     let list: TimelineFrame[] = [];
     let log: Array<Record<string, any>> | null = null;
     try {
@@ -1549,6 +1560,8 @@ export default class CoverageService extends PubSubService {
       log = events;
     } catch (e) {
       console.warn('covmap: timeline failed', e);
+    } finally {
+      this.replayOpening = false;
     }
     if (!list.length || sessionId !== this.state.sessionId) {
       if (!list.length) {
@@ -1761,7 +1774,10 @@ export default class CoverageService extends PubSubService {
     if (note) {
       fields.note = note;
     }
-    const ev = this.enqueue('annotation', fields)!;
+    const ev = this.enqueue('annotation', fields);
+    if (!ev) {
+      return;
+    }
     const prev = this.state.reader[key] ?? NO_READER;
     const layer = applyAction(prev, action, note);
     this.localReader[key] = applyAction(this.localReader[key] ?? NO_READER, action, note);
@@ -1773,6 +1789,10 @@ export default class CoverageService extends PubSubService {
   private setLayer(key: string, next: ReaderLayer): void {
     if (!this.writer && !this.state.replay) {
       this.notifyOtherTab();
+      return;
+    }
+    if (this.switching) {
+      this.notify(SWITCHING_HINT);
       return;
     }
     const cur = this.state.reader[key] ?? NO_READER;
@@ -1851,6 +1871,10 @@ export default class CoverageService extends PubSubService {
       this.notifyOtherTab();
       return;
     }
+    if (open && this.switching) {
+      this.notify(SWITCHING_HINT);
+      return;
+    }
     this.state.finishOpen = open;
     this.emit();
   }
@@ -1869,7 +1893,11 @@ export default class CoverageService extends PubSubService {
     const ev = this.enqueue('finish', { confirmed, remaining: this.remaining() });
     if (!ev) {
       this.emit();
-      this.notifyOtherTab();
+      if (this.switching) {
+        this.notify(SWITCHING_HINT);
+      } else {
+        this.notifyOtherTab();
+      }
       return;
     }
     // shown at once; a confirmed finish stays (Go back after a Confirm does not undo it)

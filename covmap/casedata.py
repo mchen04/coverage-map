@@ -45,6 +45,13 @@ def read_json(path: Path):
         return json.load(f)
 
 
+def check_case(case, named: str | None, what: str) -> None:
+    """Refuse ``what`` (a file) naming another case than ``case`` (id or directory)."""
+    want = read_json(resolve_case_dir(case) / "volume.json")["case"]
+    if named not in (None, want):
+        raise ValueError(f"{what} is for case {named!r}, not {want!r}")
+
+
 @dataclass(frozen=True)
 class Geometry:
     """Voxel (k, r, c) <-> LPS world mm, per the SPEC formula."""

@@ -920,6 +920,7 @@ def test_failed_log_append_is_not_applied(env, monkeypatch):
     def disk_full(path, events, mode="a"):
         with open(path, mode) as f:
             f.write('{"seq": 1, "tor')
+        time.sleep(0.3)  # the log is read meanwhile
         raise OSError(28, "No space left on device")
 
     async def fn(c):
@@ -928,7 +929,12 @@ def test_failed_log_append_is_not_applied(env, monkeypatch):
         batch = _to(sid, read_pass(vol, [6, 7, 8], 150, 1))
         with monkeypatch.context() as m:
             m.setattr(server, "_write_jsonl", disk_full)
-            assert (await c.post(f"/api/sessions/{sid}/events", json={"events": batch})).status == 500
+            post = asyncio.ensure_future(c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
+            await asyncio.sleep(0.1)
+            during = [await (await c.get(f"/api/sessions/{sid}/{u}")).read()
+                      for u in ("events.jsonl", "export?format=jsonl")]
+            assert (await post).status == 500
+        assert during[0] == during[1] and len(during[0].splitlines()) == 1  # not the refused batch
         assert (await _json(await c.get(f"/api/sessions/{sid}/coverage")))["events"]["total"] == 1
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
         return sid, cov

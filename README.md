@@ -46,15 +46,16 @@ python -m covmap fetch --case lidc-0001            # public TCIA download + prov
 python -m covmap orthanc-load --case lidc-0001
 python -m covmap segment --case lidc-0001          # TotalSegmentator → labels, organs, meshes
 python -m covmap scenarios --case lidc-0001
-python -m covmap simulate --case lidc-0001 --scenario window_skip_lung --out r.jsonl
-python -m covmap replay --case lidc-0001 --events r.jsonl --out cov.json
-python -m covmap report --case lidc-0001 --coverage cov.json --truth r.jsonl.truth.json
-python -m covmap render --case lidc-0001 --coverage cov.json --out map.png
+python -m covmap simulate --case lidc-0001 --scenario window_skip_lung --out work/r.jsonl
+python -m covmap replay --case lidc-0001 --events work/r.jsonl --out work/cov.json
+python -m covmap report --case lidc-0001 --coverage work/cov.json --truth work/r.jsonl.truth.json
+python -m covmap render --case lidc-0001 --coverage work/cov.json --out work/map.png
 python -m covmap serve --port 8765
 ```
 
 Commands run on the Mac mini (`scripts/mini.sh -- python -m covmap …`), where the toolchain
-and data live.
+and data live. Each `mini.sh` call re-syncs the checkout there and deletes other files, so
+outputs go under `work/` (kept, like `data/`).
 
 ## Data
 
@@ -76,9 +77,14 @@ Everything runs in a task directory on the Mac mini, nothing is installed global
 ```bash
 scripts/mini.sh -- bash scripts/setup_mini.sh all        # Python venv, Node, Orthanc, OHIF, Playwright Chromium
 scripts/mini.sh --heavy -- bash scripts/build_ohif.sh    # Coverage Map OHIF build -> $MINI_WORK/ohif-dist
+scripts/mini.sh --heavy -- bash scripts/stock_ohif.sh    # unmodified OHIF baseline -> $MINI_WORK/ohif-dist-stock
+scripts/mini.sh -- bash scripts/services.sh start         # Orthanc, Coverage Map (8765), stock OHIF (8766)
 scripts/mini.sh -- python -m covmap fetch --case pancreas-0051   # then orthanc-load and segment as above
-scripts/mini.sh -- bash -c 'source scripts/mini_env.sh && python -m pytest -q'
+scripts/mini.sh -- python e2e/make_sample.py --case pancreas-0051  # the sample reading, recorded in OHIF
+scripts/mini.sh --heavy -- python -m pytest -q
 ```
+
+Repeat the case steps for `lidc-0001`.
 
 ## Evaluation
 

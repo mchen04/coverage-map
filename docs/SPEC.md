@@ -48,8 +48,8 @@ changing an interface.
 ```
 
 Slice index `k` orders slices by position along `slice_dir` ascending (ImagePositionPatient
-projected on the normal). Arrays are indexed `[k, r, c]`. `world = origin + c*col_mm*row_dir...`
-— precisely: `world = origin + c * pixel_spacing[1] * row_dir + r * pixel_spacing[0] * col_dir + k * slice_spacing * slice_dir`
+projected on the normal). Arrays are indexed `[k, r, c]`.
+`world = origin + c * pixel_spacing[1] * row_dir + r * pixel_spacing[0] * col_dir + k * slice_spacing * slice_dir`
 (DICOM: the first IOP triple is the direction along a row, i.e. increasing column).
 
 ### `seg/organs.json`
@@ -212,8 +212,8 @@ does not have it.
 `GET …/coverage` and the `json`/`csv` exports report the session as the reader last saw it:
 while display states are open (no `end`, `hidden "*"` or confirmed `finish` since), the
 coverage provisional at the latest POST's `now_ms`, equal to that POST's response
-(`"provisional": true`, `"t_ms"` = that `now_ms`); otherwise, or when no `now_ms` is known
-(no POST with one since the server started), the committed coverage. Replaying the log
+(`"provisional": true`, `"t_ms"` = that `now_ms`); otherwise, or when that POST carried no
+`now_ms` (or none came since the server started), the committed coverage. Replaying the log
 (`covmap replay`) credits closed display states only, so it equals the export once the
 session is closed (e.g. after a confirmed finish).
 
@@ -278,7 +278,7 @@ Gap target (`GET /api/sessions/{id}/gap?organ=<key>`): `{"organ": key, "k": int|
 "sop": str|null, "window": "soft"|"lung"|"bone", "unseen_voxels": n, "ranges": [[k0, k1], ...]}`
 from the current state: committed, plus the open display states credited up to `now_ms`
 (the query `now_ms`, client clock, shifted like POSTs; default the latest POST's `now_ms`
-since the server started; committed only if neither). `unseen_voxels` = the organ's unseen voxels; `k` = the slice
+since the server started; committed if neither, or if that POST carried none). `unseen_voxels` = the organ's unseen voxels; `k` = the slice
 holding most of them (ties: nearest to the organ's `center_k`, then the lower `k`), `sop`
 its instance, both null when nothing is unseen. `ranges` = maximal runs of consecutive
 slices (inclusive) whose unseen count is ≥ max(1, 2% of the organ's voxels on that slice);
@@ -368,7 +368,8 @@ a one-line research-use note.
   time, events, "✓ finished"); choosing one ends the current session as a switch does and
   continues the chosen one as after a reload (localStorage, `last_view`, `last_seq + 1`).
   On a session switch, recording pauses, the old session's `end` is flushed and the event queue
-  is cleared before the new session's clock starts at its first event. A hidden tab records no
+  is cleared before the new session's clock starts at its first event. A mark or Finish during
+  the switch is refused with "The reading is changing. Try again in a moment." A hidden tab records no
   `view` (also while a reading resumes or switches); shown again, it re-captures the display.
   At `pagehide` recording stops, so `end` is the page's last event: the beacon carries the
   events of a POST still in flight (unless it was sent with keepalive, which outlives the
@@ -391,7 +392,8 @@ a one-line research-use note.
   (now b%)" (voxel share, with decimals when needed to tell them apart).
 - Replay plays a session's timeline frames, moving the viewer to each frame's `view` and showing
   that frame's statuses, counts and done / N/A / flag marks; it sends `hidden '*'` when it starts,
-  records nothing and disables the rules form until it closes, then restores the view.
+  records nothing (also after a takeover while it opens) and disables the rules form until it
+  closes, then restores the view.
 - Finish opens a compact list of remaining gray/yellow organs with per-organ decisions
   (done / N/A / flag), Go back and Confirm finish; the research note stays visible. The
   decisions keep their full height (up to a third of the sheet, then they scroll); the list of

@@ -2125,6 +2125,71 @@ def main() -> int:
         C.run("U1 Record here with the replay open ends the other tab's display at once (hidden '*'), records nothing "
               "until the replay closes", takeover_in_replay)
 
+        def takeover_while_loading():
+            """Record here pressed while a recent reading is still loading records that reading
+            here (F1); pressed while the replay is still loading, the replay records nothing until
+            it closes (F2)."""
+            s = session()
+            neutral()
+            pb, drv_b, _ = tab("tab B")
+            try:
+                drv_b.open(url)
+                pb.wait_for_function("() => window.__covmap && window.__covmap.ready && window.__covmap.sessionId",
+                                     timeout=90000)
+                pb.locator('[data-testid="covmap-other-tab"]').wait_for(timeout=10000)
+                s_b = pb.evaluate("async () => await window.__covmap.newReading()")
+                need(s_b != s and pb.evaluate("() => window.__covmap.writer") is True, f"tab B new reading {s_b}")
+                # F1: B picks A's reading under Recent readings; Record here as soon as its banner shows
+                pb.evaluate("""s => { const t = setInterval(() => { const st = window.__covmap.state();
+                    if (st.sessionId === s && st.otherTab) { clearInterval(t); window.__covmap.recordHere(); } }, 5); }""", s)
+                pb.bring_to_front()
+                pb.locator('[data-testid="covmap-session-menu"]').click()
+                pb.locator('[data-testid="covmap-recent"]').click()
+                pb.locator(f'[data-testid="covmap-recent-{s}"]').click()
+                pb.wait_for_function("s => window.__covmap.sessionId === s", arg=s, timeout=15000)
+                page.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
+                pb.wait_for_timeout(1500)
+                f1 = pb.evaluate("() => ({writer: window.__covmap.writer, other_tab: window.__covmap.state().otherTab})")
+                need(f1 == {"writer": True, "other_tab": False}, f"tab B after Record here while loading: {f1}")
+                n0 = len(api.events(s))
+                drv_b.goto(len(viewer_sops) // 3)
+                pb.wait_for_timeout(600)
+                pb.evaluate("() => window.__covmap.flush()")
+                pb.wait_for_timeout(300)
+                need(any(e["kind"] == "view" for e in api.events(s)[n0:]), "tab B records nothing after Record here")
+                # F2: A (now waiting) opens the replay, slowed down, and presses Record here meanwhile
+                page.bring_to_front()
+                page.evaluate("""() => { const f = window.fetch; window.__covmapFetch = f;
+                    window.fetch = async (u, o) => {
+                      if (String(u).includes('/timeline')) { await new Promise(r => setTimeout(r, 1500)); }
+                      return f(u, o); }; }""")
+                try:
+                    n1 = len(api.events(s))
+                    tid("covmap-session-menu").click()
+                    tid("covmap-replay").click()
+                    tid("covmap-record-here").click()
+                    need(not page.evaluate("() => !!window.__covmap.state().replay"), "the replay opened before Record here")
+                    page.wait_for_function("() => window.__covmap.writer === true && !!window.__covmap.state().replay",
+                                           timeout=10000)
+                finally:
+                    page.evaluate("() => { if (window.__covmapFetch) window.fetch = window.__covmapFetch; }")
+                page.wait_for_timeout(2500)  # replay frames play
+                flush()
+                page.wait_for_timeout(300)
+                during = api.events(s)[n1:]
+                need(during and during[0]["kind"] == "hidden" and during[0].get("viewport") == "*",
+                     f"first event after Record here while the replay loads: {during[:1]}")
+                need(not any(e["kind"] == "view" for e in during), "a view recorded while the replay is open")
+                tid("covmap-replay-close").click()
+                page.wait_for_function("() => !window.__covmap.state().replay && window.__covmap.state().recording",
+                                       timeout=10000)
+            finally:
+                pb.close()
+            page.wait_for_function("() => window.__covmap.writer === true", timeout=15000)
+            return {"session": s, "tab_b_new": s_b, "f1_tab_b": f1, "f2_events_during_replay": len(during)}
+        C.run("F1/F2 Record here while a recent reading or the replay is still loading: that tab records the reading; "
+              "the replay records nothing", takeover_while_loading)
+
         # ---- U6 radiological display survives a camera reset --------------------------------
         def reset_keeps_orientation():
             s = session()
@@ -2338,6 +2403,46 @@ def main() -> int:
                     "views_once_shown": len(shown)}
         C.run("visibilitychange hidden -> hidden event; visible -> state re-emitted; C24 a new reading started "
               "while hidden records no view until shown", hidden)
+
+        # ---- a mark or Finish while New reading is creating the session -----------------------
+        def mark_while_switching():
+            s0 = session()
+            flush()
+            n0 = len(api.events(s0))
+            key = next(k for k in page.evaluate("() => window.__covmap.remaining()")
+                       if not page.evaluate("k => (window.__covmap.state().reader[k] || {}).reader || null", k))
+            # the server takes 2.5 s to create the new session
+            page.evaluate("""() => { const f = window.fetch; window.__covmapFetch = f;
+                window.fetch = async (u, o) => {
+                  if (o && o.method === 'POST' && String(u).endsWith('/api/sessions')) {
+                    await new Promise(r => setTimeout(r, 2500));
+                  }
+                  return f(u, o); }; }""")
+            try:
+                page.evaluate("() => { window.__covmapSwitch = window.__covmap.newReading(); }")
+                page.wait_for_timeout(700)
+                need(session() == s0, "the new reading exists before its held POST")
+                tid(f"covmap-organ-{key}-done").click()
+                page.get_by_text("The reading is changing").first.wait_for(timeout=2000)
+                page.keyboard.press("f")
+                page.wait_for_timeout(300)
+                finish_opened = tid("covmap-finish-dialog").count() > 0
+                s1 = page.evaluate("async () => await window.__covmapSwitch")
+            finally:
+                page.evaluate("() => { if (window.__covmapFetch) window.fetch = window.__covmapFetch; }")
+            flush()
+            page.wait_for_timeout(300)
+            need(isinstance(s1, str) and s1 != s0 and session() == s1, f"new reading {s1!r}, session {session()}")
+            need(not finish_opened, "Finish opened while the reading was changing")
+            shown = page.evaluate("k => (window.__covmap.state().reader[k] || {}).reader || null", key)
+            need(shown is None, f"{key} shows {shown!r} in the new reading")
+            old_tail = [e["kind"] for e in api.events(s0)[n0:]]
+            new_marks = [e for e in api.events(s1) if e["kind"] in ("annotation", "finish")]
+            need("annotation" not in old_tail and "finish" not in old_tail, f"old reading got {old_tail}")
+            need(not new_marks, f"new reading got {new_marks}")
+            return {"organ": key, "old": s0, "old_tail": old_tail, "new": s1, "finish_opened": finish_opened}
+        C.run("J3-1 a mark or Finish while New reading creates the session: refused with a notice, in neither "
+              "reading", mark_while_switching)
 
         # ---- 1280x800 -------------------------------------------------------------------------
         def small():

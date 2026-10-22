@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Task-owned Orthanc on 127.0.0.1:8042 (DICOMweb at /dicom-web/). Run on the mini.
+# Task-owned Orthanc on port 8042, local clients only (DICOMweb at /dicom-web/). Run on the mini.
 #   scripts/orthanc.sh start|stop|status
 set -euo pipefail
 MINI_WORK="${MINI_WORK:-/Users/michaelchen/coverage-map-work}"

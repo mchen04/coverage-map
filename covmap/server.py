@@ -451,7 +451,7 @@ class App:
     async def coverage(self, s: Session) -> dict:
         """Coverage as the reader last saw it: while views are open (no end, hidden or
         confirmed finish since), provisional at the latest POST's now_ms like that POST's
-        response; else (or before any now_ms since the server started) committed."""
+        response; else (or when the latest POST since the server started had no now_ms) committed."""
         async with s.lock:
             sc = await self._ready(s)
             now = s.last_now if sc.segmenter.open else None
@@ -689,13 +689,18 @@ async def get_gap(request):
     return _json(await a.gap(s, key, now))
 
 
+async def _log_bytes(s: Session) -> bytes:
+    """The log as recorded: read under the session lock, never during an append that may
+    still be cut back."""
+    async with s.lock:
+        return s.log.read_bytes() if s.log.exists() else b""
+
+
 async def get_events(request):
     a = _app(request)
     s = await a.session(request.match_info["id"])
-    if not s.log.exists():
-        return web.Response(body=b"", content_type="application/x-ndjson")
-    return web.FileResponse(s.log, headers={"Content-Type": "application/x-ndjson",
-                                            "Cache-Control": "no-cache"})
+    return web.Response(body=await _log_bytes(s), content_type="application/x-ndjson",
+                        headers={"Cache-Control": "no-cache"})
 
 
 async def post_rules(request):
@@ -735,8 +740,7 @@ async def export(request):
     fmt = request.query.get("format", "json")
     disp = 'attachment; filename="{}"'
     if fmt == "jsonl":
-        body = s.log.read_bytes() if s.log.exists() else b""
-        return web.Response(body=body, content_type="application/x-ndjson",
+        return web.Response(body=await _log_bytes(s), content_type="application/x-ndjson",
                             headers={"Content-Disposition": disp.format(f"{s.id}.jsonl")})
     if fmt not in ("json", "csv"):
         raise ApiError(400, "format must be jsonl, json or csv")

@@ -168,6 +168,10 @@ def render(case_id: str, coverage=None, out="organ-map.png", width: int = 800, h
 
     timings: dict[str, float] = {"import": (time.perf_counter() - t0) * 1000}
     cov = _load_coverage(coverage)
+    if cov is not None:
+        from covmap.casedata import check_case  # numpy: only when a coverage is drawn
+
+        check_case(case_id, cov.get("case"), "coverage")
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     init: dict = {"case": case_id, "width": width, "height": height}

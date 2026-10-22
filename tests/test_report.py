@@ -77,14 +77,22 @@ def test_report_without_truth(case_dir, tmp_path):
     assert all(o["top_unseen_reason"] is None for o in rep["organs"])
 
 
-def test_truth_for_other_case_rejected(case_dir, tmp_path):
+def test_files_for_other_case_rejected(case_dir, tmp_path):
+    from covmap.render import render
+
     out = tmp_path / "full.jsonl"
     simulate(str(case_dir), "full_read", out)
-    replay_file(str(case_dir), out, out=tmp_path / "c.json")
+    cov = replay_file(str(case_dir), out, out=tmp_path / "c.json")
     t = json.loads((tmp_path / "full.jsonl.truth.json").read_text())
     t["case"] = "other"
     with pytest.raises(ValueError, match="truth is for case"):
         report(str(case_dir), tmp_path / "c.json", truth=t)
+    (tmp_path / "o.json").write_text(json.dumps({**cov, "case": "other"}))
+    with pytest.raises(ValueError, match="coverage is for case 'other'"):
+        report(str(case_dir), tmp_path / "o.json")
+    with pytest.raises(ValueError, match="coverage is for case 'other'"):  # before any browser starts
+        render(str(case_dir), coverage=tmp_path / "o.json", out=tmp_path / "o.png")
+    assert not (tmp_path / "o.png").exists()
 
 
 def test_cli_roundtrip(tmp_path, monkeypatch, capsys):
