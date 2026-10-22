@@ -235,6 +235,7 @@ Synapse/eRAD per-image behaviour; it is not the proprietary product.
 | `GET /api/cases/{case}/volume` | `volume.json` |
 | `GET /api/cases/{case}/meshes.json`, `/meshes.bin` | mesh files (bin as `application/octet-stream`) |
 | `POST /api/sessions` `{case, label?, from_sample?}` | `{session, case}`; `from_sample` pre-fills the session with that sample's events (marked in the log) |
+| `GET /api/sessions?case=<id>[&limit=10]` | `{case, sessions: [{session, label, from_sample, created, events, last_t_ms, finished}]}`: the case's latest readings, newest first (limit 1–50; read from meta and logs, no scoring); 400 without `case` |
 | `GET /api/sessions/{id}` | session info (below), 404 if unknown |
 | `POST /api/sessions/{id}/events` | coverage JSON (provisional at `now_ms`) + `session_info`; nothing applied on 400 (invalid events, foreign `session`, clock guard) or 409 (a `seq` already used for a different event: `{error, conflicts: [seq…], last_seq, last_t_ms}`, client numbering) — see "Reading events" |
 | `GET /api/sessions/{id}/coverage` | coverage JSON as last shown (provisional at the latest POST's `now_ms` while views are open, else committed; "Coverage JSON") + `session_info` |

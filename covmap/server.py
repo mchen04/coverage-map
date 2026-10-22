@@ -439,6 +439,35 @@ class App:
             await self._ready(s)
             return s.info()
 
+    async def recent(self, case: str, limit: int) -> list[dict]:
+        """The case's latest readings, newest first, from their meta and logs (no scoring)."""
+        _safe_id(case, "case")
+        metas = []
+        for path in self.cfg.sessions_dir.glob("*.json"):
+            try:
+                meta = read_json(path)
+            except (OSError, ValueError):
+                continue
+            if isinstance(meta, dict) and meta.get("case") == case and isinstance(meta.get("session"), str):
+                metas.append(meta)
+        metas.sort(key=lambda m: m.get("created_epoch") or 0.0, reverse=True)
+        out = []
+        for meta in metas[:limit]:
+            s = await self.session(meta["session"])
+            async with s.lock:
+                if s.events is not None:
+                    st, fin = dict(s.stats), s.scorer.finished
+                else:
+                    events = await self.run(read_jsonl, s.log) if s.log.exists() else []
+                    tmp = Session(s.id, s.case, s.case_dir, s.meta, s.log, s.meta_path)
+                    tmp.tally(events)
+                    st = tmp.stats
+                    fin = next((e for e in reversed(events) if e.get("kind") == "finish"), None)
+                out.append({"session": s.id, "label": s.meta.get("label"), "from_sample": s.meta.get("from_sample"),
+                            "created": s.meta.get("created"), "events": st["events"], "last_t_ms": st["last_t_ms"],
+                            "finished": bool(fin and fin.get("confirmed"))})
+        return out
+
     async def gap(self, s: Session, key: str, now: float | None) -> dict:
         async with s.lock:
             scorer = await self._ready(s)
@@ -592,6 +621,17 @@ async def post_events(request):
 async def get_coverage(request):
     a = _app(request)
     return _json(await a.coverage(await a.session(request.match_info["id"])))
+
+
+async def list_sessions(request):
+    case = request.query.get("case")
+    if not case:
+        raise ApiError(400, "need ?case=<id>")
+    try:
+        limit = min(max(int(request.query.get("limit", "10")), 1), 50)
+    except ValueError:
+        raise ApiError(400, "'limit' must be an integer")
+    return _json({"case": case, "sessions": await _app(request).recent(case, limit)})
 
 
 async def get_session(request):
@@ -862,6 +902,7 @@ def make_app(cfg: Config | None = None, **overrides) -> web.Application:
     r.add_get("/api/cases/{case}/samples", samples)
     r.add_get("/api/cases/{case}/outline", outline)
     r.add_post("/api/sessions", create_session)
+    r.add_get("/api/sessions", list_sessions)
     r.add_get("/api/sessions/{id}", get_session)
     r.add_post("/api/sessions/{id}/events", post_events)
     r.add_get("/api/sessions/{id}/coverage", get_coverage)

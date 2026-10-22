@@ -882,3 +882,27 @@ def test_failed_batch_is_not_half_applied(env, monkeypatch):
         cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
         assert cov["events"]["total"] == 4 and cov["events"]["ignored"].get("other", 0) == 0
     run_client(_cfg(env), fn)
+
+
+def test_recent_readings_of_a_case(env):
+    vol = env.vol
+
+    async def fn(c):
+        sids = [(await _json(await c.post("/api/sessions", json={"case": CASE, "label": f"r{i}"})))["session"]
+                for i in range(3)]
+        evs = read_pass(vol, [3, 4], 0, 0) + [finish(vol, 400, 2)]
+        await _json(await c.post(f"/api/sessions/{sids[1]}/events", json={"events": _to(sids[1], evs)}))
+        await _json(await c.get(f"/api/sessions/{sids[1]}/coverage"))
+        return sids, await _json(await c.get(f"/api/sessions?case={CASE}&limit=3")), \
+            await c.get("/api/sessions"), await _json(await c.get("/api/sessions?case=unsegmented"))
+
+    sids, listed, missing, other = run_client(_cfg(env), fn)
+    assert listed["case"] == CASE and [x["session"] for x in listed["sessions"]] == sids[::-1]
+    newest, read, _ = listed["sessions"]
+    assert newest == {**newest, "label": "r2", "events": 0, "last_t_ms": None, "finished": False}
+    assert read == {**read, "label": "r1", "events": 3, "last_t_ms": 400, "finished": True}
+    assert missing.status == 400 and other["sessions"] == []
+
+    async def cold(c):  # a fresh server reads the same from the logs, without scoring
+        return await _json(await c.get(f"/api/sessions?case={CASE}&limit=3"))
+    assert run_client(_cfg(env), cold)["sessions"] == listed["sessions"]
