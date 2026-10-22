@@ -338,11 +338,16 @@ def test_confirmed_finish_closes_open_views(case, vol):
     assert key(cov) == key(seen_on_screen) == key(Scorer(case).add(shown + [hidden(vol, 500, 2)]))
     assert by_key(cov)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k:k + 2])
     assert cov["events"]["open"] == 0 and cov["summary"]["finished"]["confirmed"]
+    confirmed = {"statuses": {o["key"]: o["status"] for o in cov["organs"]},
+                 **{x: cov["summary"][x] for x in ("reviewed", "partial", "skipped", "voxel_coverage")}}
     open_ = Scorer(case).add(shown + [finish(vol, 500, 2, confirmed=False)])
     assert open_["events"]["open"] == 1
     assert by_key(open_)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k])
     cov = sc.add([stack_view(vol, k + 2, 600, 3), end(vol, 700, 4)])
     assert by_key(cov)["liver"]["seen_voxels"] == organ_count(case, "liver", np.s_[k:k + 3])
+    # reading on after the confirm changes coverage; the record keeps what was confirmed
+    assert cov["summary"]["voxel_coverage"] > confirmed["voxel_coverage"]
+    assert cov["summary"]["finished"]["at_finish"] == confirmed
 
 
 def test_last_view_is_the_latest_displayed_stack_image(case, vol):
@@ -383,6 +388,7 @@ def test_malformed_view_fields_rejected_without_mutation(case, vol):
     good = stack_view(vol, 3, 0, 0)
     sc = Scorer(case)
     for field, value, msg in [("corners_lps", [[0, 0, 0]] * 3, "corners_lps"), ("voi", {"wc": 40}, "ww"),
+                              ("corners_lps", [[1.7e308, 0, 0]] * 4, "beyond"),  # finite, overflows the solve
                               ("vp_type", "3d", "vp_type"), ("sop", None, "sop")]:
         with pytest.raises(EventError, match=msg):
             sc.add([good, {**good, "seq": 1, field: value}])
@@ -435,7 +441,9 @@ def test_annotations_and_finish(case, vol, tmp_path):
     assert s["attested"] == 1 and s["not_applicable"] == 1 and s["flagged"] == 1
     non_reviewed = [k for k, x in o.items() if x["status"] != "reviewed"]
     assert s["remaining"] == [k for k in non_reviewed if k not in ("lung_left", "sternum")]
-    assert s["finished"] == {"t_ms": K * 150 + 8, "confirmed": True, "remaining": ["lung_right"]}
+    assert {k: v for k, v in s["finished"].items() if k != "at_finish"} == \
+        {"t_ms": K * 150 + 8, "confirmed": True, "remaining": ["lung_right"]}
+    assert s["finished"]["at_finish"]["statuses"] == {k: x["status"] for k, x in o.items()}
     assert cov["events"]["ignored"]["other"] == 1
     # replay reproduces the reader layer
     p = tmp_path / "ev.jsonl"

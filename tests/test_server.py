@@ -823,3 +823,62 @@ def test_scorer_eviction_and_reload(env, monkeypatch):
         cov = await _json(await c.post(f"/api/sessions/{sids[0]}/events", json={"events": more}))
         assert cov["events"]["total"] == 13
     run_client(_cfg(env), fn)
+
+
+def test_late_batch_scored_in_log_order(env):
+    """A batch older than events already applied (an unload beacon overtaking a tick) is scored
+    as replay and a restart score the log: live coverage equals the record."""
+    from covmap.scoring import replay_file
+
+    vol = env.vol
+    first = read_pass(vol, range(0, 12), 0, 0)
+    rest = read_pass(vol, range(12, 18), 12 * 150, 12)
+    last = [end(vol, 18 * 150 + 40, 18)]
+
+    async def fn(c):
+        out = {}
+        for name, order in (("in_order", [first, rest, last]), ("late", [first, last, rest])):
+            sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+            for b in order:
+                await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": _to(sid, b)}))
+            out[name] = (sid, await _json(await c.get(f"/api/sessions/{sid}/coverage")))
+        return out
+
+    out = run_client(_cfg(env), fn)
+    key = lambda cov: [(o["key"], o["seen_voxels"], o["status"]) for o in cov["organs"]]  # noqa: E731
+    sid, late = out["late"]
+    assert late["events"]["open"] == 0 and not late["provisional"]
+    replayed = replay_file(env.cdir, env.data / "sessions" / f"{sid}.jsonl")
+    assert key(late) == key(replayed) == key(out["in_order"][1])
+
+    async def restarted(c):  # a fresh server rebuilds the session from its log
+        return await _json(await c.get(f"/api/sessions/{sid}/coverage"))
+    assert key(run_client(_cfg(env), restarted)) == key(late)
+
+
+def test_failed_batch_is_not_half_applied(env, monkeypatch):
+    """An unexpected scorer error refuses the batch whole: the session is rebuilt from its log,
+    so a retry neither double-counts nor logs a half-applied state."""
+    from covmap.scoring import Scorer
+
+    vol = env.vol
+    feed = Scorer.feed
+
+    def failing(self, ev, *a, **kw):
+        if ev["seq"] == 3:
+            raise RuntimeError("boom")
+        return feed(self, ev, *a, **kw)
+
+    async def fn(c):
+        sid = (await _json(await c.post("/api/sessions", json={"case": CASE})))["session"]
+        await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": _to(sid, read_pass(vol, [5], 0, 0))}))
+        batch = _to(sid, read_pass(vol, [6, 7, 8], 150, 1))
+        with monkeypatch.context() as m:
+            m.setattr(Scorer, "feed", failing)
+            r = await c.post(f"/api/sessions/{sid}/events", json={"events": batch})
+            assert r.status == 500
+        cov = await _json(await c.get(f"/api/sessions/{sid}/coverage"))
+        assert cov["events"]["total"] == 1  # nothing of the refused batch
+        cov = await _json(await c.post(f"/api/sessions/{sid}/events", json={"events": batch}))
+        assert cov["events"]["total"] == 4 and cov["events"]["ignored"].get("other", 0) == 0
+    run_client(_cfg(env), fn)

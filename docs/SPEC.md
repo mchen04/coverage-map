@@ -112,7 +112,7 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   tab hidden), or `kind: "end"` (session end). Dwell = elapsed `t_ms`.
 - `t_ms` is monotonic milliseconds since session start (`performance.now()` based).
 - `corners_lps` are the four canvas corners (TL, TR, BR, BL) mapped to patient LPS mm via
-  `viewport.canvasToWorld`. The scorer maps them to continuous voxel coordinates; the axis
+  `viewport.canvasToWorld` (each coordinate within ±1e6 mm). The scorer maps them to continuous voxel coordinates; the axis
   with (near) zero extent is the slice axis, the other two give the visible rectangle,
   clipped to the volume. Axial, coronal and sagittal planes are scored; oblique planes
   (normal not within 5° of a volume axis) are counted under `ignored.oblique`.
@@ -129,6 +129,9 @@ soft organs `["soft"]`, trachea `["lung","soft"]`.
   `{"kind": "hidden", "viewport": "*"}`: the image on screen when the reader confirms is
   credited, so replaying a finished session's log equals what the reader saw at the
   confirm. View events after it start new states as usual; `confirmed: false` ends nothing.
+  Coverage keeps what a confirmed finish confirmed in `finished.at_finish` (`reviewed`,
+  `partial`, `skipped`, `voxel_coverage`, per-organ `statuses` at its `t_ms`), so reading on
+  after the confirm never rewrites it.
 - `source` labels provenance: `simulated` events are synthetic and must be labeled so in
   every report.
 
@@ -160,6 +163,11 @@ them). A batch failing a guard is refused whole and nothing is applied:
   or `now_ms > elapsed + lead + tolerance`. Tolerance 5000 ms; `COVMAP_CLOCK_TOLERANCE_MS`
   sets it, `off` disables the clock check (the session check stays).
 - `from_sample` on posted events is dropped (only the server marks sample events).
+
+A batch whose new events are older than events already applied (two POSTs in flight, an
+unload beacon overtaking a tick) is scored in log order, by re-scoring the session as replay
+and a restart do, so live coverage always equals the record. A batch the scorer fails on for
+any other reason (HTTP 500) is not applied either: the session rebuilds from its log.
 
 ## Scoring (`covmap/scoring.py`)
 
@@ -210,7 +218,7 @@ session is closed (e.g. after a confirmed finish).
 `"reader": null | "done" | "na"`, `"flagged": bool`, `"note": str|null`; the measured
 `status` never changes because of annotations. `summary` adds `attested` (reader done on a
 non-reviewed organ), `not_applicable`, `flagged`, and `remaining` (keys of organs that are not
-reviewed and not marked done/na — the finish list), plus `finished` (last finish event or null). `baseline` is the per-image viewed/unviewed
+reviewed and not marked done/na — the finish list), plus `finished` (last finish event or null; `at_finish` after a confirmed one). `baseline` is the per-image viewed/unviewed
 model (`covmap/baseline.py`): an image counts as viewed when it was displayed in any
 viewport for any duration under any window and zoom (≥ 1 view event naming it, or a volume
 viewport state whose plane is that acquisition slice). This models the described

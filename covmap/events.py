@@ -19,6 +19,7 @@ KINDS = DISPLAY_KINDS + READER_KINDS
 VP_TYPES = ("stack", "volume")
 ACTIONS = ("done", "na", "flag", "clear")
 ALL_VIEWPORTS = "*"
+COORD_LIMIT_MM = 1e6  # |corner| bound: finite but huge values overflow the voxel solve
 
 
 class EventError(ValueError):
@@ -88,6 +89,8 @@ def validate_event(ev: Any, where: str = "event") -> dict:
         if not isinstance(corners, (list, tuple)) or len(corners) != 4:
             raise EventError(f"{where}: 'corners_lps' must be 4 points [TL, TR, BR, BL]")
         out["corners_lps"] = [_vec(p, 3, "corners_lps", where) for p in corners]
+        if max(abs(v) for p in out["corners_lps"] for v in p) > COORD_LIMIT_MM:
+            raise EventError(f"{where}: 'corners_lps' beyond ±{COORD_LIMIT_MM:g} mm")
         if ev.get("normal") is not None:
             out["normal"] = _vec(ev["normal"], 3, "normal", where)
         voi = ev.get("voi")

@@ -319,10 +319,11 @@ class App:
         return s.scorer
 
     @staticmethod
-    def _rescore(s: Session, rules: dict) -> Scorer:
+    def _rescore(s: Session, rules: dict, events: list[dict] | None = None) -> Scorer:
         sc = Scorer(s.case_dir, s.id, **rules)
-        if s.events:
-            sc.add(s.events, validated=True)
+        events = s.events if events is None else events
+        if events:
+            sc.add(events, validated=True)
         return sc
 
     @staticmethod
@@ -394,10 +395,23 @@ class App:
             self._check_seqs(s, scorer, events)
             if now is not None:
                 now += s.meta.get("t_offset_ms", 0.0)
+            # a batch with new events older than ones already applied (concurrent POSTs, an unload
+            # beacon overtaking a tick) is scored in log order, as replay and restarts score it
+            late = scorer.last_t is not None and any(
+                e["t_ms"] < scorer.last_t and e["seq"] not in scorer.seqs for e in events)
             try:
-                cov = await self.run(scorer.add, events, now, validated=True)
+                if late:
+                    scorer = await self.run(self._rescore, s, s.params, s.events + events)
+                    cov = await self.run(scorer.coverage, now)
+                    s.scorer = scorer
+                else:
+                    cov = await self.run(scorer.add, events, now, validated=True)
             except EventError as e:
                 raise ApiError(400, str(e))
+            except Exception:
+                s.scorer = None  # may hold part of the refused batch: rebuild from the log next time
+                self.live.pop(s.id, None)
+                raise
             if events:
                 await self.run(_write_jsonl, s.log, events)
                 s.events.extend(events)

@@ -272,6 +272,11 @@ class Scorer:
             if iv.payload is not None:
                 self.pending[iv.payload] = self.pending.get(iv.payload, 0.0) + iv.dwell_ms
                 self.n_states += 1
+        if kind == "finish" and ev["confirmed"]:  # keep what was confirmed if reading goes on
+            snap = self.snapshot()
+            self.finished["at_finish"] = {**{k: snap["summary"][k] for k in ("reviewed", "partial", "skipped",
+                                                                          "voxel_coverage")},
+                                          "statuses": snap["statuses"]}
 
     def stack_view_of(self, ev: dict) -> dict | None:
         """``{sop, k, voi: {wc, ww}, window}`` of a stack view event showing an image of this
