@@ -69,8 +69,30 @@ DOIs above (and TCIA, doi:10.1007/s10278-013-9622-7) when reusing them.
 Both are public, deidentified research datasets downloaded without credentials; each case's
 `provenance.json` records URLs, DOIs and file hashes.
 
+## Setup
+
+Everything runs in a task directory on the Mac mini, nothing is installed globally:
+
+```bash
+scripts/mini.sh -- bash scripts/setup_mini.sh all        # Python venv, Node, Orthanc, OHIF, Playwright Chromium
+scripts/mini.sh --heavy -- bash scripts/build_ohif.sh    # Coverage Map OHIF build -> $MINI_WORK/ohif-dist
+scripts/mini.sh -- python -m covmap fetch --case pancreas-0051   # then orthanc-load and segment as above
+scripts/mini.sh -- bash -c 'source scripts/mini_env.sh && python -m pytest -q'
+```
+
 ## Evaluation
 
-[evidence/INDEX.md](evidence/INDEX.md) lists every evaluation run with its command, exit status
-and result: performance baseline vs final, browser readings with known skip truth, review and
-UI evidence.
+- **Scripted readings with known skips** ([gauntlet matrix](evidence/gauntlet/final/MATRIX.md)):
+  18 readings over both CTs, scored from the log and in a real browser driving OHIF. Coverage Map
+  flags exactly the intended skips in all 18 (59 caught, 0 missed, 0 false alarms). Stock OHIF's
+  built-in viewed-image tracker and a per-image viewed/unviewed model each catch 28: they see
+  slices never displayed, not a wrong window, a region off-screen, a too-brief look or one organ
+  left unread. The per-image model implements the behaviour described for Synapse/eRAD; it is
+  not the vendor product and was not tested against it.
+- **Performance** ([docs/PERFORMANCE.md](docs/PERFORMANCE.md)): segmentation 377 → 105 s and
+  189 → 60 s, live scoring 36–59 → 1.4–1.7 ms per update, render 869–951 → 529–556 ms, with
+  identical results.
+- [evidence/INDEX.md](evidence/INDEX.md) lists every evaluation run with its command, exit
+  status and result, including the review and hands-on use rounds.
+
+The readings are scripted (labelled `simulated`), not clinical reads, on two public CTs.

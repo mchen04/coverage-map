@@ -335,31 +335,55 @@ a one-line research-use note.
 
 - Jumps. Clicking a gray/yellow organ in the map, its list row, a finish-list entry or Next
   gap goes to the server's gap target (`GET /api/sessions/{id}/gap`, see "Gap target"): the
-  organ's slice with the most unseen voxels, in the organ's window preset.
+  organ's slice with the most unseen voxels, in the organ's window preset. If the reader's pan
+  or zoom leaves part of the organ on that slice outside the canvas (its outline from
+  `GET /api/cases/{case}/outline`, else `bbox_rc`), the stack viewport pans to centre the organ
+  and zooms out only as far as needed to fit it with an 8% margin; an organ already fully in
+  view leaves pan and zoom unchanged. The camera moves in the image plane only, so the
+  radiological flip and the window stay.
 - Display. The viewer opens in Soft (the active preset is highlighted, with a window hint).
   Axial stacks are shown radiologically (anterior up, patient right on screen left) whatever the
   acquisition order; recorded corners stay in true patient coordinates, so scoring does not
-  depend on the flip.
+  depend on the flip. OHIF's Reset View resets pan and zoom (the flip is re-applied) and keeps
+  the window if it was one of the presets 1–5 (otherwise the image's own window returns). The
+  panel names the window class with the same rules as the S/L/B badges: a window in no class
+  shows "Brain window: counts for no organ — press 1 soft, 2 lung, 3 bone" ("Custom window: …"
+  when it is no preset); a non-preset window in a class shows "Custom window W 2400 / L 176:
+  counts as bone (B)".
 - Sessions. A live session is labeled "live reading (OHIF)". "Start from sample" creates a new
   session "Your reading, started from sample: <label>" holding the sample's events first; the
   sample itself is never modified. `localStorage` key `covmap:session:<caseId>` stores
   `{session, label, sample, saved}`; a reload resumes through `GET /api/sessions/{id}`,
-  continuing at `last_seq + 1` and `last_t_ms + 1`. "New reading" asks before discarding.
+  continuing at `last_seq + 1` and `last_t_ms + 1`, and shows "Resumed · Start new reading…".
+  "New reading" asks before ending the current reading. Session ▾ › "Recent readings for this
+  case" lists the case's other readings (`GET /api/sessions?case=`, newest first: label, start
+  time, events, "✓ finished"); choosing one ends the current session as a switch does and
+  continues the chosen one as after a reload (localStorage, `last_view`, `last_seq + 1`).
   On a session switch, recording pauses, the old session's `end` is flushed and the event queue
   is cleared before the new session's clock starts at its first event. At `pagehide` recording
-  stops, so `end` is the page's last event.
+  stops, so `end` is the page's last event: the beacon carries the events of a POST still in
+  flight (unless it was sent with keepalive, which outlives the page), then the queue, then
+  `end`; the server scores an identical resend of a `seq` once.
 - One recording tab per session. A tab records only while it holds the Web Lock
   `covmap-session-<id>`; another tab on the same session shows "This reading is open in another
-  tab — not recording here", follows the session's coverage, and can take over with Record here
-  (steals the lock, continues at the server's `last_seq + 1`). Without Web Locks (non-secure
-  origins) the server's 409 on a reused `seq` makes the client renumber its queue and resend once.
+  tab — not recording here until that tab closes", follows the session's coverage, and keeps a
+  queued request for the lock: when the recording tab closes or leaves the session, it takes
+  over by itself (400 ms later, so the closing tab's beacon lands first) and continues at the
+  server's `last_seq + 1` / `last_t_ms + 1`. Record here takes over at once (steals the lock;
+  the other tab then waits in turn). Without Web Locks (non-secure origins) the server's 409 on
+  a reused `seq` makes the client renumber its queue and resend once.
 - Finished state follows the last `finish` event: Go back or Escape after a confirmed finish
-  clears the "✓ Finished" chip at once, as on the server.
+  clears the "✓ Finished" chip at once, as on the server. Reading on after a confirmed finish
+  is recorded; once the summary differs from `summary.finished.at_finish` the chip reads
+  "✓ Finished at a%" followed by "reading continued (now b%)" (voxel share, with decimals when
+  needed to tell them apart).
 - Replay plays a session's timeline frames, moving the viewer to each frame's `view` and showing
   that frame's statuses, counts and done / N/A / flag marks; it sends `hidden '*'` when it starts,
   records nothing and disables the rules form until it closes, then restores the view.
 - Finish opens a compact list of remaining gray/yellow organs with per-organ decisions
-  (done / N/A / flag), Go back and Confirm finish; the research note stays visible.
+  (done / N/A / flag), Go back and Confirm finish; the research note stays visible. The
+  decisions keep their full height (up to a third of the sheet, then they scroll); the list of
+  remaining organs gives way.
 - Test hooks: `window.__covmap` exposes `sessionId`, `flush()`, `newReading(): Promise<string|null>`
   (no confirm; resolves once the new session is attached) and `setRadiological(on)`.
 
