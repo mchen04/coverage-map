@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 CHROMIUM_ARGS = ["--use-angle=metal", "--enable-gpu"]
 NEUTRAL = (40.0, 80.0)  # Brain W80/L40: window class "other", qualifies no organ
+FLICK_MS = 40.0  # passes with a shorter per-slice dwell are flicked (see OhifDriver._flick)
 
 HELPERS = r"""
 (() => {
@@ -56,23 +57,34 @@ HELPERS = r"""
         viewportId: v.id, windowWidth: ww, windowCenter: wc,
       });
     },
-    // Frame an image-pixel rectangle [r0, r1) x [c0, c1) of the current slice.
-    frameRect(r0, r1, c0, c1) {
+    // Show tile i of an image-pixel rectangle [r0, r1) x [c0, c1) on the current slice.
+    // Plans assume a square canvas; on a wider/taller canvas a single framing would show more
+    // than the rect, so the rect is fitted inside the canvas along its long side and covered
+    // by n tiles (aligned to the rect's start/end) along the other. Returns n.
+    frameRect(r0, r1, c0, c1, i) {
       const v = vp();
       const img = v.getImageData();
       const [colMm, rowMm] = img.spacing;
-      const mid = img.imageData.indexToWorld([(c0 + c1 - 1) / 2, (r0 + r1 - 1) / 2, 0]);
-      const cam = v.getCamera();
       const [w, h] = [v.canvas.clientWidth, v.canvas.clientHeight];
-      const halfH = Math.max((r1 - r0) * rowMm, (c1 - c0) * colMm * h / w) / 2;
-      const off = [0, 1, 2].map(i => cam.position[i] - cam.focalPoint[i]);
+      const hMm = (r1 - r0) * rowMm, wMm = (c1 - c0) * colMm;
+      const half = Math.min(hMm / 2, wMm / 2 * h / w);       // parallelScale: visible height / 2
+      const visH = 2 * half, visW = 2 * half * w / h;
+      const nR = Math.max(1, Math.ceil(hMm / visH - 1e-6)), nC = Math.max(1, Math.ceil(wMm / visW - 1e-6));
+      const n = nR * nC, ir = Math.floor(i / nC), ic = i % nC;
+      // tile centre in pixel-index coordinates (pixel centres are integers; edges at x - 0.5)
+      const cr = nR === 1 ? (r0 + r1 - 1) / 2 : r0 - 0.5 + (visH / 2 + ir * (hMm - visH) / (nR - 1)) / rowMm;
+      const cc = nC === 1 ? (c0 + c1 - 1) / 2 : c0 - 0.5 + (visW / 2 + ic * (wMm - visW) / (nC - 1)) / colMm;
+      const mid = img.imageData.indexToWorld([cc, cr, 0]);
+      const cam = v.getCamera();
+      const off = [0, 1, 2].map(k => cam.position[k] - cam.focalPoint[k]);
       // keep the focal point on the current slice plane: move only in-plane
-      const n = cam.viewPlaneNormal;
-      const d = [0, 1, 2].map(i => mid[i] - cam.focalPoint[i]);
-      const along = d[0] * n[0] + d[1] * n[1] + d[2] * n[2];
-      const fp = [0, 1, 2].map(i => mid[i] - along * n[i]);
-      v.setCamera({focalPoint: fp, position: [0, 1, 2].map(i => fp[i] + off[i]), parallelScale: halfH});
+      const nrm = cam.viewPlaneNormal;
+      const d = [0, 1, 2].map(k => mid[k] - cam.focalPoint[k]);
+      const along = d[0] * nrm[0] + d[1] * nrm[1] + d[2] * nrm[2];
+      const fp = [0, 1, 2].map(k => mid[k] - along * nrm[k]);
+      v.setCamera({focalPoint: fp, position: [0, 1, 2].map(k => fp[k] + off[k]), parallelScale: half});
       v.render();
+      return n;
     },
     resetCamera() { const v = vp(); v.resetCamera(); v.render(); },
     stockViewed() {
@@ -183,9 +195,11 @@ class OhifDriver:
         self.page.mouse.move(x, y)
         self.page.keyboard.press(key)
 
-    def frame_rect(self, rect) -> None:
-        self.page.evaluate("r => window.__e2e.frameRect(r[0], r[1], r[2], r[3])", list(rect))
+    def frame_rect(self, rect, tile: int = 0) -> int:
+        """Show one tile of the rect; returns how many tiles cover it on this canvas."""
+        n = self.page.evaluate("([r, i]) => window.__e2e.frameRect(r[0], r[1], r[2], r[3], i)", [list(rect), tile])
         self.log.frames += 1
+        return n
 
     def reset_camera(self) -> None:
         self.page.evaluate("() => window.__e2e.resetCamera()")
@@ -197,6 +211,23 @@ class OhifDriver:
 
     def stock_viewed(self) -> list[bool]:
         return self.page.evaluate("() => window.__e2e.stockViewed()")
+
+    def _flick(self, p: dict, idx: list[int]) -> bool:
+        """A pass faster than a render round trip: real wheel ticks every dwell_ms without
+        waiting for each slice to be confirmed, as a reader flicking through the stack does.
+        Only for full-field passes over consecutive slices; returns False otherwise."""
+        if any(len(st["rects"]) != 1 for st in p["steps"]) or any(abs(b - a) != 1 for a, b in zip(idx, idx[1:])):
+            return False
+        x, y = self.viewport_center()
+        self.page.mouse.move(x, y)
+        for a, b in zip(idx, idx[1:]):
+            self.page.mouse.wheel(0, 100 * (b - a))
+            self.log.wheel_ticks += 1
+            self.page.wait_for_timeout(p["dwell_ms"])
+        if not self._wait_index(idx[-1], 3000):
+            self.log.wheel_misses += 1
+            self.goto(idx[-1])
+        return True
 
     # ---- plan execution --------------------------------------------------------------
     def run_plan(self, plan: dict, sop_to_index: dict[str, int], case_sops: list[str], full_rect) -> dict:
@@ -218,14 +249,23 @@ class OhifDriver:
                 continue
             self.goto(sop_to_index[case_sops[steps[0]["k"]]])
             self.set_window(p["voi"]["wc"], p["voi"]["ww"])
+            if p["dwell_ms"] < FLICK_MS and self._flick(p, [sop_to_index[case_sops[st["k"]]] for st in steps]):
+                passes.append({"window": p["window"], "steps": len(steps), "flick": True,
+                               "s": round(time.perf_counter() - tp, 2),
+                               "ms_per_slice": round((time.perf_counter() - tp) * 1000 / len(steps), 1)})
+                continue
             for step in steps:
                 self.goto(sop_to_index[case_sops[step["k"]]])
                 for rect in step["rects"]:
                     if list(rect) == list(full_rect):
                         self.reset_camera()
-                    else:
-                        self.frame_rect(rect)
-                    self.dwell(p["dwell_ms"])
+                        self.dwell(p["dwell_ms"])
+                        continue
+                    n, tile = 1, 0
+                    while tile < n:
+                        n = self.frame_rect(rect, tile)
+                        self.dwell(p["dwell_ms"])
+                        tile += 1
             passes.append({"window": p["window"], "steps": len(steps), "s": round(time.perf_counter() - tp, 2)})
         self.set_window(*NEUTRAL)
         self.reset_camera()

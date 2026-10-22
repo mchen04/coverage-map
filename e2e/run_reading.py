@@ -72,7 +72,7 @@ def run(case: str, scenario: str, base: str, mode: str, out: Path, headless: boo
         if mode == "coverage":
             page.wait_for_function("() => window.__covmap && window.__covmap.sessionId", timeout=60000)
         res["run"] = drv.run_plan(plan, sop_to_index, case_sops, full_rect)
-        page.screenshot(path=str(out / f"{mode}-{scenario}.png"))
+        page.screenshot(path=str(out / f"{case}.{scenario}.{mode}.png"))
 
         viewed = drv.stock_viewed()  # present in both builds: stock cornerstone extension
         unviewed_case_idx = sorted(case_sops.index(viewer_sops[i]) for i, v in enumerate(viewed) if not v)
@@ -89,8 +89,8 @@ def run(case: str, scenario: str, base: str, mode: str, out: Path, headless: boo
             res["coverage"] = _get_json(f"{base}/api/sessions/{sid}/coverage")
             with urllib.request.urlopen(f"{base}/api/sessions/{sid}/events.jsonl", timeout=60) as r:
                 events = r.read()
-            (out / f"{scenario}.events.jsonl").write_bytes(events)
-            res["events_path"] = str(out / f"{scenario}.events.jsonl")
+            (out / f"{case}.{scenario}.events.jsonl").write_bytes(events)
+            res["events_path"] = str(out / f"{case}.{scenario}.events.jsonl")
         res["console_errors"] = console_errors[:20]
         ctx.close()
         browser.close()
