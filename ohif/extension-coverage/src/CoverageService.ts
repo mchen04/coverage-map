@@ -2,6 +2,7 @@ import { PubSubService } from '@ohif/core';
 import { Enums as csEnums, utilities as csUtils } from '@cornerstonejs/core';
 
 import { CovmapApi, type ApiError } from './api';
+import { InBrowserServer } from './inBrowser';
 import type { MeshesJson } from '@covmap/organ-map';
 import {
   ViewTracker,
@@ -48,6 +49,7 @@ const STORE_PREFIX = 'covmap:session:';
 const LOCK_PREFIX = 'covmap-session-';
 /** While another tab records the session: how often this tab re-reads its coverage. */
 const FOLLOW_MS = 2500;
+let inBrowserServer: InBrowserServer | undefined;
 const OTHER_TAB_HINT = 'This reading is open in another tab. Press "Record here" to record in this tab.';
 /** Shown when a mark or Finish comes while New reading or Recent readings is switching sessions. */
 const SWITCHING_HINT = 'The reading is changing. Try again in a moment.';
@@ -294,7 +296,11 @@ export default class CoverageService extends PubSubService {
       return;
     }
     this.active = true;
-    this.api = new CovmapApi(appConfig?.covmap?.apiRoot ?? '/api');
+    const inBrowser = appConfig?.covmap?.inBrowser;
+    if (inBrowser && !inBrowserServer) {
+      inBrowserServer = new InBrowserServer(inBrowser);
+    }
+    this.api = new CovmapApi(appConfig?.covmap?.apiRoot ?? '/api', inBrowser ? inBrowserServer : undefined);
     this.state = { ...initialState(), phase: 'waiting' };
     this.queue = [];
     this.seq = 0;
@@ -1514,6 +1520,12 @@ export default class CoverageService extends PubSubService {
 
   public exportUrl(format: 'jsonl' | 'json' | 'csv'): string | null {
     return this.state.sessionId ? this.api.exportUrl(this.state.sessionId, format) : null;
+  }
+
+  public async download(format: 'jsonl' | 'json' | 'csv'): Promise<void> {
+    if (this.state.sessionId) {
+      await this.api.download(this.state.sessionId, format);
+    }
   }
 
   public async applyRules(rules: Partial<Rules>): Promise<void> {

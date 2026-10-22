@@ -160,7 +160,7 @@ function CaseList({ service, state }: { service: CoverageService; state: Coverag
             data-testid={`covmap-case-${c.case}`}
             disabled={current || !c.segmented}
             onClick={() => {
-              window.location.assign(`/coverage?StudyInstanceUIDs=${encodeURIComponent(c.study_uid)}`);
+              window.location.assign(service.api.viewerUrl(c.case, c.study_uid));
             }}
           >
             {c.case}
@@ -235,7 +235,7 @@ function RecentList({
         </button>
       ))}
       <div className="cm-muted" style={{ padding: '2px 6px', fontSize: 10 }}>
-        Continues that reading where it left off; this one stays on the server and is listed here.
+        Continues that reading where it left off; this one stays saved and is listed here.
       </div>
     </div>
   );
@@ -295,7 +295,7 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
         <div data-testid="covmap-confirm" role="alertdialog" aria-label={confirm.title}>
           <div className="cm-pop-title">{confirm.title}</div>
           <div className="cm-pop-text">
-            The current reading ends here. It stays on the server: Session ▾ › Recent readings
+            The current reading ends here. It stays saved: Session ▾ › Recent readings
             for this case returns to it.
           </div>
           <div className="cm-row-flex" style={{ justifyContent: 'flex-end', padding: '2px 6px 4px' }}>
@@ -417,12 +417,7 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
                   onClick={e => {
                     // include the events still queued in this tab
                     e.preventDefault();
-                    service.flush().finally(() => {
-                      const a = document.createElement('a');
-                      a.href = href;
-                      a.download = '';
-                      a.click();
-                    });
+                    service.flush().finally(() => service.download(f));
                   }}
                 >
                   {f === 'jsonl' ? 'events (JSONL)' : f === 'json' ? 'coverage (JSON)' : 'organs (CSV)'}

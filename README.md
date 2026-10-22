@@ -7,6 +7,8 @@ model: **reviewed** (green), **partly reviewed** (yellow) or **skipped** (gray).
 > **Research use only. Not a medical device.** Coverage measures what the viewer displayed, not
 > what a reader perceived or concluded. A green organ does not prove clinical review.
 
+**Live demo: [coverage-map-sage.vercel.app](https://coverage-map-sage.vercel.app)**
+
 ![Coverage Map in OHIF: an abdominal CT with the 3D organ map and per-organ coverage list](docs/screenshot.png)
 
 ## Features
@@ -84,6 +86,26 @@ The scripts read these settings from the environment ([scripts/env.sh](scripts/e
    scripts/launch.sh stop
    ```
 
+## Static demo
+
+The live demo needs no server. It runs as plain files:
+
+- **Scoring server:** `covmap serve` runs inside the browser on [Pyodide](https://pyodide.org)
+  (`covmap/browser.py`, `web/inbrowser/server-worker.js`). Same code and same scores as the
+  real server. Organ outlines come precomputed, so the browser skips scikit-image.
+- **Scans:** plain DICOM files on Hugging Face
+  ([mchen04/coverage-map-data](https://huggingface.co/datasets/mchen04/coverage-map-data)),
+  listed for OHIF's DICOM JSON data source.
+- **Readings:** saved in the visitor's browser (IndexedDB). Each visitor sees only their own.
+  **Session ▾ › New reading** starts over; clearing site data removes them all.
+
+Build and deploy (the build reads the viewer build and case data from the host):
+
+```bash
+deploy/static/build_site.sh ../coverage-map-site
+cd ../coverage-map-site && vercel deploy --prod
+```
+
 ## Usage
 
 The start page opens the demo abdominal CT with a fresh reading session.
@@ -153,9 +175,11 @@ dataset DOIs and TCIA ([doi:10.1007/s10278-013-9622-7](https://doi.org/10.1007/s
 | `covmap/` | Python package: CLI, data fetch, segmentation, scoring, app server |
 | `ohif/` | OHIF `coverage` mode, extension and 3D organ map |
 | `web/render/` | Standalone 3D render page used by `covmap render` |
+| `web/inbrowser/` | Web worker that runs the app server in the browser |
 | `e2e/` | Browser-driven readings and end-to-end runs |
 | `bench/` | Benchmarks for segmentation, replay, render and page load |
 | `tests/` | pytest suite |
 | `scripts/` | Host setup, sync and service scripts |
 | `config/` | OHIF and Orthanc configuration |
+| `deploy/static/` | Static demo build (Vercel + Hugging Face scans) |
 | `docs/SPEC.md` | Interface contract |

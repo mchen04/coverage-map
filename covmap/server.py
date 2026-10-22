@@ -31,6 +31,7 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import aiohttp
 from aiohttp import web
@@ -86,6 +87,7 @@ class Config:
     # live POSTs: a batch with an event t_ms (or now_ms) more than this far ahead of the
     # session's clock is refused (App._check_clock); None = no clock check
     clock_tolerance_ms: float | None = field(default_factory=lambda: _env_tolerance())
+    outline: Callable = organ_outline
 
     @property
     def cases_dir(self) -> Path:
@@ -625,7 +627,7 @@ async def outline(request):
     if not key:
         raise ApiError(400, "need ?organ=<key>")
     try:
-        contours = await a.run(organ_outline, d, key, k)
+        contours = await a.run(a.cfg.outline, d, key, k)
     except FileNotFoundError:
         raise ApiError(409, "case is not segmented")
     except KeyError as e:
