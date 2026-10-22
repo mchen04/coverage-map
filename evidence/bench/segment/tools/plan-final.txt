@@ -1,0 +1,8 @@
+baseline lidc-0001 seg-bench-baseline 1 COVMAP_SEG_CONV3D=sum2d -- --device cpu
+adopted lidc-0001 seg-bench-final 1 -- --device auto
+baseline lidc-0001 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d -- --device cpu
+adopted lidc-0001 seg-bench-final 2 -- --device auto
+baseline pancreas-0051 seg-bench-baseline 1 COVMAP_SEG_CONV3D=sum2d -- --device cpu
+adopted pancreas-0051 seg-bench-final 1 -- --device auto
+baseline pancreas-0051 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d -- --device cpu
+adopted pancreas-0051 seg-bench-final 2 -- --device auto

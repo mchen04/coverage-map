@@ -1,0 +1,7 @@
+chunk3d lidc-0001 seg-bench-chunk3d 1 COVMAP_SEG_CONV3D=chunk3d --
+baseline pancreas-0051 seg-bench-baseline 1 COVMAP_SEG_CONV3D=sum2d --
+chunk3d pancreas-0051 seg-bench-chunk3d 1 COVMAP_SEG_CONV3D=chunk3d --
+chunk3d lidc-0001 seg-bench-chunk3d 2 COVMAP_SEG_CONV3D=chunk3d --
+baseline lidc-0001 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d --
+chunk3d pancreas-0051 seg-bench-chunk3d 2 COVMAP_SEG_CONV3D=chunk3d --
+baseline pancreas-0051 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d --

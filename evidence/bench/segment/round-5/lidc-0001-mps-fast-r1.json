@@ -1,0 +1,159 @@
+{
+ "case": "lidc-0001",
+ "cmd": "/Users/michaelchen/coverage-map-work/venv/bin/python -m covmap segment --case lidc-0001 --device mps --out-name seg-bench-mps-fast --fast",
+ "exit": 0,
+ "wall_s": 18.02,
+ "context": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   1.56,
+   1.93,
+   3.64
+  ],
+  "time": "2026-10-21T19:48:20-0700"
+ },
+ "context_end": {
+  "host": "Mac.attlocal.net",
+  "cpu": "Apple M4",
+  "cores": 10,
+  "macos": "26.2",
+  "loadavg_1_5_15": [
+   1.91,
+   1.99,
+   3.62
+  ],
+  "time": "2026-10-21T19:48:38-0700"
+ },
+ "segment": {
+  "case": "lidc-0001",
+  "out_dir": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast",
+  "device": "mps",
+  "reused_totalseg": false,
+  "n_organs": 25,
+  "organs": {
+   "lung_left": 1406418,
+   "lung_right": 1579621,
+   "trachea": 20292,
+   "heart": 297864,
+   "aorta": 151223,
+   "inferior_vena_cava": 22869,
+   "esophagus": 19942,
+   "thyroid": 8169,
+   "liver": 820755,
+   "spleen": 101356,
+   "pancreas": 46269,
+   "stomach": 160094,
+   "kidney_left": 59181,
+   "kidney_right": 60526,
+   "duodenum": 29429,
+   "small_bowel": 19520,
+   "colon": 243543,
+   "cervical_spine": 14921,
+   "thoracic_spine": 238680,
+   "lumbar_spine": 101584,
+   "ribs_left": 106946,
+   "ribs_right": 109442,
+   "sternum": 128481,
+   "shoulder_left": 89201,
+   "shoulder_right": 126722
+  },
+  "organs_below_min_voxels": {},
+  "regrid": "permutation",
+  "mesh_triangles": 217598,
+  "weights_downloaded_now": [
+   297
+  ],
+  "timings_s": {
+   "weights_check_s": 4.616,
+   "totalsegmentator_s": 8.284,
+   "postprocess_s": 0.744,
+   "meshes_s": 1.278,
+   "total_s": 15.392
+  },
+  "totalsegmentator": {
+   "wall_s": 8.284403208992444,
+   "threads": null,
+   "torch_threads": 4,
+   "conv3d": {
+    "mode": "sum2d_t",
+    "description": "conv3d as a sum over kernel depth of batched conv2d on a depth-major input copy",
+    "device": "mps",
+    "budget_mb": 256,
+    "self_check_rel_err": 4.424605890562816e-07,
+    "calls": {
+     "decomposed": 38,
+     "native": 0
+    },
+    "torch_threads_at_first_call": 4,
+    "source": "environment"
+   },
+   "process_max_rss_gb": 5.24,
+   "mps_driver_allocated_gb": 1.12,
+   "loadavg_after": [
+    1.82,
+    1.97,
+    3.62
+   ]
+  },
+  "loadavg_start": [
+   1.56,
+   1.93,
+   3.64
+  ],
+  "hashes_sha256": {
+   "totalseg.nii.gz": "a7819f736c084c83b99970bffbb79d803591ae70fbdcf4da228249cf0a90e048",
+   "labels.npy": "4489fda34863ab9bea3bec3d4c29a3975cd9d0f3cfd3ee12547ccecb2656029c",
+   "organs.json": "5dc277bc9c2fb22e6ec94973076f3463899fb0dd91f0994275cd420dc3af009d",
+   "meshes.bin": "c7b529ccd991f3d8f9c07bba20141e2979bf6e8b17a9ab4bafb5c9c8d1403e9a",
+   "meshes.json": "67b9d986d9bff7bb2cd3485389a71e160021b2f15d5398c5e1365371f1dc0b6e"
+  },
+  "paths": {
+   "labels": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast/labels.npy",
+   "organs": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast/organs.json",
+   "meshes_bin": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast/meshes.bin",
+   "meshes_json": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast/meshes.json",
+   "record": "/Users/michaelchen/coverage-map-work/data/cases/lidc-0001/seg-bench-mps-fast/segment.json"
+  },
+  "ok": true,
+  "cmd": "segment",
+  "elapsed_s": 15.526
+ },
+ "correctness": {
+  "same_organ_set": true,
+  "missing": [],
+  "extra": [],
+  "dice": {
+   "lung_left": 0.9744,
+   "lung_right": 0.975,
+   "trachea": 0.8791,
+   "heart": 0.9501,
+   "aorta": 0.935,
+   "inferior_vena_cava": 0.8589,
+   "esophagus": 0.8471,
+   "thyroid": 0.8207,
+   "liver": 0.9653,
+   "spleen": 0.947,
+   "pancreas": 0.8643,
+   "stomach": 0.9327,
+   "kidney_left": 0.9314,
+   "kidney_right": 0.9407,
+   "duodenum": 0.8453,
+   "small_bowel": 0.7342,
+   "colon": 0.9113,
+   "cervical_spine": 0.8624,
+   "thoracic_spine": 0.8788,
+   "lumbar_spine": 0.9038,
+   "ribs_left": 0.7748,
+   "ribs_right": 0.7705,
+   "sternum": 0.8464,
+   "shoulder_left": 0.8799,
+   "shoulder_right": 0.8896
+  },
+  "dice_mean": 0.8847,
+  "dice_min": 0.7342,
+  "pass": false
+ }
+}

@@ -1,0 +1,8 @@
+baseline lidc-0001 seg-bench-baseline 1 COVMAP_SEG_CONV3D=sum2d --
+mps lidc-0001 seg-bench-mps 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
+baseline pancreas-0051 seg-bench-baseline 1 COVMAP_SEG_CONV3D=sum2d --
+mps pancreas-0051 seg-bench-mps 1 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
+mps lidc-0001 seg-bench-mps 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
+baseline lidc-0001 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d --
+mps pancreas-0051 seg-bench-mps 2 COVMAP_SEG_CONV3D=sum2d_t -- --device mps
+baseline pancreas-0051 seg-bench-baseline 2 COVMAP_SEG_CONV3D=sum2d --
