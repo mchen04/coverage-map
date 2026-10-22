@@ -58,6 +58,14 @@ export function presetOf(voi: { wc: number; ww: number } | null): Preset | null 
 /** Mirrors covmap/scoring.py DEFAULTS (the server's rules for a new session). */
 export const DEFAULT_RULES = { min_dwell_ms: 80, reviewed_threshold: 0.9, skipped_threshold: 0.05 };
 
+/** The panel's label of a live reading. */
+export const LIVE_LABEL = 'Live reading';
+
+/** The panel's label for a session's stored label (the server's "live reading (OHIF)"). */
+export function readingLabel(label: string | null | undefined): string {
+  return !label || /^live reading/i.test(label) ? LIVE_LABEL : label;
+}
+
 /** Plain-language description of where a sample reading came from. */
 export function sourceText(source: string | null | undefined): string {
   switch (source) {

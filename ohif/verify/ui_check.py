@@ -4,8 +4,10 @@ every claim is checked against the server's own session log, coverage and gap ta
 The exceptions are labelled in the check details: a scripted continuous scroll
 (setImageIdIndex every 25 ms) that keeps running while the page switches sessions, the
 setRadiological(false) test hook used to compare scoring with and without the radiological
-flip, and the gauntlet driver's scripted camera calls (frameRect, resetCamera() + render) in
-the camera-reset check, next to a real click on OHIF's Reset View. Research use only.
+flip, the gauntlet driver's scripted camera calls (frameRect, resetCamera() + render) in
+the camera-reset checks, next to a real click on OHIF's Reset View, its scripted
+setViewportWindowLevel for two custom windows that no hotkey sets, and __covmap.jump(key)
+where a check only needs an organ read. Research use only.
 
     python ohif/verify/ui_check.py --base http://127.0.0.1:8765 --case lidc-0001 \
         --out $MINI_WORK/evidence
@@ -126,6 +128,39 @@ SCREEN_JS = r"""
         counts: [...document.querySelectorAll('[data-testid="covmap-summary"] .cm-count')].map(e => parseInt(e.textContent.trim(), 10)),
         finished: !!document.querySelector('[data-testid="covmap-finished"]')})
 """
+# S1: where the given LPS points fall on the active stack canvas (CSS px), and its camera
+EXTENT_JS = r"""
+pts => {
+  const s = window.services;
+  const v = s.cornerstoneViewportService.getCornerstoneViewport(s.viewportGridService.getActiveViewportId());
+  const w = v.canvas.clientWidth, h = v.canvas.clientHeight;
+  const px = pts.map(p => v.worldToCanvas(p));
+  const xs = px.map(p => p[0]), ys = px.map(p => p[1]);
+  const cam = v.getCamera();
+  return {w, h, x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys),
+          inside: px.every(([x, y]) => x >= -0.5 && x <= w + 0.5 && y >= -0.5 && y <= h + 0.5),
+          scale: cam.parallelScale, focal: cam.focalPoint, flipH: !!cam.flipHorizontal, flipV: !!cam.flipVertical};
+}
+"""
+# S1: the organ Next gap goes to (the service's own order: next remaining after the selected)
+NEXT_TARGET_JS = r"""
+() => {
+  const svc = window.__covmap.service, rem = svc.remaining();
+  const order = svc.orderedOrgans().map(o => o.key), sel = window.__covmap.state().selected;
+  const start = sel ? order.indexOf(sel) : -1;
+  for (let i = 1; i <= order.length; i++) {
+    const k = order[(start + i + order.length) % order.length];
+    if (rem.includes(k)) return k;
+  }
+  return null;
+}
+"""
+# S5: the Recent readings entries as listed
+RECENT_JS = r"""
+() => [...document.querySelectorAll('[data-testid="covmap-recent-list"] button[data-testid^="covmap-recent-"]')]
+  .map(b => ({id: b.dataset.testid.slice('covmap-recent-'.length), finished: b.dataset.finished,
+              text: b.textContent.replace(/\s+/g, ' ').trim()}))
+"""
 # R5: the viewer's own image counter, "I:99 (87/185)"
 OVERLAY_JS = r"""
 () => { const m = /I:\s*(\d+)\s*\((\d+)\/(\d+)\)/.exec(document.body.innerText);
@@ -181,6 +216,38 @@ class Api:
 
     def coverage(self, session: str) -> dict:
         return self.json(f"/api/sessions/{session}/coverage")
+
+    def outline(self, case: str, organ: str, k: int) -> list:
+        return self.json(f"/api/cases/{case}/outline?organ={organ}&k={k}")["contours"]
+
+
+def drift_pcts(at: float, now: float) -> tuple[str, str]:
+    """Python twin of the panel's finishDrift: voxel share at finish and now, floored, with as
+    many decimals (up to 2) as it takes to tell them apart."""
+    def fmt(v, d):
+        return f"{math.floor(v * 100 * 10 ** d + 1e-9) / 10 ** d:.{d}f}%"
+    d = 0
+    while d < 2 and fmt(at, d) == fmt(now, d):
+        d += 1
+    return fmt(at, d), fmt(now, d)
+
+
+def logged_once(evs: list[dict], tag: str) -> tuple[list[dict], int]:
+    """The log with identical resends of a seq taken once (the unload beacon repeats the events
+    of a POST still in flight; the server scores them once but logs both). A seq logged twice
+    with different events fails."""
+    first: dict[int, dict] = {}
+    out, dups = [], 0
+    for e in evs:
+        q = e["seq"]
+        if q in first:
+            strip = lambda x: {k: v for k, v in x.items() if k not in ("session", "from_sample")}  # noqa: E731
+            need(strip(first[q]) == strip(e), f"{tag}: seq {q} logged twice with different events")
+            dups += 1
+            continue
+        first[q] = e
+        out.append(e)
+    return out, dups
 
 
 def ranges_text(ranges, mx=4) -> str:
@@ -332,6 +399,52 @@ def main() -> int:
             need(all(e["session"] == s for e in evs), "foreign session id in the log")
             return {"live_events": len(evs), "seq": [seqs[0], seqs[-1]], "first_t_ms": round(ts[0], 1),
                     "kinds": sorted({e["kind"] for e in evs})}
+
+        def seen_now(s):
+            return {o["key"]: o["seen_voxels"] for o in api.coverage(s)["organs"]}
+
+        def unread(sv, exclude=()):
+            """An organ nothing of which counts yet (soft-tissue organs first, largest first)."""
+            cand = [o for o in organs if sv.get(o["key"], 0) == 0 and o["key"] not in exclude]
+            need(cand, "no unread organ left")
+            cand.sort(key=lambda o: (o["windows"][0] != "soft", -o["voxels"]))
+            return cand[0]["key"]
+
+        def read_in(pg, drv_, key):
+            """Jump to the organ's gap slice in its window, dwell, then the brain window (counts
+            for nothing) so the display state closes, and send."""
+            pg.evaluate("k => window.__covmap.jump(k)", key)
+            pg.wait_for_timeout(900)
+            drv_.press_key("5")
+            pg.wait_for_timeout(300)
+            pg.evaluate("() => window.__covmap.flush()")
+            pg.wait_for_timeout(200)
+
+        def same_corners(c1, c2, ordered=True, tol=0.5):
+            a_, b_ = (c1, c2) if ordered else (sorted(c1), sorted(c2))
+            return all(abs(x - y) <= tol for p, q in zip(a_, b_) for x, y in zip(p, q))
+
+        def views_since(s, n0):
+            flush()
+            page.wait_for_timeout(400)
+            flush()
+            evs = api.events(s)[n0:]
+            return [e for e in evs if e["kind"] == "view" and e.get("vp_type") == "stack" and abs(e["normal"][2]) > 0.9]
+
+        def pressed_presets():
+            return [k for k in ("soft", "lung", "bone") if tid(f"covmap-window-{k}").get_attribute("aria-pressed") == "true"]
+
+        def tab(tag):
+            """A second tab on this case, its console and event POSTs recorded."""
+            pg = ctx.new_page()
+            sent: list[str] = []
+            pg.on("console", lambda m: console.append({"type": m.type, "text": f"[{tag}] " + m.text[:400],
+                                                       "check": C.current, "at": m.location})
+                  if m.type in ("error", "warning") else None)
+            pg.on("pageerror", lambda e: console.append({"type": "pageerror", "text": f"[{tag}] " + str(e)[:400],
+                                                         "check": C.current}))
+            pg.on("request", lambda r: sent.append(r.url) if r.method == "POST" and "/events" in r.url else None)
+            return pg, OhifDriver(pg), sent
 
         def old_session_closed(s):
             evs = api.events(s)
@@ -665,6 +778,139 @@ def main() -> int:
                               "image": view()["idx"] + 1, "window": exp["preset"]})
             return jumps
         C.run("U1 Next gap jumps to remaining organs at the server's gap slice with the organ window", next_gap)
+
+        # ---- S1 a jump shows the whole organ on its gap slice ---------------------------------
+        def organ_lps(key, k):
+            """The organ's outline on case slice k (server outline, pixel edges) as LPS points."""
+            A = vol["affine_lps"]
+            return [[A[i][0] * c + A[i][1] * r + A[i][2] * k + A[i][3] for i in range(3)]
+                    for cnt in api.outline(a.case, key, k) for r, c in cnt]
+
+        def outside_corners(pts, corners, tol=0.004):
+            """How many points fall outside the displayed rectangle of a view event."""
+            tl, tr, _, bl = corners
+            eu, ev = [tr[i] - tl[i] for i in range(3)], [bl[i] - tl[i] for i in range(3)]
+            nu, nv = sum(x * x for x in eu), sum(x * x for x in ev)
+            n = 0
+            for p_ in pts:
+                d = [p_[i] - tl[i] for i in range(3)]
+                u = sum(d[i] * eu[i] for i in range(3)) / nu
+                v = sum(d[i] * ev[i] for i in range(3)) / nv
+                n += not (-tol <= u <= 1 + tol and -tol <= v <= 1 + tol)
+            return n
+
+        def canvas_drag(button, x0, y0, x1, y1):
+            page.mouse.move(x0, y0)
+            page.mouse.down(button=button)
+            page.mouse.move(x1, y1, steps=12)
+            page.mouse.up(button=button)
+            page.wait_for_timeout(150)
+
+        def jump_target():
+            key = page.evaluate(NEXT_TARGET_JS)
+            need(key, "no remaining organ for Next gap")
+            exp = expect_jump(key)
+            k = exp["gap"]["k"] if exp["gap"].get("k") is not None else by_key[key]["center_k"]
+            return key, exp, k, organ_lps(key, k)
+
+        def press_n(key, exp):
+            drv.press_key("n")
+            page.wait_for_function("k => window.__covmap.state().selected === k", arg=key, timeout=3000)
+            wait_view(sop=exp["sop"], preset=exp["preset"])
+            page.wait_for_timeout(400)  # the check after the slice change, and its render
+
+        def jump_frames_organ():
+            try:
+                return frames_organ()
+            finally:
+                drv.reset_camera()  # the fit again for the next checks, also after a failure
+                page.wait_for_timeout(300)
+
+        def frames_organ():
+            """S1: a jump (N here; the map, rows and finish list share the path) leaves pan and
+            zoom alone when the organ is wholly on the canvas, and otherwise pans and zooms out
+            just enough to show all of it on the gap slice. Real right-drag zoom and middle-drag
+            pan; the driver's resetCamera() + render restores the fit at the end (labelled)."""
+            s = session()
+            drv.reset_camera()
+            neutral()
+            # at the fit every organ is on the canvas: N keeps pan and zoom
+            key0, exp0, k0, pts0 = jump_target()
+            fit = drv.state()
+            press_n(key0, exp0)
+            st = page.evaluate(EXTENT_JS, pts0)
+            need(st["inside"], f"{key0} not wholly on the canvas at the fit: {st}")
+            need(abs(st["scale"] - fit["parallelScale"]) < 1e-6
+                 and all(abs(st["focal"][i] - fit["focalPoint"][i]) < 1e-3 for i in (0, 1)),
+                 f"N at the fit moved the camera: {fit['parallelScale']} {fit['focalPoint']} -> {st['scale']} {st['focal']}")
+            neutral()
+            # zoom about 4x (right-drag) and pan the next target off the canvas (middle-drag)
+            box = page.locator(".cornerstone-canvas").first.bounding_box()
+            cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+            sign, length, zooms = 1, 0.06, []
+            for i in range(30):  # short drags until about 4x; an overshoot backs out with a shorter one
+                zoom = fit["parallelScale"] / drv.state()["parallelScale"]
+                zooms.append(round(zoom, 2))
+                if 3.8 <= zoom <= 4.6:
+                    break
+                if i == 1 and zoom < 1:
+                    sign = -1  # this build zooms in on an upward drag
+                if zoom > 4.6:
+                    length /= 2
+                d = (sign if zoom < 3.8 else -sign) * box["height"] * length
+                canvas_drag("right", cx, cy - d, cx, cy + d)
+            zoom = fit["parallelScale"] / drv.state()["parallelScale"]
+            need(3.8 <= zoom <= 4.6, f"right-drag zoom reached {zoom:.2f}x: {zooms}")
+            key1, exp1, k1, pts1 = jump_target()
+            ext = page.evaluate(EXTENT_JS, pts1)
+            pans = []
+            for i in range(4):
+                if i and not ext["inside"]:
+                    break
+                w, h = ext["w"], ext["h"]
+                ox, oy = (ext["x0"] + ext["x1"]) / 2, (ext["y0"] + ext["y1"]) / 2
+                # the organ's centre just past the nearest canvas edge (the image follows the mouse)
+                dx, dy = min([(-(ox + 0.1 * w), 0), (1.1 * w - ox, 0), (0, -(oy + 0.1 * h)), (0, 1.1 * h - oy)],
+                             key=lambda d_: abs(d_[0]) + abs(d_[1]))
+                dx, dy = max(-0.8 * w, min(0.8 * w, dx)), max(-0.8 * h, min(0.8 * h, dy))
+                canvas_drag("middle", cx - dx / 2, cy - dy / 2, cx + dx / 2, cy + dy / 2)
+                pans.append([round(dx), round(dy)])
+                ext = page.evaluate(EXTENT_JS, pts1)
+            need(not ext["inside"], f"{key1} still wholly on the canvas after panning {pans}: {ext}")
+            before = {k_: round(ext[k_], 1) for k_ in ("x0", "x1", "y0", "y1", "w", "h")}
+            pre = drv.state()
+            v_pre = view()
+            n0 = len(api.events(s))
+            seen0 = seen_now(s).get(key1, 0)
+            shot("s1-a-zoomed-panned", page.locator(".cornerstone-canvas").first.locator("xpath=.."))
+            press_n(key1, exp1)
+            after = page.evaluate(EXTENT_JS, pts1)
+            need(after["inside"], f"after N {key1} is not wholly on the canvas: {after}")
+            need(after["scale"] >= pre["parallelScale"] * 0.999, f"N zoomed in: {pre['parallelScale']} -> {after['scale']}")
+            v = view()
+            need([v["flipH"], v["flipV"]] == [v_pre["flipH"], v_pre["flipV"]], f"flips changed: {v_pre} -> {v}")
+            shot("s1-b-after-next-gap", page.locator(".cornerstone-canvas").first.locator("xpath=.."))
+            on_gap = [e for e in views_since(s, n0) if e["sop"] == exp1["sop"]]
+            need(on_gap, f"no view event on the gap image of {key1}")
+            e = on_gap[-1]
+            need(radiological(e), f"view after the jump not radiological: {e['corners_lps']}")
+            need((e["voi"]["wc"], e["voi"]["ww"]) == exp1["preset"], f"recorded window {e['voi']} vs {exp1['preset']}")
+            n_out = outside_corners(pts1, e["corners_lps"])
+            need(n_out == 0, f"{n_out} of {len(pts1)} outline points of {key1} outside the recorded view")
+            neutral()
+            seen1 = seen_now(s).get(key1, 0)
+            if exp1["gap"].get("k") is not None:
+                need(seen1 > seen0, f"{key1}: nothing counted on the reframed gap slice ({seen0} -> {seen1})")
+            return {"at_fit": {"organ": key0, "k": k0, "scale": round(st["scale"], 2), "unchanged": True},
+                    "zoom": round(zoom, 2), "zoom_steps": zooms, "pans_px": pans, "organ": key1, "k": k1, "outline_points": len(pts1),
+                    "canvas_before": before,
+                    "canvas_after": {k_: round(after[k_], 1) for k_ in ("x0", "x1", "y0", "y1", "w", "h")},
+                    "scale": [round(pre["parallelScale"], 2), round(after["scale"], 2)],
+                    "recorded_corners": e["corners_lps"], "flips": [v["flipH"], v["flipV"]],
+                    "seen_voxels": [seen0, seen1]}
+        C.run("S1 a jump shows the whole organ: N at the fit keeps pan and zoom; zoomed 4x and panned away, N pans "
+              "and zooms out to show all of it on the gap slice (canvas and recorded view), flips and window kept",
+              jump_frames_organ)
 
         # ---- row click + row actions ----------------------------------------------------
         def detail_texts(key):
@@ -1036,6 +1282,40 @@ def main() -> int:
         C.run("C13 finished follows the last finish event: Confirm, then F + Go back / Esc un-finishes at once "
               "(chip, server), Confirm again", finish_follows_last)
 
+        def finish_small():
+            """S7: at 1280x800 the Finish sheet's 'Your decisions' block keeps its height above the
+            buttons (the remaining-organs list gives way); Confirm keeps the reading finished."""
+            page.set_viewport_size({"width": 1280, "height": 800})
+            page.wait_for_timeout(1200)
+            drv.press_key("f")
+            dlg = tid("covmap-finish-dialog")
+            dlg.wait_for(timeout=3000)
+            page.wait_for_timeout(300)
+            m = page.evaluate("""() => {
+                const r = e => { const b = e.getBoundingClientRect(); return {top: b.top, bottom: b.bottom, h: b.height}; };
+                const dec = document.querySelector('[data-testid="covmap-finish-decisions"]');
+                const title = dec.querySelector('.cm-pop-title');
+                const btn = document.querySelector('[data-testid="covmap-confirm-finish"]');
+                const list = document.querySelector('[data-testid="covmap-finish-list"]');
+                const tb = title.getBoundingClientRect();
+                const hit = document.elementFromPoint(tb.left + Math.min(30, tb.width / 2), tb.top + tb.height / 2);
+                return {dec: {...r(dec), client: dec.clientHeight, scroll: dec.scrollHeight}, title: r(title),
+                        title_text: title.textContent, title_on_top: !!hit && title.contains(hit),
+                        buttons: r(btn), list: {...r(list), client: list.clientHeight, scroll: list.scrollHeight},
+                        lines: dec.children.length, vh: innerHeight}; }""")
+            need(m["title"]["h"] >= 10 and m["title_on_top"], f"'Your decisions' title hidden: {m}")
+            need(m["dec"]["bottom"] <= m["buttons"]["top"] + 0.5, f"decisions run under the buttons: {m}")
+            need(m["dec"]["scroll"] <= m["dec"]["client"] + 1, f"decisions clipped (scroll inside): {m}")
+            need(m["buttons"]["bottom"] <= m["vh"], f"buttons below the window: {m}")
+            shot("s7-finish-1280x800", tid("covmap-panel"))
+            tid("covmap-confirm-finish").click()
+            tid("covmap-finished").wait_for(timeout=3000)
+            page.set_viewport_size({"width": 1440, "height": 900})
+            page.wait_for_timeout(800)
+            return m
+        C.run("S7 Finish sheet at 1280x800: 'Your decisions' visible above the buttons, not clipped; Confirm",
+              finish_small)
+
         # ---- session menu: export, rules, replay, samples, new reading ------------------
         def menu(item):
             tid("covmap-session-menu").click()
@@ -1286,8 +1566,94 @@ def main() -> int:
             page.wait_for_timeout(300)
             res.update(hook=s2, c6_hook=fresh_session_events(s2), hook_old_closed=old_session_closed(s1))
             return res
-        C.run("U10/U24/C6 New reading (confirm, and the __covmap.newReading hook) while scrolling: seq 0, t~0, "
-              "no leaks", new_reading)
+        nr = C.run("U10/U24/C6 New reading (confirm, and the __covmap.newReading hook) while scrolling: seq 0, t~0, "
+                   "no leaks", new_reading)
+
+        # ---- S5/S2 Recent readings: back to an earlier reading, read on after its finish ---------
+        def pick_recent(target, tag):
+            menu("covmap-recent")
+            tid("covmap-recent-list").wait_for(timeout=3000)
+            tid(f"covmap-recent-{target}").wait_for(timeout=5000)
+            entries = page.evaluate(RECENT_JS)
+            shot(f"s5-recent-list-{tag}", tid("covmap-panel"))
+            tid(f"covmap-recent-{target}").click()
+            page.wait_for_function("s => window.__covmap.sessionId === s", arg=target, timeout=15000)
+            tid("covmap-session-popover").wait_for(state="detached", timeout=10000)
+            return entries
+
+        def recent_readings():
+            need(opened and nr, "needs the first session and the New reading check")
+            s_a = opened["marks_ms"]["hooks"]["sessionId"]
+            s_b, s_c, s_d = nr["old"], nr["new"], nr["hook"]
+            need(session() == s_d, f"not in the New reading session {s_d}: {session()}")
+            server = api.json(f"/api/sessions?case={a.case}&limit=10")["sessions"]
+            info_a = api.info(s_a)
+            lv = info_a.get("last_view")
+            evs_a0 = api.events(s_a)
+            entries = pick_recent(s_a, "a-open-earlier")
+            ids = [e["id"] for e in entries]
+            need(s_d not in ids, f"the current reading is listed: {ids}")
+            need(ids == [x["session"] for x in server if x["session"] != s_d], f"listed {ids} vs server {server}")
+            need(ids.index(s_c) < ids.index(s_b) < ids.index(s_a), f"not newest first: {ids}")
+            e_a = entries[ids.index(s_a)]
+            n_a = next(x for x in server if x["session"] == s_a)["events"]
+            need(e_a["finished"] == "1" and "✓ finished" in e_a["text"], f"finished reading not marked: {e_a}")
+            need(re.search(r"(today|\w{3} \d{1,2},) \d{1,2}:\d\d(\s?[AP]M)? · " + str(n_a) + " events", e_a["text"]),
+                 f"time / event count missing: {e_a['text']!r} ({n_a} events)")
+            # switched: this tab records the earlier reading, where it left off
+            if lv:
+                wait_view(sop=lv["sop"], preset=(lv["voi"]["wc"], lv["voi"]["ww"]), timeout=10000)
+            stored = json.loads(page.evaluate("k => localStorage.getItem(k)", f"covmap:session:{a.case}") or "null")
+            need(stored and stored.get("session") == s_a, f"localStorage not switched: {stored}")
+            need(page.evaluate("() => window.__covmap.writer") is True, "not recording the reopened reading")
+            chip = " ".join(tid("covmap-resumed").text_content().split())
+            need(chip == "Resumed · Start new reading…", f"resumed chip {chip!r}")
+            tid("covmap-finished").wait_for(timeout=10000)
+            closed_d = old_session_closed(s_d)
+            # S2: read on after the confirmed finish
+            neutral()
+            sm0 = api.coverage(s_a)["summary"]
+            at = (sm0.get("finished") or {}).get("at_finish")
+            need(sm0["finished"]["confirmed"] is True and at, f"no confirmed finish with at_finish: {sm0.get('finished')}")
+            key = next((k for k in page.evaluate("() => window.__covmap.remaining()")
+                        if api.gap(s_a, k).get("k") is not None and api.gap(s_a, k).get("unseen_voxels", 0) > 0), None)
+            need(key, "no remaining organ with unseen voxels")
+            read_in(page, drv, key)
+            c = api.coverage(s_a)
+            sm = c["summary"]
+            need(sm["finished"]["confirmed"] is True, "reading on un-finished the reading")
+            need(sm["finished"]["at_finish"] == at, f"at_finish changed: {at} -> {sm['finished']['at_finish']}")
+            need(sm["voxel_coverage"] > at["voxel_coverage"], f"{key}: nothing more counted ({sm['voxel_coverage']})")
+            want_at, want_now = drift_pcts(at["voxel_coverage"], sm["voxel_coverage"])
+            page.wait_for_function("t => { const e = document.querySelector('[data-testid=\"covmap-finished-continued\"]');"
+                                   " return !!e && e.textContent.trim() === t; }",
+                                   arg=f"reading continued (now {want_now})", timeout=5000)
+            fin_chip = tid("covmap-finished").text_content().strip()
+            need(fin_chip == f"✓ Finished at {want_at}", f"finished chip {fin_chip!r}, want at {want_at}")
+            shot("s2-finished-continued", tid("covmap-panel"))
+            evs = api.events(s_a)
+            new = evs[len(evs_a0):]
+            need(new, "nothing recorded in the reopened reading")
+            need(min(e["seq"] for e in new) == max(e["seq"] for e in evs_a0) + 1, "seq does not continue")
+            need(min(e["t_ms"] for e in new) > max(e["t_ms"] for e in evs_a0), "clock does not continue")
+            ign = c["events"]["ignored"]
+            need(ign.get("conflict", 0) == 0, f"server ignored events {ign}")
+            # back to the New reading session through the list
+            entries2 = pick_recent(s_d, "b-back")
+            need(s_a not in [e["id"] for e in entries2], "the current reading is listed")
+            need(max(api.events(s_a), key=lambda e: e["seq"])["kind"] == "end", "earlier reading not ended")
+            need(tid("covmap-finished").count() == 0, "finish chip of the earlier reading kept")
+            stored = json.loads(page.evaluate("k => localStorage.getItem(k)", f"covmap:session:{a.case}") or "null")
+            need(stored and stored.get("session") == s_d, f"localStorage not switched back: {stored}")
+            return {"listed": entries, "server": server, "reopened": s_a, "last_view": lv,
+                    "first_seq_after": min(e["seq"] for e in new), "read_on": key,
+                    "at_finish": {k: at[k] for k in ("reviewed", "partial", "skipped", "voxel_coverage")},
+                    "now": {k: sm[k] for k in ("reviewed", "partial", "skipped", "voxel_coverage")},
+                    "chip": fin_chip, "continued": f"reading continued (now {want_now})", "resumed_chip": chip,
+                    "closed_new_reading": closed_d, "back_to": s_d}
+        C.run("S5/S2/S6 Session > Recent readings: lists the case's other readings newest first (time, events, "
+              "finished), opens one where it left off (seq/clock continue); reading on after its finish shows "
+              "'Finished at a% · reading continued (now b%)'; back through the list", recent_readings)
 
         # ---- R1 finish at the confirm moment: screen, finish list, exports and reload agree ----
         def screen():
@@ -1433,6 +1799,8 @@ def main() -> int:
             reattach(a.case)
             need(session() == s0, f"reload opened {session()} instead of resuming {s0}")
             tid("covmap-resumed").wait_for(timeout=3000)
+            chip = " ".join(tid("covmap-resumed").text_content().split())
+            need(chip == "Resumed · Start new reading…", f"S6 resumed chip {chip!r}")
             page.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
             wait_view(sop=left["sop"], preset=(left["wc"], left["ww"]), timeout=10000)
             back = view()
@@ -1459,10 +1827,10 @@ def main() -> int:
                 page.wait_for_timeout(200)
             flush()
             page.wait_for_timeout(300)
-            evs = api.events(s0)
+            evs, resent = logged_once(api.events(s0), "resume")
             need(len(evs) > n_before, "no events after the resume")
             seqs = [e["seq"] for e in evs]
-            need(seqs == sorted(seqs) and len(set(seqs)) == len(seqs), "seq not strictly increasing across the reload")
+            need(seqs == sorted(seqs), "seq not strictly increasing across the reload")
             ts = [e["t_ms"] for e in evs]
             need(ts == sorted(ts), "t_ms not monotonic across the reload")
             shot("u10-resumed", tid("covmap-panel"))
@@ -1473,34 +1841,15 @@ def main() -> int:
             page.wait_for_function("s => window.__covmap.sessionId && window.__covmap.sessionId !== s", arg=s0, timeout=15000)
             page.wait_for_function("() => !document.querySelector('[data-testid=\"covmap-resumed\"]')", timeout=3000)
             return {"session": s0, "events_before_reload": n_before, "events_after": len(evs),
+                    "identical_resends_logged": resent, "resumed_chip": chip,
                     "continued_from": evs[n_before]["seq"] if len(evs) > n_before else None, "new_after_quick": session(),
                     "r2": {"left": left, "server_last_view": lv, "after_reload": back,
                            "first_view_after": {k: first_views[0][k] for k in ("seq", "sop", "voi")}},
                     "r3": {"counter": shown, "session_total": total}}
-        C.run("U10/R2/R3 reload resumes the case's session (seq/t continue) at its last image and window; events "
-              "counter = session total; 'New reading' next to 'resumed'", resume)
+        C.run("U10/R2/R3/S6 reload resumes the case's session (seq/t continue) at its last image and window; events "
+              "counter = session total; 'Resumed · Start new reading…'", resume)
 
         # ---- C12 one writer per session: two tabs on the same case ---------------------------
-        def seen_now(s):
-            return {o["key"]: o["seen_voxels"] for o in api.coverage(s)["organs"]}
-
-        def unread(sv, exclude=()):
-            """An organ nothing of which counts yet (soft-tissue organs first, largest first)."""
-            cand = [o for o in organs if sv.get(o["key"], 0) == 0 and o["key"] not in exclude]
-            need(cand, "no unread organ left")
-            cand.sort(key=lambda o: (o["windows"][0] != "soft", -o["voxels"]))
-            return cand[0]["key"]
-
-        def read_in(pg, drv_, key):
-            """Jump to the organ's gap slice in its window, dwell, then the brain window (counts
-            for nothing) so the display state closes, and send."""
-            pg.evaluate("k => window.__covmap.jump(k)", key)
-            pg.wait_for_timeout(900)
-            drv_.press_key("5")
-            pg.wait_for_timeout(300)
-            pg.evaluate("() => window.__covmap.flush()")
-            pg.wait_for_timeout(200)
-
         def two_tabs():
             s = session()
             need(page.evaluate("() => window.__covmap.writer") is True, "this tab does not record its session")
@@ -1636,18 +1985,74 @@ def main() -> int:
         C.run("C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, "
               "no duplicates", seq_conflict)
 
+        def auto_takeover():
+            """S3: the tab that does not record waits for the session's lock; when the recording
+            tab closes it records by itself (no click), after that tab's last event."""
+            s = session()
+            need(page.evaluate("() => window.__covmap.writer") is True, "this tab does not record its session")
+            neutral()
+            n_warn = sum("seq conflict (409)" in c_["text"] for c_ in console)
+            pb, drv_b, b_posts = tab("tab B")
+            closed = False
+            try:
+                drv_b.open(url)
+                pb.wait_for_function("() => window.__covmap && window.__covmap.ready && window.__covmap.sessionId",
+                                     timeout=90000)
+                pb.locator('[data-testid="covmap-other-tab"]').wait_for(timeout=10000)
+                pb.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
+                need(pb.evaluate("() => window.__covmap.sessionId") == s, "tab B opened another session")
+                # B takes the reading over; A shows the banner and waits
+                pb.bring_to_front()
+                pb.locator('[data-testid="covmap-record-here"]').click()
+                pb.wait_for_function("() => window.__covmap.writer === true", timeout=10000)
+                page.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
+                banner = tid("covmap-other-tab")
+                banner.wait_for(timeout=3000)
+                text = " ".join(banner.text_content().split())
+                need("not recording here until that tab closes" in text, f"banner {text!r}")
+                shot("s3-a-tabA-waiting", tid("covmap-panel"))
+                y = unread(seen_now(s))
+                read_in(pb, drv_b, y)
+                need(seen_now(s)[y] > 0, f"tab B's reading of {y} not counted")
+                b_last = max(e["seq"] for e in api.events(s))
+                n_a = len(posts)
+                pb.close(run_before_unload=True)  # unload handlers run: B's beacon, then its lock is free
+                closed = True
+            finally:
+                if not closed:
+                    pb.close()
+            t0 = time.perf_counter()
+            page.wait_for_function("() => window.__covmap.writer === true", timeout=15000)
+            took = round(time.perf_counter() - t0, 2)
+            banner.wait_for(state="detached", timeout=3000)
+            shot("s3-b-tabA-recording-again", tid("covmap-panel"))
+            z = unread(seen_now(s), exclude=(y,))
+            read_in(page, drv, z)
+            need(len(posts) > n_a, "tab A posted nothing after taking over")
+            need(seen_now(s)[z] > 0, f"tab A's reading of {z} not counted after it took over by itself")
+            c = api.coverage(s)
+            raw = api.events(s)
+            evs, resent = logged_once(raw, "auto takeover")
+            ign = c["events"]["ignored"]
+            need(ign.get("conflict", 0) == 0 and ign.get("other", 0) == resent,
+                 f"server ignored {ign}, identical resends in the log {resent}")
+            warned = sum("seq conflict (409)" in c_["text"] for c_ in console) - n_warn
+            need(warned == 0, f"{warned} seq conflicts during the takeover")
+            ends = sorted(e["seq"] for e in evs if e["kind"] == "end" and e["seq"] > b_last)
+            need(ends, "tab B's close sent no 'end' (no unload beacon)")
+            a_part = sorted((e for e in evs if e["seq"] > ends[0]), key=lambda e: e["seq"])
+            need(a_part and a_part[0]["seq"] == ends[0] + 1,
+                 f"tab A did not continue after tab B's 'end' (seq {ends[0]}): {a_part[:1]}")
+            need(a_part[0]["t_ms"] > max(e["t_ms"] for e in evs if e["seq"] <= ends[0]),
+                 "tab A's clock not after tab B's last event")
+            return {"session": s, "read_in_B": y, "read_in_A_after": z, "takeover_s": took, "banner": text,
+                    "b_close_events": [(e["seq"], e["kind"]) for e in evs if b_last < e["seq"] <= ends[0]],
+                    "a_first": {k: a_part[0][k] for k in ("seq", "t_ms", "kind")}, "ignored": ign,
+                    "identical_resends_logged": resent, "events": len(raw), "a_events_after": len(a_part)}
+        C.run("S3 two tabs: the recording tab closes, the waiting tab records by itself (no click), continuing after "
+              "the closed tab's last event; no conflicts", auto_takeover)
+
         # ---- U6 radiological display survives a camera reset --------------------------------
-        def same_corners(c1, c2, ordered=True, tol=0.5):
-            a_, b_ = (c1, c2) if ordered else (sorted(c1), sorted(c2))
-            return all(abs(x - y) <= tol for p, q in zip(a_, b_) for x, y in zip(p, q))
-
-        def views_since(s, n0):
-            flush()
-            page.wait_for_timeout(400)
-            flush()
-            evs = api.events(s)[n0:]
-            return [e for e in evs if e["kind"] == "view" and e.get("vp_type") == "stack" and abs(e["normal"][2]) > 0.9]
-
         def reset_keeps_orientation():
             s = session()
             neutral()  # brain window: counts for no organ
@@ -1685,7 +2090,7 @@ def main() -> int:
 
             out_["ohif_reset_view_button"] = after_reset("OHIF Reset View", ohif_reset)
             shot("u06-after-reset-view", page.locator(".cornerstone-canvas").first.locator("xpath=.."))
-            neutral()  # Reset View also resets the window to the image default
+            neutral()
             out_["driver_reset_camera"] = after_reset("viewport.resetCamera() + render", drv.reset_camera)
 
             # the gauntlet driver frames after a reset: same displayed region with and without the flip
@@ -1714,6 +2119,70 @@ def main() -> int:
         C.run("U6 radiological display kept after OHIF Reset View and viewport.resetCamera(); framing after a reset "
               "shows the same region as without the flip", reset_keeps_orientation)
 
+        # ---- S4 Reset View keeps the preset; custom windows say what they count for -------------
+        def reset_keeps_preset():
+            s = session()
+            drv.press_key("3")
+            wait_view(preset=PRESETS["3"])
+            rows, cols = vol["rows"], vol["cols"]
+            drv.frame_rect((rows // 4, rows // 2, cols // 2, cols * 3 // 4))
+            page.wait_for_timeout(300)
+            framed = drv.state()
+            n0 = len(api.events(s))
+            page.locator('[data-cy="Reset-btn"]').click()
+            page.wait_for_function("s => window.__e2e.state().parallelScale > s * 1.2", arg=framed["parallelScale"],
+                                   timeout=3000)
+            page.wait_for_timeout(400)
+            v = view()
+            need((v["wc"], v["ww"]) == PRESETS["3"], f"Reset View changed the bone window to W {v['ww']} / L {v['wc']}")
+            need(pressed_presets() == ["bone"], f"pressed after Reset View: {pressed_presets()}")
+            need(tid("covmap-window-hint").count() == 0 and tid("covmap-window-custom").count() == 0,
+                 "a window hint after Reset View in the bone preset")
+            after = views_since(s, n0)
+            need(after and all(radiological(e) for e in after), "a view after Reset View is not radiological")
+            vois = sorted({(e["voi"]["wc"], e["voi"]["ww"]) for e in after})
+            need(vois == [PRESETS["3"]], f"windows recorded after Reset View: {vois}")
+            # the preset is set, not only shown: the next image keeps it
+            idx = view()["idx"]
+            x, y = drv.viewport_center()
+            page.mouse.move(x, y)
+            page.mouse.wheel(0, 100 if idx == 0 else -100)
+            page.wait_for_function("i => window.__cvView().idx !== i", arg=idx, timeout=3000)
+            page.wait_for_timeout(300)
+            v2 = view()
+            need((v2["wc"], v2["ww"]) == PRESETS["3"], f"next image after Reset View in W {v2['ww']} / L {v2['wc']}")
+            shot("s4-a-reset-view-bone", tid("covmap-panel"))
+            # custom windows (the driver's scripted setViewportWindowLevel): one in no class, one in bone
+            drv.set_window(300, 60)
+            hint = tid("covmap-window-hint")
+            hint.wait_for(timeout=3000)
+            none_text = " ".join(hint.text_content().split())
+            need(none_text.startswith("Custom window: counts for no organ — press 1 soft, 2 lung, 3 bone"),
+                 f"no-class hint {none_text!r}")
+            need(not pressed_presets(), f"a preset shows as active in W 60 / L 300: {pressed_presets()}")
+            shot("s4-b-custom-no-class", tid("covmap-panel"))
+            drv.set_window(176, 2400)
+            custom = tid("covmap-window-custom")
+            custom.wait_for(timeout=3000)
+            bone_text = " ".join(custom.text_content().split())
+            need(bone_text == "Custom window W 2400 / L 176: counts as bone (B)", f"custom-window line {bone_text!r}")
+            need(hint.count() == 0, "no-organ hint shown in a bone-class window")
+            need(not pressed_presets(), f"a preset shows as active in W 2400 / L 176: {pressed_presets()}")
+            shot("s4-c-custom-bone", tid("covmap-panel"))
+            drv.press_key("5")
+            hint.wait_for(timeout=3000)
+            brain_text = " ".join(hint.text_content().split())
+            need(brain_text.startswith("Brain window: counts for no organ"), f"brain-window hint {brain_text!r}")
+            need(custom.count() == 0, "custom-window line in the brain preset")
+            neutral()
+            return {"window_after_reset": [v["wc"], v["ww"]], "next_image_window": [v2["wc"], v2["ww"]],
+                    "scale": [round(framed["parallelScale"], 2), round(drv.state()["parallelScale"], 2)],
+                    "views_after_reset": len(after), "hints": {"W60/L300": none_text, "W2400/L176": bone_text,
+                                                               "brain": brain_text}}
+        C.run("S4 OHIF Reset View resets pan/zoom and keeps the bone preset (next image too); a custom window in no "
+              "class says 'Custom window: counts for no organ', one in a class 'counts as bone (B)'",
+              reset_keeps_preset)
+
         # ---- U6 scoring unchanged by the radiological flip ---------------------------------
         def flip_equivalence():
             mid = len(viewer_sops) // 2
@@ -1721,8 +2190,8 @@ def main() -> int:
             got = {}
             for mode, radio in (("radiological", True), ("acquisition", False)):
                 page.evaluate("on => window.__covmap.setRadiological(on)", radio)
-                # OHIF Reset View before the reading; it also resets the window to the image's
-                # own, so it comes before the neutral window and the new session
+                # OHIF Reset View before the reading (it keeps a preset window, any other goes
+                # back to the image's own), then the neutral window and the new session
                 page.locator('[data-cy="Reset-btn"]').click()
                 page.wait_for_timeout(300)
                 neutral()

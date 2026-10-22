@@ -1,5 +1,16 @@
 import { fetchMeshes } from '@covmap/organ-map';
-import type { CaseInfo, Coverage, Gap, Organ, Rules, Sample, SessionInfo, TimelineFrame, Volume } from './types';
+import type {
+  CaseInfo,
+  Coverage,
+  Gap,
+  Organ,
+  RecentReading,
+  Rules,
+  Sample,
+  SessionInfo,
+  TimelineFrame,
+  Volume,
+} from './types';
 
 /** A failed API request: HTTP status and the parsed JSON error body (null if none). */
 export type ApiError = Error & { status?: number; body?: Record<string, unknown> | null };
@@ -53,6 +64,13 @@ export class CovmapApi {
   /** Session info (last_seq / last_t_ms to continue a session after a reload). */
   session(id: string) {
     return this.json<SessionInfo>(`/sessions/${encodeURIComponent(id)}`);
+  }
+
+  /** The case's latest readings, newest first. */
+  recentSessions(caseId: string, limit = 10) {
+    return this.json<{ case: string; sessions: RecentReading[] }>(
+      `/sessions?case=${encodeURIComponent(caseId)}&limit=${limit}`
+    );
   }
 
   /** The session's coverage from the events already accepted (no new events). */

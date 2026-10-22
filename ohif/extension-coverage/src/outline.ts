@@ -9,7 +9,7 @@ import { STATUS_COLORS } from '@covmap/organ-map';
 import { allViewports, isPlanarVolume, isStack } from './instrumentation';
 import type CoverageService from './CoverageService';
 
-type Contours = [number, number][][];
+export type Contours = [number, number][][];
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const LAYER_CLASS = 'covmap-outline-layer';
@@ -55,7 +55,8 @@ export class OutlineOverlay {
     });
   }
 
-  private contours(caseId: string, organ: string, k: number): Promise<Contours> {
+  /** The organ's contours on slice k (cached; also used to frame the organ after a jump). */
+  contours(caseId: string, organ: string, k: number): Promise<Contours> {
     const key = `${caseId}|${organ}|${k}`;
     let p = this.cache.get(key);
     if (!p) {

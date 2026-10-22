@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type CoverageService from '../CoverageService';
-import { DEFAULT_RULES, sourceText } from '../presets';
-import type { CaseInfo, CoverageState, Rules } from '../types';
+import { DEFAULT_RULES, readingLabel, sourceText } from '../presets';
+import type { CaseInfo, CoverageState, RecentReading, Rules } from '../types';
 
-export type MenuView = 'main' | 'samples' | 'rules' | 'cases' | 'confirm-new';
+export type MenuView = 'main' | 'samples' | 'rules' | 'cases' | 'recent' | 'confirm-new';
 
 interface Props {
   service: CoverageService;
@@ -178,6 +178,69 @@ function CaseList({ service, state }: { service: CoverageService; state: Coverag
   );
 }
 
+/** "Oct 21, 14:05" (or "today 14:05") from the server's "%Y-%m-%dT%H:%M:%S%z" stamp. */
+function whenText(created: string | null): string {
+  const t = created ? new Date(created.replace(/([+-]\d\d)(\d\d)$/, '$1:$2')) : null;
+  if (!t || Number.isNaN(t.getTime())) {
+    return created ?? 'unknown time';
+  }
+  const hm = t.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return t.toDateString() === new Date().toDateString()
+    ? `today ${hm}`
+    : `${t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${hm}`;
+}
+
+/** The case's other recent readings on the server; picking one continues it here. */
+function RecentList({
+  service,
+  state,
+  busy,
+  onPick,
+}: {
+  service: CoverageService;
+  state: CoverageState;
+  busy: boolean;
+  onPick: (session: string) => void;
+}) {
+  const [list, setList] = useState<RecentReading[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    service
+      .recentReadings()
+      .then(setList)
+      .catch(e => setErr((e as Error).message));
+  }, [service]);
+  const others = list?.filter(r => r.session !== state.sessionId) ?? null;
+  return (
+    <div data-testid="covmap-recent-list">
+      <div className="cm-pop-title">Recent readings for this case</div>
+      {err && <div className="cm-msg cm-msg--error">{err}</div>}
+      {!list && !err && <div className="cm-msg">Loading…</div>}
+      {others?.length === 0 && <div className="cm-msg">No other readings of this case yet.</div>}
+      {others?.map(r => (
+        <button
+          key={r.session}
+          className="cm-sample"
+          data-testid={`covmap-recent-${r.session}`}
+          data-finished={r.finished ? '1' : '0'}
+          disabled={busy}
+          title={`Continue this reading here (${r.session})`}
+          onClick={() => onPick(r.session)}
+        >
+          {readingLabel(r.label)}
+          {r.finished && <span className="cm-recent-done"> · ✓ finished</span>}
+          <small>
+            {whenText(r.created)} · {r.events} {r.events === 1 ? 'event' : 'events'}
+          </small>
+        </button>
+      ))}
+      <div className="cm-muted" style={{ padding: '2px 6px', fontSize: 10 }}>
+        Continues that reading where it left off; this one stays on the server and is listed here.
+      </div>
+    </div>
+  );
+}
+
 export default function SessionMenu({ service, state, initial = 'main', onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MenuView>(initial);
@@ -215,7 +278,7 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
       setBusy(false);
     }
   };
-  /** Ask first when the current reading has something in it; it cannot be reopened later. */
+  /** Ask first when the current reading has something in it (it ends; Recent readings returns to it). */
   const guarded = (title: string, ok: string, fn: () => Promise<unknown>) => () => {
     if (service.hasReading()) {
       setConfirm({ title, ok, run: fn });
@@ -232,8 +295,8 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
         <div data-testid="covmap-confirm" role="alertdialog" aria-label={confirm.title}>
           <div className="cm-pop-title">{confirm.title}</div>
           <div className="cm-pop-text">
-            The current reading ends here. It stays on the server (export it first if you need the
-            files), but this page will not return to it.
+            The current reading ends here. It stays on the server: Session ▾ › Recent readings
+            for this case returns to it.
           </div>
           <div className="cm-row-flex" style={{ justifyContent: 'flex-end', padding: '2px 6px 4px' }}>
             <button className="cm-btn" data-testid="covmap-confirm-cancel" onClick={() => setView('main')}>
@@ -251,6 +314,14 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
         </div>
       )}
       {view === 'rules' && <RulesForm service={service} state={state} onDone={onClose} />}
+      {view === 'recent' && (
+        <RecentList
+          service={service}
+          state={state}
+          busy={busy}
+          onPick={id => run(() => service.openReading(id))()}
+        />
+      )}
       {view === 'cases' && <CaseList service={service} state={state} />}
       {view === 'samples' && (
         <div data-testid="covmap-sample-list">
@@ -302,6 +373,14 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
             onClick={() => setView('samples')}
           >
             Start from a sample reading… <span className="cm-muted">({state.samples.length})</span>
+          </button>
+          <button
+            className="cm-pop-item"
+            data-testid="covmap-recent"
+            disabled={busy || !state.caseId}
+            onClick={() => setView('recent')}
+          >
+            Recent readings for this case…
           </button>
           <button className="cm-pop-item" data-testid="covmap-open-case" onClick={() => setView('cases')}>
             Open another case…

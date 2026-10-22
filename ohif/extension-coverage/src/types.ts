@@ -50,7 +50,27 @@ export interface Summary {
   not_applicable?: number;
   flagged?: number;
   remaining?: string[];
-  finished?: { confirmed: boolean; t_ms?: number; remaining?: string[] } | null;
+  finished?: { confirmed: boolean; t_ms?: number; remaining?: string[]; at_finish?: AtFinish } | null;
+}
+
+/** What a confirmed finish confirmed (`summary.finished.at_finish`); kept if reading goes on. */
+export interface AtFinish {
+  reviewed: number;
+  partial: number;
+  skipped: number;
+  voxel_coverage: number;
+  statuses: Record<string, Status>;
+}
+
+/** One entry of `GET /api/sessions?case=` (the case's latest readings, newest first). */
+export interface RecentReading {
+  session: string;
+  label: string | null;
+  from_sample: string | null;
+  created: string | null;
+  events: number;
+  last_t_ms: number | null;
+  finished: boolean;
 }
 
 export interface Rules {

@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type CoverageService from '../CoverageService';
-import { classifyWindow, PRESETS, presetOf, sourceText } from '../presets';
+import { CLASS_BADGE, classifyWindow, PRESETS, presetOf, sourceText } from '../presets';
 import FinishSheet from './FinishSheet';
 import OrganList from './OrganList';
 import OrganMapView from './OrganMapView';
 import ReplayBar from './ReplayBar';
 import SessionMenu, { isCustomRules, type MenuView } from './SessionMenu';
-import { buildRows, summarize, useCoverageState } from './model';
+import { buildRows, finishDrift, summarize, useCoverageState } from './model';
 import './coverage.css';
 
 /** localStorage key: the reader closed the first-use hint (kept across reloads and cases). */
@@ -55,7 +55,11 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
   const closeMenu = useCallback(() => setMenu(null), []);
   const ready = state.phase === 'ready';
   const activePreset = presetOf(state.voi);
-  const noClass = !!state.voi && classifyWindow(state.voi.wc, state.voi.ww) === null;
+  // the same window classes as the S/L/B badges (covmap/windows.py)
+  const voiClass = state.voi ? classifyWindow(state.voi.wc, state.voi.ww) : null;
+  const noClass = !!state.voi && voiClass === null;
+  const customClass = !!state.voi && !activePreset && voiClass !== null;
+  const drift = finished?.confirmed ? finishDrift(state.coverage) : null;
   const params = state.coverage?.params;
   const custom = isCustomRules(params);
   const sample = state.origin.sample;
@@ -96,7 +100,12 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
     <div className="cm-root" data-testid="covmap-panel" data-phase={state.phase}>
       {state.otherTab && state.sessionId && (
         <div className="cm-other-tab" data-testid="covmap-other-tab" role="status">
-          <span className="cm-grow">This reading is open in another tab — not recording here</span>
+          <span
+            className="cm-grow"
+            title="This tab records the reading by itself once the other tab closes; Record here takes it over now"
+          >
+            This reading is open in another tab — not recording here until that tab closes
+          </span>
           <button
             className="cm-btn cm-btn--primary"
             data-testid="covmap-record-here"
@@ -146,7 +155,12 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
       <div className="cm-sub">
         {finished?.confirmed && !replaying && (
           <span className="cm-chip cm-chip--done" data-testid="covmap-finished" title="Reader confirmed finish">
-            ✓ Finished
+            ✓ Finished{drift ? ` at ${drift.at}` : ''}
+          </span>
+        )}
+        {drift && !replaying && (
+          <span className="cm-continued" data-testid="covmap-finished-continued" title={drift.title}>
+            reading continued (now {drift.now})
           </span>
         )}
         <span
@@ -158,15 +172,15 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
           {state.sessionLabel || 'No session yet'}
         </span>
         {state.origin.resumed && !replaying && !state.otherTab && (
-          <span className="cm-chip" data-testid="covmap-resumed" title="Continued after the page was reloaded">
-            resumed
+          <span className="cm-chip" data-testid="covmap-resumed" title="This reading continues where it left off">
+            Resumed ·{' '}
             <button
               className="cm-link"
               data-testid="covmap-new-reading-quick"
               data-covmap-menu-toggle=""
               onClick={() => setMenu('confirm-new')}
             >
-              New reading
+              Start new reading…
             </button>
           </span>
         )}
@@ -283,9 +297,20 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
           role="status"
           title={`W ${Math.round(state.voi!.ww)} / L ${Math.round(state.voi!.wc)} qualifies for no organ's window class`}
         >
-          This window counts for no organ — press{' '}
+          {activePreset ? `${activePreset.label} window` : 'Custom window'}: counts for no organ — press{' '}
           <span className="cm-kbd">1</span> soft, <span className="cm-kbd">2</span> lung,{' '}
           <span className="cm-kbd">3</span> bone
+        </div>
+      )}
+      {state.caseId && !replaying && !sheet && customClass && (
+        <div
+          className="cm-window-hint cm-window-hint--custom"
+          data-testid="covmap-window-custom"
+          role="status"
+          title="Not one of the presets; organs count by the window class it falls in, as in the S / L / B badges"
+        >
+          Custom window W {Math.round(state.voi!.ww)} / L {Math.round(state.voi!.wc)}: counts as{' '}
+          {PRESETS[voiClass!].label.toLowerCase()} ({CLASS_BADGE[voiClass!].letter})
         </div>
       )}
       {state.caseId && !sheet && (

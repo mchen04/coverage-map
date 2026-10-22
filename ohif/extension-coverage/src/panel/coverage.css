@@ -105,6 +105,10 @@ html.covmap-mode body {
   border-color: var(--cm-attested);
   color: var(--cm-attested);
 }
+/* reading went on after a confirmed finish (recorded; the finish keeps what it confirmed) */
+.cm-continued {
+  color: var(--cm-partial);
+}
 .cm-chip--sample {
   border-color: var(--cm-partial);
   color: var(--cm-partial);
@@ -287,6 +291,10 @@ button.cm-chip {
   color: var(--cm-partial);
   font-size: 10.5px;
   line-height: 16px;
+}
+.cm-window-hint--custom {
+  border-color: var(--cm-line);
+  color: var(--cm-muted);
 }
 
 /* another tab records this session (single writer) */
@@ -580,6 +588,10 @@ button.cm-chip {
   font-size: 10px;
   line-height: 12px;
 }
+.cm-recent-done {
+  color: var(--cm-attested);
+  white-space: nowrap;
+}
 .cm-form {
   display: grid;
   grid-template-columns: 1fr 64px;
@@ -628,8 +640,9 @@ button.cm-chip {
   border-top: 1px solid var(--cm-line);
   border-bottom: 1px solid var(--cm-line);
 }
+/* the decisions keep their height up to the cap (then scroll); the list above gives way */
 .cm-decisions {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   max-height: 32%;
   min-height: 0;
   overflow-y: auto;

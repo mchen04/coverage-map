@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type CoverageService from '../CoverageService';
-import type { CoverageState, Organ, ReaderLayer, Status, Unseen } from '../types';
+import type { Coverage, CoverageState, Organ, ReaderLayer, Status, Unseen } from '../types';
 
 export interface Row {
   organ: Organ;
@@ -116,6 +116,44 @@ export function unseenHint(row: Row): { short: string; full: string } | null {
       .sort((a, b) => b.v - a.v)
       .map(p => `${Math.round(p.v * 100)}% ${p.long}`)
       .join(' · '),
+  };
+}
+
+/**
+ * After a confirmed finish the reader may read on (it is recorded): when the server's summary
+ * no longer equals what the finish confirmed (`summary.finished.at_finish`), the voxel share
+ * then and now, with as many decimals (up to 2) as it takes to tell them apart.
+ */
+export function finishDrift(cov: Coverage | null): { at: string; now: string; title: string } | null {
+  const sm = cov?.summary;
+  const at = sm?.finished?.confirmed ? sm.finished.at_finish : null;
+  if (!sm || !at) {
+    return null;
+  }
+  const statuses = Object.fromEntries((cov!.organs ?? []).map(o => [o.key, o.status]));
+  const same =
+    at.reviewed === sm.reviewed &&
+    at.partial === sm.partial &&
+    at.skipped === sm.skipped &&
+    Math.abs(at.voxel_coverage - sm.voxel_coverage) < 1e-12 &&
+    Object.entries(at.statuses ?? {}).every(([k, v]) => statuses[k] === undefined || statuses[k] === v);
+  if (same) {
+    return null;
+  }
+  const fmt = (v: number, d: number) => `${(Math.floor(v * 100 * 10 ** d + 1e-9) / 10 ** d).toFixed(d)}%`;
+  let d = 0;
+  while (d < 2 && fmt(at.voxel_coverage, d) === fmt(sm.voxel_coverage, d)) {
+    d++;
+  }
+  const counts = (x: { reviewed: number; partial: number; skipped: number }) =>
+    `${x.reviewed} reviewed, ${x.partial} partial, ${x.skipped} skipped`;
+  return {
+    at: fmt(at.voxel_coverage, d),
+    now: fmt(sm.voxel_coverage, d),
+    title:
+      `Reading went on after the confirmed finish, and is recorded. At finish: ${counts(at)}, ` +
+      `${fmt(at.voxel_coverage, d)} of voxels; now: ${counts(sm)}, ${fmt(sm.voxel_coverage, d)}. ` +
+      'Exports keep what was confirmed in summary.finished.at_finish.',
   };
 }
 

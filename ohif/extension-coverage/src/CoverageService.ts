@@ -14,8 +14,8 @@ import {
   sopOf,
   type ViewState,
 } from './instrumentation';
-import { OutlineOverlay } from './outline';
-import { CLASS_PRESET, PRESETS, type Preset } from './presets';
+import { OutlineOverlay, type Contours } from './outline';
+import { CLASS_PRESET, LIVE_LABEL, PRESETS, presetOf, readingLabel, type Preset } from './presets';
 import type {
   CaseInfo,
   CovEvent,
@@ -25,6 +25,7 @@ import type {
   Organ,
   ReaderAction,
   ReaderLayer,
+  RecentReading,
   Rules,
   Sample,
   SessionInfo,
@@ -43,12 +44,18 @@ const CLASS_ORDER: WindowClass[] = ['soft', 'lung', 'bone'];
 const NO_READER: ReaderLayer = { reader: null, flagged: false, note: null };
 /** localStorage: the last session per case, resumed after a reload (docs/SPEC.md UI contract). */
 const STORE_PREFIX = 'covmap:session:';
-const LIVE_LABEL = 'Live reading';
 /** Web Lock held by the one tab of this browser that records a session. */
 const LOCK_PREFIX = 'covmap-session-';
 /** While another tab records the session: how often this tab re-reads its coverage. */
 const FOLLOW_MS = 2500;
 const OTHER_TAB_HINT = 'This reading is open in another tab. Press "Record here" to record in this tab.';
+/** When the recording tab closes, the waiting tab takes over this long after the lock is
+ *  free, so the closing tab's last batch (its pagehide beacon) is on the server first. */
+const TAKEOVER_SETTLE_MS = 400;
+/** Framing after a jump: margin around the organ, as a share of the canvas on each side. */
+const FRAME_MARGIN = 0.08;
+/** How long a jump waits for the organ's outline on the target slice before it uses bbox_rc. */
+const OUTLINE_WAIT_MS = 1000;
 
 interface StoredSession {
   session: string;
@@ -244,6 +251,10 @@ export default class CoverageService extends PubSubService {
   private writer = true;
   private lock: { session: string; token: number; release: () => void } | null = null;
   private lockToken = 0;
+  /** a queued lock request: this tab takes the session over once the recording tab lets go */
+  private lockWait: { session: string; ctl: AbortController } | null = null;
+  /** the events of the POST in flight, unless sent with keepalive (sent again with the pagehide beacon) */
+  private inflightEvents: CovEvent[] = [];
   private takingOver: Promise<boolean> | null = null;
   /** 409 resyncs since the last accepted batch (one retry; a second stops recording here) */
   private conflicts = 0;
@@ -309,6 +320,7 @@ export default class CoverageService extends PubSubService {
       return;
     }
     // the lock goes once the last events are sent, so a tab taking over continues after them
+    this.cancelWait();
     const lock = this.lock;
     this.lock = null;
     this.lockToken++;
@@ -492,19 +504,45 @@ export default class CoverageService extends PubSubService {
    * assigns it per instance). The check runs as a microtask, before the next frame is drawn:
    * CS3D's internal resets (each new slice, resize, actor changes) restore the previous
    * presentation, flips included, synchronously, so only a plain reset is flipped back.
+   *
+   * OHIF's Reset View also calls resetProperties, which puts the image's own window back
+   * (e.g. W2400/L176). That is wrapped too: a window that was one of the presets stays.
    */
   private hookReset(vp: any): void {
     const original = vp.resetCamera;
-    if (typeof original !== 'function' || original[RESET_HOOK]) {
-      return;
+    if (typeof original === 'function' && !original[RESET_HOOK]) {
+      const wrapped = (...args: unknown[]) => {
+        const result = original.apply(vp, args);
+        queueMicrotask(() => this.reorient(vp));
+        return result;
+      };
+      (wrapped as any)[RESET_HOOK] = true;
+      vp.resetCamera = wrapped;
     }
-    const wrapped = (...args: unknown[]) => {
-      const result = original.apply(vp, args);
-      queueMicrotask(() => this.reorient(vp));
-      return result;
-    };
-    (wrapped as any)[RESET_HOOK] = true;
-    vp.resetCamera = wrapped;
+    const props = vp.resetProperties;
+    if (typeof props === 'function' && !props[RESET_HOOK]) {
+      const wrapped = (...args: unknown[]) => {
+        const keep = this.presetShown(vp);
+        const result = props.apply(vp, args);
+        if (keep) {
+          // set, not only shown: the preset also stays on the next slices
+          vp.setProperties({ voiRange: csUtils.windowLevel.toLowHighRange(keep.ww, keep.wc) });
+        }
+        return result;
+      };
+      (wrapped as any)[RESET_HOOK] = true;
+      vp.resetProperties = wrapped;
+    }
+  }
+
+  /** The preset a viewport's window shows exactly, if any. */
+  private presetShown(vp: any): Preset | null {
+    const r = vp.getProperties?.()?.voiRange;
+    if (!r || !Number.isFinite(r.lower) || !Number.isFinite(r.upper)) {
+      return null;
+    }
+    const { windowWidth, windowCenter } = csUtils.windowLevel.toWindowLevel(r.lower, r.upper);
+    return presetOf({ wc: windowCenter, ww: windowWidth });
   }
 
   /** After a camera reset: apply the stack's radiological flips once more (flip never resets). */
@@ -567,6 +605,7 @@ export default class CoverageService extends PubSubService {
   };
 
   private onPageHide = () => {
+    this.cancelWait();
     if (!this.state.sessionId) {
       return;
     }
@@ -576,7 +615,13 @@ export default class CoverageService extends PubSubService {
     if (this.writer) {
       this.enqueue('end', {});
       const sessionId = this.state.sessionId;
-      const events = this.queue.splice(0).map(e => this.stamp(e));
+      // a POST in flight without keepalive may be cancelled with the page: its events go again,
+      // before the queue and 'end' (the server scores an identical resend of a seq once), so
+      // the beacon is complete and in order whichever request arrives first
+      const seqs = new Set<number>();
+      const events = [...this.inflightEvents, ...this.queue.splice(0)]
+        .filter(e => !seqs.has(e.seq) && !!seqs.add(e.seq))
+        .map(e => this.stamp(e));
       if (!this.api.beacon(sessionId, events, this.nowMs())) {
         this.api.postEvents(sessionId, events, this.nowMs(), true).catch(() => {});
       }
@@ -587,10 +632,15 @@ export default class CoverageService extends PubSubService {
   };
 
   /** Back from the back/forward cache: record again if no other tab took the session over
-   *  (continuing after its last event), else show it without recording. */
+   *  (continuing after its last event), else show it without recording and wait for it. */
   private onPageShow = (e: PageTransitionEvent) => {
-    if (e.persisted && this.state.sessionId && !this.switching && this.writer) {
+    if (!e.persisted || !this.state.sessionId || this.switching) {
+      return;
+    }
+    if (this.writer) {
       this.takeOver(false);
+    } else {
+      this.waitForLock(this.state.sessionId);
     }
   };
 
@@ -662,6 +712,9 @@ export default class CoverageService extends PubSubService {
     const now = this.nowMs();
     const t = performance.now();
     let resend = false;
+    // a keepalive POST outlives the page as the beacon does: the unload beacon resends only
+    // the events of a POST that may be cancelled with the page
+    this.inflightEvents = keepalive ? [] : events;
     this.inflight = (async () => {
       try {
         const cov = await this.api.postEvents(sessionId, events, now, keepalive);
@@ -691,6 +744,7 @@ export default class CoverageService extends PubSubService {
       }
     })().finally(() => {
       this.inflight = null;
+      this.inflightEvents = [];
     });
     await this.inflight;
     if (resend) {
@@ -718,7 +772,7 @@ export default class CoverageService extends PubSubService {
     if (this.conflicts > 0) {
       console.warn('covmap: seq conflict again after a resync: another writer records this session', body);
       this.releaseLock();
-      this.standBy();
+      this.standBy(false); // that writer holds no lock here: waiting for it would take it back at once
       return false;
     }
     this.conflicts++;
@@ -772,6 +826,7 @@ export default class CoverageService extends PubSubService {
     if (this.lock?.session === sessionId) {
       return Promise.resolve(true); // held already (a release would not be seen in time)
     }
+    this.cancelWait();
     this.releaseLock();
     const locks = (navigator as any).locks;
     if (!locks?.request) {
@@ -815,6 +870,64 @@ export default class CoverageService extends PubSubService {
     held?.release();
   }
 
+  /**
+   * Queue a request for the session's lock behind the tab that records it: when that tab
+   * closes (or leaves the session) the lock is granted here and this tab takes the session
+   * over by itself, continuing after the server's last event. Cancelled when this tab takes
+   * or leaves the session (acquireLock, stop, pagehide).
+   */
+  private waitForLock(sessionId: string): void {
+    const locks = (navigator as any).locks;
+    if (!locks?.request || this.lockWait?.session === sessionId) {
+      return;
+    }
+    this.cancelWait();
+    const wait = { session: sessionId, ctl: new AbortController() };
+    this.lockWait = wait;
+    let token = -1;
+    locks
+      .request(LOCK_PREFIX + sessionId, { signal: wait.ctl.signal }, (lock: unknown) => {
+        if (this.lockWait !== wait) {
+          return undefined;
+        }
+        this.lockWait = null;
+        if (!lock || sessionId !== this.state.sessionId || this.writer) {
+          return undefined;
+        }
+        this.releaseLock();
+        token = ++this.lockToken;
+        // held until released here, or stolen by another tab (then request() rejects)
+        return new Promise<void>(release => {
+          this.lock = { session: sessionId, token, release };
+          this.autoTakeOver(sessionId, token);
+        });
+      })
+      .catch((e: unknown) => {
+        if (this.lockWait === wait) {
+          this.lockWait = null; // cancelled
+        } else if (token >= 0 && this.lock?.token === token) {
+          this.lock = null;
+          this.onLockLost(sessionId, e);
+        }
+      });
+  }
+
+  private cancelWait(): void {
+    const wait = this.lockWait;
+    this.lockWait = null;
+    wait?.ctl.abort();
+  }
+
+  /** The recording tab let the session go and this tab holds its lock now: record here. */
+  private async autoTakeOver(sessionId: string, token: number): Promise<void> {
+    await new Promise(r => setTimeout(r, TAKEOVER_SETTLE_MS));
+    if (sessionId !== this.state.sessionId || this.writer || this.lock?.token !== token) {
+      return;
+    }
+    console.info('covmap: the tab that recorded this reading let it go; recording here now');
+    await this.takeOver(false);
+  }
+
   /** Another tab pressed "Record here" for this session. */
   private onLockLost(sessionId: string, reason: unknown): void {
     if (sessionId !== this.state.sessionId || !this.writer) {
@@ -825,9 +938,9 @@ export default class CoverageService extends PubSubService {
   }
 
   /** Another tab records this session: record nothing here, show the banner and follow the
-   *  server's coverage. Whatever was queued here is dropped (it would collide with the
-   *  other tab's numbering). */
-  private standBy(): void {
+   *  server's coverage; `wait`: take the session over once that tab lets it go. Whatever was
+   *  queued here is dropped (it would collide with the other tab's numbering). */
+  private standBy(wait = true): void {
     this.writer = false;
     this.queue = [];
     this.pending.clear();
@@ -839,6 +952,9 @@ export default class CoverageService extends PubSubService {
     this.state.reader = this.mergeReader(this.state.coverage);
     this.emit();
     this.follow();
+    if (wait && this.state.sessionId) {
+      this.waitForLock(this.state.sessionId);
+    }
   }
 
   /**
@@ -873,7 +989,7 @@ export default class CoverageService extends PubSubService {
       info = await this.api.session(sessionId);
     } catch (e) {
       this.releaseLock();
-      this.standBy();
+      this.standBy(false); // not a lock wait: it would be granted at once and fail again
       this.notify(`Could not record here: ${(e as Error).message}`);
       return false;
     }
@@ -1196,6 +1312,9 @@ export default class CoverageService extends PubSubService {
       this.switching = false;
       this.setRecording(true);
     }
+    if (!this.writer) {
+      this.waitForLock(session);
+    }
     this.tracker.recaptureAll();
     await this.flush();
     return session;
@@ -1213,6 +1332,98 @@ export default class CoverageService extends PubSubService {
       return Promise.resolve(null);
     }
     return this.restartSession(`Your reading, started from sample: ${sampleName(sample)}`, sample);
+  }
+
+  /** The case's latest readings on the server, newest first (this one included). */
+  public async recentReadings(limit = 10): Promise<RecentReading[]> {
+    const caseId = this.state.caseId;
+    if (!caseId) {
+      return [];
+    }
+    return (await this.api.recentSessions(caseId, limit)).sessions ?? [];
+  }
+
+  /**
+   * Switch to an earlier reading of this case (Session menu, Recent readings): the current
+   * session ends as on New reading, then the chosen one continues after its last event, as
+   * after a reload (localStorage, last_view restored, seq and clock from the server). Another
+   * tab recording it keeps it; this tab then shows it without recording until that tab lets go.
+   */
+  public async openReading(sessionId: string): Promise<string | null> {
+    const caseId = this.state.caseId;
+    if (!caseId || sessionId === this.state.sessionId) {
+      return null;
+    }
+    // read it first: a reading the server does not have leaves the current one as it is
+    let found: SessionInfo;
+    try {
+      found = await this.api.session(sessionId);
+      if (found?.case !== caseId) {
+        throw new Error(`it is not a reading of ${caseId}`);
+      }
+    } catch (e) {
+      this.notify(`Could not open that reading: ${(e as Error).message}`);
+      return null;
+    }
+    this.stopReplay(false);
+    this.switching = true;
+    let writer = false;
+    try {
+      this.setRecording(false);
+      if (this.state.sessionId && this.writer) {
+        this.enqueue('end', {});
+        await this.flush(false, true);
+      }
+      this.pending.clear();
+      this.localReader = {};
+      this.localFinish = null;
+      // the lock first, so the session read below is where this tab continues
+      writer = await this.acquireLock(sessionId);
+      const info = await this.api.session(sessionId).catch(() => found);
+      this.writer = writer;
+      this.conflicts = 0;
+      this.continueAfter(info);
+      const sample = info.from_sample ? this.state.samples.find(x => x.name === info.from_sample) : null;
+      const origin = info.from_sample
+        ? {
+            name: info.from_sample,
+            label: sample ? sampleName(sample) : info.from_sample,
+            source: sample?.source ?? '',
+            events: info.sample_events,
+          }
+        : null;
+      const label = readingLabel(info.label);
+      Object.assign(this.state, {
+        sessionId,
+        sessionLabel: label,
+        sessionSource: 'ohif',
+        origin: { sample: origin, resumed: true },
+        otherTab: !writer,
+        coverage: null,
+        finishOpen: false,
+        selected: null,
+        outline: false,
+        gaps: {},
+        eventsSent: 0,
+      });
+      this.gapSeen.clear();
+      this.remember(caseId, { session: sessionId, label, sample: origin });
+      this.state.reader = this.mergeReader(null);
+      this.emit();
+      if (info.last_view) {
+        await this.showLastView(info.last_view); // where that reading left off
+      }
+    } finally {
+      this.switching = false;
+      this.setRecording(true);
+    }
+    if (!writer) {
+      this.standBy(); // another tab records that reading
+      return sessionId;
+    }
+    this.tracker.recaptureAll();
+    await this.flush();
+    return sessionId;
   }
 
   /** True when discarding the session would lose something: coverage, reader marks, finish. */
@@ -1303,9 +1514,13 @@ export default class CoverageService extends PubSubService {
     this.playReplay();
   }
 
+  /** Record again; the display is re-captured now, or when the tab is shown (a tab that
+   *  took a session over while hidden records nothing until then). */
   private resumeRecording(): void {
     this.setRecording(true);
-    this.tracker.recaptureAll();
+    if (document.visibilityState !== 'hidden') {
+      this.tracker.recaptureAll();
+    }
   }
 
   public setReplayIndex(index: number): void {
@@ -1831,9 +2046,83 @@ export default class CoverageService extends PubSubService {
   }
 
   /**
+   * The organ's in-plane extent on case slice k as image (r, c) bounds: its outline on that
+   * slice (pixel edges), else its bbox_rc over all slices widened to pixel edges; null when
+   * neither is known. The outline is waited for OUTLINE_WAIT_MS at most.
+   */
+  private async organExtent(organ: Organ, k: number): Promise<[number, number, number, number] | null> {
+    const caseId = this.state.caseId;
+    let contours: Contours | null = null;
+    if (caseId) {
+      const wait = new Promise<null>(r => setTimeout(() => r(null), OUTLINE_WAIT_MS));
+      contours = await Promise.race([this.outlineOverlay.contours(caseId, organ.key, k).catch(() => null), wait]);
+    }
+    const pts = (contours ?? []).flat();
+    if (pts.length) {
+      const rs = pts.map(p => p[0]);
+      const cs = pts.map(p => p[1]);
+      return [Math.min(...rs), Math.max(...rs), Math.min(...cs), Math.max(...cs)];
+    }
+    const bb = organ.bbox_rc;
+    return bb && bb.length >= 4 ? [bb[0] - 0.5, bb[1] + 0.5, bb[2] - 0.5, bb[3] + 0.5] : null;
+  }
+
+  /**
+   * After a jump: when part of the organ's extent on slice k is outside the stack viewport's
+   * canvas, pan to centre it and zoom out as far as needed to fit it with a margin (never
+   * in). An organ fully in view leaves the reader's pan and zoom as they are. The camera only
+   * moves in the image plane, so the radiological flips and the window stay. True if moved.
+   */
+  private frameOrgan(vp: any, extent: [number, number, number, number], k: number): boolean {
+    const A = this.volume?.affine_lps;
+    const canvas: HTMLCanvasElement | undefined = vp.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const w = (canvas?.width ?? 0) / dpr;
+    const h = (canvas?.height ?? 0) / dpr;
+    if (!A || !w || !h || !isStack(vp)) {
+      return false;
+    }
+    try {
+      const [r0, r1, c0, c1] = extent;
+      // canvas positions do not depend on the slice shown (parallel projection, one plane normal)
+      const px = [
+        [r0, c0],
+        [r0, c1],
+        [r1, c0],
+        [r1, c1],
+      ].map(([r, c]) => vp.worldToCanvas([0, 1, 2].map(i => A[i][0] * c + A[i][1] * r + A[i][2] * k + A[i][3])));
+      const xs = px.map(p => p[0]);
+      const ys = px.map(p => p[1]);
+      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+      if (![x0, x1, y0, y1].every(Number.isFinite)) {
+        return false;
+      }
+      if (x0 >= -0.5 && y0 >= -0.5 && x1 <= w + 0.5 && y1 <= h + 0.5) {
+        return false; // fully in view: keep the reader's framing
+      }
+      const fit = 1 - 2 * FRAME_MARGIN;
+      const zoomOut = Math.max(1, (x1 - x0) / (w * fit), (y1 - y0) / (h * fit));
+      const cam = vp.getCamera();
+      const to = vp.canvasToWorld([(x0 + x1) / 2, (y0 + y1) / 2]);
+      const from = vp.canvasToWorld([w / 2, h / 2]);
+      const d = [0, 1, 2].map(i => to[i] - from[i]);
+      vp.setCamera({
+        focalPoint: cam.focalPoint.map((v: number, i: number) => v + d[i]),
+        position: cam.position.map((v: number, i: number) => v + d[i]),
+        parallelScale: cam.parallelScale * zoomOut,
+      });
+      return true;
+    } catch (e) {
+      console.warn('covmap: could not frame the organ', e);
+      return false;
+    }
+  }
+
+  /**
    * Select an organ and show it: the slice where it still has the most unseen voxels (from
    * the server, after sending what is queued) in its window; the organ centre when nothing is
-   * unseen or the gap lookup fails.
+   * unseen or the gap lookup fails. A stack viewport whose pan or zoom leaves part of the
+   * organ on that slice outside the canvas is reframed to show all of it (frameOrgan).
    */
   public async jumpToOrgan(key: string): Promise<void> {
     const organ = this.state.organs.find(o => o.key === key);
@@ -1861,14 +2150,26 @@ export default class CoverageService extends PubSubService {
       }
     }
     const preset = CLASS_PRESET[cls] ?? PRESETS.soft;
+    const extentReq = this.organExtent(organ, k);
     let targets = this.caseViewports();
     if (!targets.length) {
       targets = await this.showCaseSeries();
     }
+    const extent = await extentReq;
+    if (token !== this.jumpToken) {
+      return;
+    }
     const range = csUtils.windowLevel.toLowHighRange(preset.ww, preset.wc);
     for (const vp of targets) {
       try {
+        // framed before the slice changes, so the reader sees one move; checked again after
+        if (extent) {
+          this.frameOrgan(vp, extent, k);
+        }
         await this.showSlice(vp, sop, k, range, organ);
+        if (extent && token === this.jumpToken && this.frameOrgan(vp, extent, k)) {
+          vp.render();
+        }
       } catch (e) {
         console.warn('covmap: jump failed', e);
       }
