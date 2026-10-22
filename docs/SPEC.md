@@ -286,13 +286,40 @@ case. A scenario passes when every organ's status equals its expected status.
 
 The page never scrolls; only the organ list (and dialogs' lists) scroll. Right panel, top to
 bottom: summary line (reviewed/partial/skipped/remaining counts, overall %, session menu:
-new reading, load sample, replay, rules, export), the vtk.js 3D map (click a gray/yellow organ
-→ jump to its center slice with the correct window preset), quick actions (Next gap,
-Soft/Lung/Bone windows, Finish), the live organ list (status dot, %, window badge, reader
-state; row click jumps; row actions done / N/A / flag), and a one-line research-use note.
-Finish opens a compact list of remaining gray/yellow organs with Go back / Confirm finish.
+new reading, start from sample, open another case, replay, rules, export), the vtk.js 3D map
+(front/back/right/left views, "Hide reviewed" toggle, legend with N/A), quick actions (Next gap,
+Soft/Lung/Bone windows, Finish), the live organ list (status dot, floored %, window badge,
+reader state; row actions done / N/A / flag; the selected organ's detail shows "On images a–b
+of N", "Still to read: images …" in the viewer's numbering and "% unseen · reason" hints), and
+a one-line research-use note.
+
+- Jumps. Clicking a gray/yellow organ in the map, its list row, a finish-list entry or Next
+  gap goes to the server's gap target (`GET /api/sessions/{id}/gap`, see "Gap target"): the
+  organ's slice with the most unseen voxels, in the organ's window preset.
+- Display. The viewer opens in Soft (the active preset is highlighted, with a window hint).
+  Axial stacks are shown radiologically (anterior up, patient right on screen left) whatever the
+  acquisition order; recorded corners stay in true patient coordinates, so scoring does not
+  depend on the flip.
+- Sessions. A live session is labeled "live reading (OHIF)". "Start from sample" creates a new
+  session "Your reading, started from sample: <label>" holding the sample's events first; the
+  sample itself is never modified. `localStorage` key `covmap:session:<caseId>` stores
+  `{session, label, sample, saved}`; a reload resumes through `GET /api/sessions/{id}`,
+  continuing at `last_seq + 1` and `last_t_ms + 1`. "New reading" asks before discarding.
+  On a session switch, recording pauses, the old session's `end` is flushed and the event queue
+  is cleared before the new session's clock starts at its first event. At `pagehide` recording
+  stops, so `end` is the page's last event.
+- Replay plays a session's timeline frames, moving the viewer to each frame's `view`; it sends
+  `hidden '*'` when it starts and records nothing until it closes, then restores the view.
+- Finish opens a compact list of remaining gray/yellow organs with per-organ decisions
+  (done / N/A / flag), Go back and Confirm finish; the research note stays visible.
+- Test hooks: `window.__covmap` exposes `sessionId`, `flush()`, `newReading(): Promise<string|null>`
+  (no confirm; resolves once the new session is attached) and `setRadiological(on)`.
+
 Keyboard: `N` next gap, `D` mark selected organ done, `A` mark selected organ not applicable,
 `G` flag selected organ's segmentation, `O` toggle selected organ outline on the image,
 `F` finish, `1` soft, `2` lung, `3` bone, `4` liver, `5` brain (coverage mode only; stock
 modes keep stock hotkeys). Every claim in the UI stays research-only: coverage measures what
 was displayed (slice, region, window, dwell), not what was perceived or diagnosed.
+
+Known limitation: magnification is not scored. A slice region counts as displayed at any zoom,
+so an organ shown very small (for example at 0.25× zoom) still accrues coverage.
