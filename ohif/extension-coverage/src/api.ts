@@ -1,5 +1,5 @@
 import { fetchMeshes } from '@covmap/organ-map';
-import type { Coverage, Organ, Rules, Sample, TimelineFrame, Volume } from './types';
+import type { CaseInfo, Coverage, Gap, Organ, Rules, Sample, SessionInfo, TimelineFrame, Volume } from './types';
 
 /** Thin client for the covmap HTTP API (docs/SPEC.md "HTTP API"). Same origin. */
 export class CovmapApi {
@@ -38,6 +38,24 @@ export class CovmapApi {
       }
       throw e;
     }
+  }
+
+  cases() {
+    return this.json<CaseInfo[]>('/cases');
+  }
+
+  /** Session info (last_seq / last_t_ms to continue a session after a reload). */
+  session(id: string) {
+    return this.json<SessionInfo>(`/sessions/${encodeURIComponent(id)}`);
+  }
+
+  /** Where the organ still has unseen voxels; nowMs credits the open display state. */
+  gap(session: string, organ: string, nowMs?: number, signal?: AbortSignal) {
+    const now = nowMs === undefined ? '' : `&now_ms=${nowMs}`;
+    return this.json<Gap>(
+      `/sessions/${encodeURIComponent(session)}/gap?organ=${encodeURIComponent(organ)}${now}`,
+      signal ? { signal } : undefined
+    );
   }
 
   createSession(caseId: string, label?: string, fromSample?: string) {

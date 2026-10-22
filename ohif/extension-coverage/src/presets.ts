@@ -44,3 +44,30 @@ export function classifyWindow(wc: number, ww: number): WindowClass | null {
   }
   return null;
 }
+
+/** The preset whose W/L the VOI shows exactly (within 0.5 HU), if any. */
+export function presetOf(voi: { wc: number; ww: number } | null): Preset | null {
+  if (!voi) {
+    return null;
+  }
+  return (
+    Object.values(PRESETS).find(p => Math.abs(p.wc - voi.wc) < 0.5 && Math.abs(p.ww - voi.ww) < 0.5) ?? null
+  );
+}
+
+/** Mirrors covmap/scoring.py DEFAULTS (the server's rules for a new session). */
+export const DEFAULT_RULES = { min_dwell_ms: 80, reviewed_threshold: 0.9, skipped_threshold: 0.05 };
+
+/** Plain-language description of where a sample reading came from. */
+export function sourceText(source: string | null | undefined): string {
+  switch (source) {
+    case 'browser-scripted':
+      return 'scripted automated reading (not a human)';
+    case 'simulated':
+      return 'simulated reading (not a human)';
+    case 'ohif':
+      return 'reader in this viewer';
+    default:
+      return source ? `${source} (origin as recorded)` : 'unknown origin';
+  }
+}

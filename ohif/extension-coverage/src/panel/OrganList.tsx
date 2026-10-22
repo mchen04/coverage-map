@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CLASS_BADGE } from '../presets';
 import type CoverageService from '../CoverageService';
-import type { WindowClass } from '../types';
-import { pct, STATUS_WORD, unseenHint, type Row } from './model';
+import type { Gap, WindowClass } from '../types';
+import { pct, rangesText, STATUS_WORD, unseenHint, type Row } from './model';
 
 const GROUP_TITLE: Record<WindowClass, string> = {
   soft: 'Soft-tissue window',
@@ -32,10 +32,12 @@ interface Props {
   selected: string | null;
   hot: string | null;
   replaying: boolean;
+  gaps: Record<string, Gap>;
+  sessionId: string | null;
   onHover: (key: string | null) => void;
 }
 
-export default function OrganList({ service, rows, selected, hot, replaying, onHover }: Props) {
+export default function OrganList({ service, rows, selected, hot, replaying, gaps, sessionId, onHover }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +47,13 @@ export default function OrganList({ service, rows, selected, hot, replaying, onH
     const el = listRef.current.querySelector(`[data-key="${selected}"]`);
     el?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
+
+  // a new reading starts at the top of the list
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
+  }, [sessionId]);
 
   const groups: Array<[WindowClass, Row[]]> = (['soft', 'lung', 'bone'] as WindowClass[])
     .map(cls => [cls, rows.filter(r => (r.organ.windows?.[0] ?? 'soft') === cls)] as [WindowClass, Row[]])
@@ -73,6 +82,7 @@ export default function OrganList({ service, rows, selected, hot, replaying, onH
               selected={selected === row.organ.key}
               hot={hot === row.organ.key}
               replaying={replaying}
+              gap={gaps[row.organ.key] ?? null}
               onHover={onHover}
             />
           ))}
@@ -88,6 +98,7 @@ function OrganRow({
   selected,
   hot,
   replaying,
+  gap,
   onHover,
 }: {
   service: CoverageService;
@@ -95,13 +106,39 @@ function OrganRow({
   selected: boolean;
   hot: boolean;
   replaying: boolean;
+  gap: Gap | null;
   onHover: (key: string | null) => void;
 }) {
   const { organ, status, layer } = row;
   const key = organ.key;
   const hint = unseenHint(row);
   const [note, setNote] = useState(layer.note ?? '');
+  const noteRef = useRef<HTMLInputElement>(null);
+  const wasFlagged = useRef(layer.flagged);
   useEffect(() => setNote(layer.note ?? ''), [layer.note]);
+  // just flagged (G or the flag button): bring the note field into view and focus it
+  useEffect(() => {
+    const now = layer.flagged;
+    if (now && !wasFlagged.current && selected && !replaying) {
+      requestAnimationFrame(() => {
+        noteRef.current?.scrollIntoView({ block: 'nearest' });
+        noteRef.current?.focus();
+      });
+    }
+    wasFlagged.current = now;
+  }, [layer.flagged, selected, replaying]);
+
+  // the detail grows when the gap target arrives: keep a focused note field in view
+  useEffect(() => {
+    const el = noteRef.current;
+    if (el && document.activeElement === el) {
+      el.scrollIntoView({ block: 'nearest' });
+    }
+  }, [gap]);
+
+  // image numbers as the viewer shows them (n of n/N), not case slice indices
+  const extent = selected && organ.k_range ? service.viewerRanges([organ.k_range]) : null;
+  const todo = selected && gap && !replaying ? service.viewerRanges(gap.ranges) : null;
 
   const cls = [
     'cm-organ',
@@ -149,6 +186,7 @@ function OrganRow({
             data-testid={`covmap-organ-${key}-done`}
             className={layer.reader === 'done' ? 'cm-on-done' : ''}
             title="Mark done (D): reader attests review. Kept separate from the measured status."
+            aria-label={`Mark ${organ.name} done`}
             aria-pressed={layer.reader === 'done'}
             disabled={replaying}
             onClick={stop(() => service.toggleDone(key))}
@@ -159,6 +197,7 @@ function OrganRow({
             data-testid={`covmap-organ-${key}-na`}
             className={layer.reader === 'na' ? 'cm-on-na' : ''}
             title="Not applicable (A): absent or out of scope; excluded from remaining"
+            aria-label={`Mark ${organ.name} not applicable`}
             aria-pressed={layer.reader === 'na'}
             disabled={replaying}
             onClick={stop(() => service.toggleNA(key))}
@@ -169,6 +208,7 @@ function OrganRow({
             data-testid={`covmap-organ-${key}-flag`}
             className={layer.flagged ? 'cm-on-flag' : ''}
             title="Flag suspicious segmentation (G)"
+            aria-label={`Flag the ${organ.name} segmentation`}
             aria-pressed={layer.flagged}
             disabled={replaying}
             onClick={stop(() => {
@@ -182,22 +222,12 @@ function OrganRow({
       </div>
       {selected && (
         <div className="cm-detail" data-testid={`covmap-organ-${key}-detail`}>
-          {hint
-            ? `Unseen: ${hint.full}.`
-            : status === 'reviewed'
-              ? 'Displayed enough to count as reviewed.'
-              : replaying
-                ? `${pct(row.coverage)} displayed at this point of the replay.`
-                : 'No display data yet.'}{' '}
-          {layer.reader === 'done' && status !== 'reviewed' && 'Marked done by reader (attestation, not measured). '}
-          {layer.reader === 'na' && 'Marked not applicable. '}
-          <span className="cm-muted">
-            {organ.k_range ? `Slices ${organ.k_range[0] + 1}–${organ.k_range[1] + 1}. ` : ''}O: outline on image.
-          </span>
           {layer.flagged && !replaying && (
             <input
+              ref={noteRef}
               data-testid={`covmap-organ-${key}-note`}
-              placeholder="Flag note (optional), Enter to save"
+              aria-label={`Flag note for ${organ.name}`}
+              placeholder="Flag note (optional): Enter saves, Esc leaves"
               value={note}
               maxLength={200}
               onClick={e => e.stopPropagation()}
@@ -207,10 +237,37 @@ function OrganRow({
                 if (e.key === 'Enter') {
                   service.toggleFlag(key, note.trim());
                   (e.target as HTMLInputElement).blur();
+                } else if (e.key === 'Escape') {
+                  setNote(layer.note ?? '');
+                  (e.target as HTMLInputElement).blur();
                 }
               }}
             />
           )}
+          {hint
+            ? `Unseen: ${hint.full}.`
+            : status === 'reviewed'
+              ? 'Displayed enough to count as reviewed.'
+              : replaying
+                ? `${pct(row.coverage)} displayed at this point of the replay.`
+                : 'No display data yet.'}{' '}
+          {layer.reader === 'done' && status !== 'reviewed' && 'Marked done by reader (attestation, not measured). '}
+          {layer.reader === 'na' && 'Marked not applicable. '}
+          {extent && extent.ranges.length > 0 && (
+            <span className="cm-muted" data-testid={`covmap-organ-${key}-extent`}>
+              On images {rangesText(extent.ranges, 2)} of {extent.n}.{' '}
+            </span>
+          )}
+          {todo && gap && (
+            <span data-testid={`covmap-organ-${key}-gap`} className="cm-todo">
+              {gap.unseen_voxels > 0 && todo.ranges.length > 0
+                ? `Still to read: images ${rangesText(todo.ranges)}. `
+                : gap.unseen_voxels > 0
+                  ? 'Unseen parts are in view; window or dwell is missing. '
+                  : 'Nothing left unseen. '}
+            </span>
+          )}
+          <span className="cm-muted">O: outline on image.</span>
         </div>
       )}
     </div>

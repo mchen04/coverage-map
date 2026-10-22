@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type CoverageService from '../CoverageService';
-import { PRESETS } from '../presets';
+import { classifyWindow, PRESETS, presetOf, sourceText } from '../presets';
 import FinishSheet from './FinishSheet';
 import OrganList from './OrganList';
 import OrganMapView from './OrganMapView';
 import ReplayBar from './ReplayBar';
-import SessionMenu from './SessionMenu';
+import SessionMenu, { isCustomRules, type MenuView } from './SessionMenu';
 import { buildRows, summarize, useCoverageState } from './model';
 import './coverage.css';
 
@@ -26,14 +26,20 @@ const SHORTCUTS: Array<[string, string]> = [
 export default function CoveragePanel({ servicesManager }: { servicesManager: AppTypes.ServicesManager }) {
   const service = (servicesManager.services as any).coverageService as CoverageService;
   const state = useCoverageState(service);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menu, setMenu] = useState<MenuView | null>(null);
   const [hot, setHot] = useState<string | null>(null);
   const rows = useMemo(() => buildRows(service, state), [service, state]);
   const sum = summarize(rows, state);
   const finished = service.finished();
   const replaying = !!state.replay;
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeMenu = useCallback(() => setMenu(null), []);
   const ready = state.phase === 'ready';
+  const activePreset = presetOf(state.voi);
+  const noClass = !!state.voi && classifyWindow(state.voi.wc, state.voi.ww) === null;
+  const params = state.coverage?.params;
+  const custom = isCustomRules(params);
+  const sample = state.origin.sample;
+  const sheet = state.finishOpen && !replaying;
 
   let message: React.ReactNode = null;
   if (state.phase === 'idle' || state.phase === 'waiting') {
@@ -53,69 +59,114 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
     );
   }
 
+  const countsTitle =
+    `Organs by measured status: ${sum.reviewed} reviewed (● displayed enough to count), ` +
+    `${sum.partial} partial (◐), ${sum.skipped} skipped (○)`;
+
   return (
     <div className="cm-root" data-testid="covmap-panel" data-phase={state.phase}>
       <div className="cm-summary" data-testid="covmap-summary" data-finished={finished?.confirmed ? '1' : '0'}>
-        <span className="cm-count" title="reviewed (measured)">
-          <i className="cm-dot cm-dot--reviewed" />
-          {sum.reviewed}
-        </span>
-        <span className="cm-count" title="partial">
-          <i className="cm-dot cm-dot--partial" />
-          {sum.partial}
-        </span>
-        <span className="cm-count" title="skipped">
-          <i className="cm-dot cm-dot--skipped" />
-          {sum.skipped}
+        <span className="cm-counts" title={countsTitle} aria-label={countsTitle}>
+          <span className="cm-count">
+            <i className="cm-dot cm-dot--reviewed" />
+            {sum.reviewed}
+          </span>
+          <span className="cm-count">
+            <i className="cm-dot cm-dot--partial" />
+            {sum.partial}
+          </span>
+          <span className="cm-count">
+            <i className="cm-dot cm-dot--skipped" />
+            {sum.skipped}
+          </span>
         </span>
         <span className="cm-muted">·</span>
-        <span title="not reviewed and not marked done or N/A" data-testid="covmap-remaining">
+        <span title="Organs not displayed enough to count and not marked done or N/A" data-testid="covmap-remaining">
           <b>{sum.remaining}</b> left
         </span>
-        <span className="cm-muted" title="share of all organ voxels displayed under a qualifying window">
-          · {sum.voxelPct === null ? '–' : `${sum.voxelPct}%`} vox
+        <span
+          className="cm-muted"
+          title="Share of all organ voxels displayed under a qualifying window long enough to count"
+        >
+          · {sum.voxelPct === null ? '–' : `${sum.voxelPct}%`} of voxels
         </span>
         <span className="cm-grow" />
-        {finished?.confirmed && !replaying && (
-          <span className="cm-chip cm-chip--done" data-testid="covmap-finished" title="Reader confirmed finish">
-            ✓ Finished
-          </span>
-        )}
         <button
           className="cm-btn"
           data-testid="covmap-session-menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(o => !o)}
+          data-covmap-menu-toggle=""
+          aria-expanded={!!menu}
+          onClick={() => setMenu(m => (m ? null : 'main'))}
         >
           Session ▾
         </button>
       </div>
       <div className="cm-sub">
-        <span className="cm-ellipsis cm-grow" data-testid="covmap-session-label">
-          {replaying ? 'Replay (read-only): ' : ''}
+        {finished?.confirmed && !replaying && (
+          <span className="cm-chip cm-chip--done" data-testid="covmap-finished" title="Reader confirmed finish">
+            ✓ Finished
+          </span>
+        )}
+        <span
+          className="cm-ellipsis cm-sub-label"
+          data-testid="covmap-session-label"
+          title={state.sessionLabel || undefined}
+        >
+          {replaying ? 'Replay (read-only, recording paused): ' : ''}
           {state.sessionLabel || 'No session yet'}
-          {state.sessionSource && state.sessionSource !== 'ohif' && (
-            <span className="cm-chip cm-chip--sample" style={{ marginLeft: 4 }}>
-              {state.sessionSource}
-            </span>
-          )}
         </span>
+        {state.origin.resumed && !replaying && (
+          <span className="cm-chip" data-testid="covmap-resumed" title="Continued after the page was reloaded">
+            resumed
+            <button
+              className="cm-link"
+              data-testid="covmap-new-reading-quick"
+              data-covmap-menu-toggle=""
+              onClick={() => setMenu('confirm-new')}
+            >
+              New reading
+            </button>
+          </span>
+        )}
+        {custom && (
+          <button
+            className="cm-chip cm-chip--rules"
+            data-testid="covmap-custom-rules"
+            data-covmap-menu-toggle=""
+            title={`Custom research rules: min dwell ${params!.min_dwell_ms} ms, reviewed at ${Math.round(
+              params!.reviewed_threshold * 100
+            )}%, skipped below ${Math.round(params!.skipped_threshold * 100)}%. Click to change or restore defaults.`}
+            onClick={() => setMenu('rules')}
+          >
+            custom rules
+          </button>
+        )}
         {(sum.attested > 0 || sum.na > 0 || sum.flagged > 0) && (
           <span>
-            {sum.attested ? `${sum.attested} marked done` : ''}
+            {sum.attested ? `${sum.attested} done` : ''}
             {sum.attested && (sum.na || sum.flagged) ? ' · ' : ''}
             {sum.na ? `${sum.na} N/A` : ''}
             {sum.na && sum.flagged ? ' · ' : ''}
             {sum.flagged ? `${sum.flagged} flagged` : ''}
           </span>
         )}
-        <span title="events sent to the coverage server">{state.eventsSent} ev</span>
+        <span title="Display and reader events sent to the coverage server">{state.eventsSent} events</span>
       </div>
-      {menuOpen && <SessionMenu service={service} state={state} onClose={closeMenu} />}
+      {sample && (
+        <div className="cm-sub" data-testid="covmap-origin">
+          <span className="cm-chip cm-chip--sample cm-ellipsis" title={`Sample: ${sample.label}`}>
+            sample events: {sourceText(sample.source)}
+            {typeof sample.events === 'number' ? ` · ${sample.events}` : ''}
+          </span>
+        </div>
+      )}
+      {menu && <SessionMenu key={menu} service={service} state={state} initial={menu} onClose={closeMenu} />}
 
       {message && <div className="cm-msg">{message}</div>}
+      {sheet && <FinishSheet service={service} rows={rows} />}
       {state.caseId && (
         <OrganMapView
+          hidden={sheet}
           service={service}
           caseId={state.caseId}
           rows={rows}
@@ -125,6 +176,7 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
         />
       )}
       {state.caseId &&
+        !sheet &&
         (state.replay ? (
           <ReplayBar service={service} replay={state.replay} />
         ) : (
@@ -133,7 +185,7 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
               className="cm-btn cm-btn--primary"
               data-testid="covmap-next-gap"
               disabled={!ready}
-              title="Jump to the next organ that is not reviewed, with its window (N)"
+              title="Jump to the next organ not displayed enough, on a slice it still has unseen, in its window (N)"
               onClick={() => service.nextGap()}
             >
               Next gap <span className="cm-kbd">N</span>
@@ -141,8 +193,9 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
             {(['soft', 'lung', 'bone'] as const).map(id => (
               <button
                 key={id}
-                className="cm-btn"
+                className={`cm-btn${activePreset?.id === id ? ' cm-btn--on' : ''}`}
                 data-testid={`covmap-window-${id}`}
+                aria-pressed={activePreset?.id === id}
                 title={`${PRESETS[id].label} window ${PRESETS[id].ww}/${PRESETS[id].wc} (${PRESETS[id].key})`}
                 onClick={() => service.applyPreset(PRESETS[id])}
               >
@@ -160,17 +213,30 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
             </button>
           </div>
         ))}
-      {state.caseId && (
+      {state.caseId && !replaying && !sheet && noClass && (
+        <div
+          className="cm-window-hint"
+          data-testid="covmap-window-hint"
+          role="status"
+          title={`W ${Math.round(state.voi!.ww)} / L ${Math.round(state.voi!.wc)} qualifies for no organ's window class`}
+        >
+          This window counts for no organ — press{' '}
+          <span className="cm-kbd">1</span> soft, <span className="cm-kbd">2</span> lung,{' '}
+          <span className="cm-kbd">3</span> bone
+        </div>
+      )}
+      {state.caseId && !sheet && (
         <OrganList
           service={service}
           rows={rows}
           selected={state.selected}
           hot={hot}
           replaying={replaying}
+          gaps={state.gaps}
+          sessionId={state.sessionId}
           onHover={setHot}
         />
       )}
-      {state.finishOpen && !replaying && <FinishSheet service={service} rows={rows} />}
       <div className="cm-foot" data-testid="covmap-shortcuts">
         {SHORTCUTS.map(([k, label]) => (
           <span key={k} style={{ marginRight: 5, whiteSpace: 'nowrap' }}>

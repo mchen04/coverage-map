@@ -31,8 +31,8 @@ const extension = {
       {
         name: 'coverage',
         iconName: 'tab-linear',
-        iconLabel: 'Coverage',
-        label: 'Coverage',
+        iconLabel: 'Coverage Map',
+        label: 'Coverage Map',
         component: WrappedCoveragePanel,
       },
     ];

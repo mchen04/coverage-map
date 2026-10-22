@@ -70,18 +70,36 @@ export interface OrganMapOptions {
   interactive?: boolean;
 }
 
+/** Canonical views: from the front (anterior), back, patient right side, patient left side. */
+export type MapView = 'front' | 'back' | 'right' | 'left';
+
+/** Patient direction at each screen edge (R L A P S I), null when the view is oblique. */
+export interface Orientation {
+  left: string | null;
+  right: string | null;
+  top: string | null;
+  bottom: string | null;
+}
+
 export interface OrganMap {
   loadMeshes(src: string | { meta: MeshesJson; buffer: ArrayBuffer }): Promise<LoadResult>;
   setOrganInfo(organs: OrganInfo[]): void;
   /** key -> status, or key -> {status, reader, flagged} */
   setStatuses(map: Record<string, Status | OrganVisual>): void;
   setHighlight(key: string | null): void;
+  /** Hide these organs (not drawn, not pickable); the others are shown. */
+  setHidden(keys: Iterable<string>): void;
   onPick(cb: (e: PickEvent) => void): () => void;
-  resetCamera(): void;
+  /** Called after every camera change (rotate, pan, zoom, view buttons). */
+  onCamera(cb: (o: Orientation) => void): () => void;
+  orientation(): Orientation;
+  /** Fit the whole model in a canonical view (default: front). */
+  resetCamera(view?: MapView): void;
   resize(): void;
   render(): void;
   keys(): string[];
   drawnCount(): number;
+  visibleCount(): number;
   dispose(): void;
 }
 
@@ -93,7 +111,8 @@ export const STATUS_COLORS: Record<Status, string> = {
 };
 /** Reader attestation ("done") — deliberately a different hue from measured green. */
 export const ATTESTED_COLOR = '#4cc9f0';
-export const NA_COLOR = '#4a5160';
+/** Not applicable: a faint violet wireframe, so it never reads as skipped gray. */
+export const NA_COLOR = '#b48ef0';
 
 export function hexToRgb(hex: string): [number, number, number] {
   const v = parseInt(hex.replace('#', ''), 16);
@@ -112,7 +131,7 @@ function visualColor(v: OrganVisual): string {
 
 function baseOpacity(info: OrganInfo | undefined, v: OrganVisual): number {
   if (v.reader === 'na') {
-    return 0.12;
+    return 0.35;
   }
   const w = info?.windows ?? [];
   if (w.length === 1 && w[0] === 'bone') {
@@ -194,7 +213,38 @@ interface Entry {
   actor: any;
   visual: OrganVisual;
   opacity: number;
+  hidden: boolean;
 }
+
+// LPS: +x patient left, +y posterior, +z superior
+const AXIS_LABELS: Array<[string, string]> = [
+  ['L', 'R'],
+  ['P', 'A'],
+  ['S', 'I'],
+];
+
+function axisLabel(v: number[]): string | null {
+  let i = 0;
+  for (let j = 1; j < 3; j++) {
+    if (Math.abs(v[j]) > Math.abs(v[i])) {
+      i = j;
+    }
+  }
+  const len = Math.hypot(v[0], v[1], v[2]) || 1;
+  // only label an edge when the view is within ~35 degrees of a patient axis
+  if (Math.abs(v[i]) / len < 0.82) {
+    return null;
+  }
+  return v[i] > 0 ? AXIS_LABELS[i][0] : AXIS_LABELS[i][1];
+}
+
+/** Camera offset direction (from the focal point) and view-up for each canonical view. */
+const VIEWS: Record<MapView, { dir: [number, number, number]; widthAxis: 0 | 1 }> = {
+  front: { dir: [0, -1, 0], widthAxis: 0 },
+  back: { dir: [0, 1, 0], widthAxis: 0 },
+  right: { dir: [-1, 0, 0], widthAxis: 1 },
+  left: { dir: [1, 0, 0], widthAxis: 1 },
+};
 
 export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {}): OrganMap {
   const interactive = opts.interactive ?? true;
@@ -214,7 +264,14 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
   if (interactive) {
     interactor = vtkRenderWindowInteractor.newInstance();
     const style = vtkInteractorStyleManipulator.newInstance();
-    style.addMouseManipulator(vtkMouseCameraTrackballRotateManipulator.newInstance({ button: 1 }));
+    // Rotate about the focal point (the model centre after a reset, the view centre after a
+    // pan) so the model stays in view; the default centre is the world origin, far from it.
+    style.addMouseManipulator(
+      vtkMouseCameraTrackballRotateManipulator.newInstance({
+        button: 1,
+        useFocalPointAsCenterOfRotation: true,
+      })
+    );
     style.addMouseManipulator(
       vtkMouseCameraTrackballPanManipulator.newInstance({ button: 1, shift: true })
     );
@@ -232,7 +289,9 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
   const actorToKey = new Map<any, string>();
   const info = new Map<string, OrganInfo>();
   const pickCbs = new Set<(e: PickEvent) => void>();
+  const cameraCbs = new Set<(o: Orientation) => void>();
   let highlight: string | null = null;
+  let hiddenKeys = new Set<string>();
   let bounds: number[] | null = null;
   let disposed = false;
 
@@ -245,8 +304,14 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     const [r, g, b] = hexToRgb(visualColor(e.visual));
     prop.setColor(r, g, b);
     const hot = highlight === e.key;
+    const na = e.visual.reader === 'na';
     e.opacity = hot ? 1 : baseOpacity(info.get(e.key), e.visual);
     prop.setOpacity(e.opacity);
+    // N/A: wireframe (hatched look), clearly unlike a solid skipped organ
+    prop.setRepresentation(na && !hot ? 1 : 2);
+    prop.setLineWidth(1);
+    e.actor.setVisibility(!e.hidden);
+    e.actor.setPickable(!e.hidden);
     prop.setAmbient(hot ? 0.45 : 0.12);
     prop.setDiffuse(0.85);
     prop.setSpecular(0.15);
@@ -284,27 +349,56 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     requestRender();
   };
 
-  const resetCamera = () => {
+  const resetCamera = (view: MapView = 'front') => {
     if (!bounds) {
       return;
     }
     const [x0, x1, y0, y1, z0, z1] = bounds;
     const c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2];
+    const { dir, widthAxis } = VIEWS[view] ?? VIEWS.front;
     const cam = renderer.getActiveCamera();
     cam.setParallelProjection(true);
     cam.setFocalPoint(c[0], c[1], c[2]);
     // LPS: anterior is -y; viewing from the front puts patient right on screen left.
-    cam.setPosition(c[0], c[1] - 1000, c[2]);
+    cam.setPosition(c[0] + dir[0] * 1000, c[1] + dir[1] * 1000, c[2] + dir[2] * 1000);
     cam.setViewUp(0, 0, 1);
     renderer.resetCamera(bounds);
     const rect = container.getBoundingClientRect();
     const aspect = rect.width > 0 && rect.height > 0 ? rect.width / rect.height : 1;
     const halfH = (z1 - z0) / 2;
-    const halfW = (x1 - x0) / 2;
+    const halfW = (widthAxis === 0 ? x1 - x0 : y1 - y0) / 2;
     cam.setParallelScale(Math.max(halfH, halfW / aspect) * 1.06);
     renderer.resetCameraClippingRange();
     requestRender();
   };
+
+  const orientation = (): Orientation => {
+    const cam = renderer.getActiveCamera();
+    const d = cam.getDirectionOfProjection();
+    const u = cam.getViewUp();
+    const right = [d[1] * u[2] - d[2] * u[1], d[2] * u[0] - d[0] * u[2], d[0] * u[1] - d[1] * u[0]];
+    const neg = (v: number[]) => v.map(x => -x);
+    return {
+      left: axisLabel(neg(right)),
+      right: axisLabel(right),
+      top: axisLabel(u),
+      bottom: axisLabel(neg(u)),
+    };
+  };
+  let cameraQueued = false;
+  const cameraSub = renderer.getActiveCamera().onModified(() => {
+    if (cameraQueued || !cameraCbs.size) {
+      return;
+    }
+    cameraQueued = true;
+    requestAnimationFrame(() => {
+      cameraQueued = false;
+      if (!disposed) {
+        const o = orientation();
+        cameraCbs.forEach(cb => cb(o));
+      }
+    });
+  });
 
   const loadMeshes = async (src: string | { meta: MeshesJson; buffer: ArrayBuffer }) => {
     const t0 = performance.now();
@@ -349,7 +443,13 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       mapper.setInputData(poly);
       const actor = vtkActor.newInstance();
       actor.setMapper(mapper);
-      const entry: Entry = { key: o.key, actor, visual: { status: 'skipped' }, opacity: 1 };
+      const entry: Entry = {
+        key: o.key,
+        actor,
+        visual: { status: 'skipped' },
+        opacity: 1,
+        hidden: hiddenKeys.has(o.key),
+      };
       applyVisual(entry);
       renderer.addActor(actor);
       entries.set(o.key, entry);
@@ -379,6 +479,18 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       const v = map[e.key];
       e.visual = typeof v === 'string' ? { status: v } : { status: 'skipped', ...(v ?? {}) };
       applyVisual(e);
+    });
+    requestRender();
+  };
+
+  const setHidden = (keys: Iterable<string>) => {
+    hiddenKeys = new Set(keys);
+    entries.forEach(e => {
+      const h = hiddenKeys.has(e.key);
+      if (h !== e.hidden) {
+        e.hidden = h;
+        applyVisual(e);
+      }
     });
     requestRender();
   };
@@ -413,13 +525,13 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       return prop ? (actorToKey.get(prop) ?? null) : null;
     };
     // Translucent organs (bones, lungs, N/A) are see-through: prefer an opaque organ behind them.
-    const translucent = [...entries.values()].filter(e => e.opacity < 0.99);
+    const translucent = [...entries.values()].filter(e => !e.hidden && e.opacity < 0.99);
     translucent.forEach(e => e.actor.setPickable(false));
     let key: string | null = null;
     try {
       key = await selectOnce();
     } finally {
-      translucent.forEach(e => e.actor.setPickable(true));
+      translucent.forEach(e => e.actor.setPickable(!e.hidden));
     }
     if (!key && translucent.length) {
       key = await selectOnce();
@@ -484,6 +596,8 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
       return;
     }
     disposed = true;
+    cameraSub?.unsubscribe?.();
+    cameraCbs.clear();
     container.removeEventListener('pointermove', onMove);
     container.removeEventListener('pointerdown', onDown);
     window.removeEventListener('pointerup', onUp);
@@ -510,15 +624,22 @@ export function createOrganMap(container: HTMLElement, opts: OrganMapOptions = {
     setOrganInfo,
     setStatuses,
     setHighlight,
+    setHidden,
     onPick: cb => {
       pickCbs.add(cb);
       return () => pickCbs.delete(cb);
     },
+    onCamera: cb => {
+      cameraCbs.add(cb);
+      return () => cameraCbs.delete(cb);
+    },
+    orientation,
     resetCamera,
     resize,
     render,
     keys: () => [...entries.keys()],
     drawnCount: () => entries.size,
+    visibleCount: () => [...entries.values()].filter(e => !e.hidden).length,
     dispose,
   };
 }

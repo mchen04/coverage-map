@@ -175,8 +175,9 @@ export class OutlineOverlay {
       svg.append(halo, path);
     }
     const text = document.createElementNS(SVG_NS, 'text');
+    // below the viewer's top orientation marker, which sits at the top edge centre
     text.setAttribute('x', '50%');
-    text.setAttribute('y', '18');
+    text.setAttribute('y', '42');
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('fill', color);
     text.setAttribute('font-size', '12');

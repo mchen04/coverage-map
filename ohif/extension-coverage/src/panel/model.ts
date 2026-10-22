@@ -72,7 +72,7 @@ export function summarize(rows: Row[], state: CoverageState): SummaryView {
     partial: count('partial'),
     skipped: count('skipped'),
     remaining,
-    voxelPct: typeof vox === 'number' ? Math.round(vox * 100) : null,
+    voxelPct: typeof vox === 'number' ? floorPct(vox) : null,
     attested: rows.filter(r => r.layer.reader === 'done' && r.status !== 'reviewed').length,
     na: rows.filter(r => r.layer.reader === 'na').length,
     flagged: rows.filter(r => r.layer.flagged).length,
@@ -80,13 +80,16 @@ export function summarize(rows: Row[], state: CoverageState): SummaryView {
 }
 
 const REASONS: Array<[keyof Unseen, string, string]> = [
-  ['never_displayed', 'unseen', 'never displayed'],
-  ['wrong_window', 'window', 'shown only in a non-qualifying window'],
+  ['never_displayed', 'never shown', 'never displayed'],
+  ['wrong_window', 'wrong window', 'shown only in a non-qualifying window'],
   ['out_of_region', 'off-view', 'its slices were shown but this part was outside the view'],
-  ['short_dwell', 'brief', 'shown too briefly'],
+  ['short_dwell', 'too brief', 'shown too briefly'],
 ];
 
-/** Dominant unseen reason as a short hint plus a full breakdown. */
+/**
+ * Dominant unseen reason as a short hint ("34% unseen · wrong window"; just the reason when
+ * nothing counted yet) plus a full breakdown.
+ */
 export function unseenHint(row: Row): { short: string; full: string } | null {
   if (row.status === 'reviewed' || !row.unseen) {
     return null;
@@ -98,8 +101,9 @@ export function unseenHint(row: Row): { short: string; full: string } | null {
     return null;
   }
   const top = parts.reduce((a, b) => (b.v > a.v ? b : a));
+  const shown = floorPct(row.coverage ?? 0);
   return {
-    short: top.short,
+    short: shown > 0 ? `${100 - shown}% unseen · ${top.short}` : top.short,
     full: parts
       .sort((a, b) => b.v - a.v)
       .map(p => `${Math.round(p.v * 100)}% ${p.long}`)
@@ -107,8 +111,19 @@ export function unseenHint(row: Row): { short: string; full: string } | null {
   };
 }
 
+/** Whole percent rounded down, so a value under a threshold never displays as reaching it. */
+export function floorPct(v: number): number {
+  return Math.floor(v * 100 + 1e-9);
+}
+
 export function pct(v: number | null): string {
-  return v === null ? '–' : `${Math.round(v * 100)}%`;
+  return v === null ? '–' : `${floorPct(v)}%`;
+}
+
+/** "12–20, 25" from inclusive ranges, at most `max` ranges then "+n more". */
+export function rangesText(ranges: Array<[number, number]>, max = 4): string {
+  const parts = ranges.slice(0, max).map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`));
+  return parts.join(', ') + (ranges.length > max ? ` +${ranges.length - max} more` : '');
 }
 
 export const STATUS_WORD: Record<Status, string> = {

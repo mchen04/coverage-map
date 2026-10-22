@@ -7,7 +7,7 @@ html.covmap-mode body {
   --cm-partial: #f2c94c;
   --cm-skipped: #8a93a3;
   --cm-attested: #4cc9f0;
-  --cm-na: #4a5160;
+  --cm-na: #b48ef0;
   --cm-flag: #ff8a3d;
   --cm-fg: hsl(var(--foreground, 0 0% 98%));
   --cm-muted: hsl(var(--muted-foreground, 200 46% 65%));
@@ -23,6 +23,7 @@ html.covmap-mode body {
   gap: 4px;
   padding: 4px 6px 4px;
   overflow: hidden;
+  overflow: clip; /* not a scroll container: scrollIntoView never shifts the panel sideways */
   color: var(--cm-fg);
   font-size: 12px;
   line-height: 16px;
@@ -56,6 +57,10 @@ html.covmap-mode body {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.cm-sub-label {
+  flex: 1 1 0;
+  min-width: 72px;
+}
 
 /* summary */
 .cm-summary {
@@ -65,6 +70,10 @@ html.covmap-mode body {
   min-height: 22px;
   white-space: nowrap;
 }
+.cm-counts {
+  display: inline-flex;
+  gap: 6px;
+}
 .cm-count {
   display: inline-flex;
   align-items: center;
@@ -73,7 +82,8 @@ html.covmap-mode body {
 }
 .cm-sub {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap; /* a crowded line (finished, resumed, rules, marks) wraps, never overflows */
+  gap: 1px 6px;
   margin-top: -3px;
   font-size: 10.5px;
   line-height: 13px;
@@ -98,6 +108,23 @@ html.covmap-mode body {
 .cm-chip--sample {
   border-color: var(--cm-partial);
   color: var(--cm-partial);
+  max-width: 100%;
+}
+button.cm-chip {
+  background: transparent;
+  cursor: pointer;
+}
+.cm-chip--rules {
+  border-color: var(--cm-flag);
+  color: var(--cm-flag);
+}
+.cm-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cm-accent) !important;
+  text-decoration: underline;
+  font-size: inherit;
 }
 .cm-btn {
   display: inline-flex;
@@ -117,6 +144,12 @@ html.covmap-mode body {
 .cm-btn--primary {
   border-color: var(--cm-accent);
   background: color-mix(in srgb, var(--cm-accent) 22%, transparent);
+}
+/* active preset / pressed toggle */
+.cm-btn--on {
+  border-color: var(--cm-reviewed);
+  background: color-mix(in srgb, var(--cm-reviewed) 24%, transparent);
+  box-shadow: inset 0 -2px 0 var(--cm-reviewed);
 }
 .cm-kbd {
   display: inline-block;
@@ -152,10 +185,16 @@ html.covmap-mode body {
 }
 
 /* map */
+.cm-map-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .cm-map {
   position: relative;
   flex: 0 0 auto;
-  height: min(34vh, 300px);
+  height: min(32vh, 290px);
   min-height: 150px;
   border: 1px solid var(--cm-line);
   border-radius: 4px;
@@ -171,9 +210,9 @@ html.covmap-mode body {
 }
 .cm-map-hover {
   position: absolute;
-  top: 4px;
+  bottom: 3px;
   left: 4px;
-  max-width: calc(100% - 40px);
+  max-width: calc(100% - 8px);
   padding: 1px 6px;
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.72);
@@ -188,10 +227,14 @@ html.covmap-mode body {
   gap: 3px;
 }
 .cm-map-tools .cm-btn {
-  height: 18px;
+  height: 20px;
+  min-width: 20px;
   padding: 0 5px;
   font-size: 10.5px;
   background: rgba(0, 0, 0, 0.6);
+}
+.cm-map-tools .cm-btn--on {
+  background: color-mix(in srgb, var(--cm-reviewed) 30%, rgba(0, 0, 0, 0.6));
 }
 .cm-map-msg {
   position: absolute;
@@ -205,19 +248,13 @@ html.covmap-mode body {
   font-size: 11px;
 }
 .cm-legend {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 3px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 2px 8px;
-  pointer-events: none;
+  gap: 1px 8px;
   font-size: 10px;
   line-height: 12px;
-  color: #c9cfdb;
-  text-shadow: 0 0 3px #000;
+  color: var(--cm-muted);
 }
 .cm-legend span {
   display: inline-flex;
@@ -237,6 +274,19 @@ html.covmap-mode body {
   width: 8px;
   height: 8px;
   border-radius: 2px;
+}
+.cm-swatch--na {
+  box-sizing: border-box;
+  border: 1px solid var(--cm-na);
+  background: repeating-linear-gradient(45deg, var(--cm-na) 0 1px, transparent 1px 3px);
+}
+.cm-window-hint {
+  padding: 1px 6px;
+  border: 1px solid var(--cm-partial);
+  border-radius: 4px;
+  color: var(--cm-partial);
+  font-size: 10.5px;
+  line-height: 16px;
 }
 
 /* quick actions */
@@ -279,7 +329,7 @@ html.covmap-mode body {
   display: flex;
   align-items: center;
   gap: 5px;
-  height: 22px;
+  height: 26px;
   padding: 0 2px 0 4px;
   cursor: pointer;
 }
@@ -307,7 +357,12 @@ html.covmap-mode body {
   text-overflow: ellipsis;
 }
 .cm-hint {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 10px;
   color: var(--cm-muted);
 }
@@ -346,13 +401,13 @@ html.covmap-mode body {
 .cm-act {
   flex: 0 0 auto;
   display: inline-flex;
-  gap: 2px;
+  gap: 4px;
 }
 .cm-act button {
-  width: 22px;
-  height: 18px;
+  width: 26px;
+  height: 24px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   background: transparent;
   color: var(--cm-muted);
@@ -368,9 +423,9 @@ html.covmap-mode body {
   color: var(--cm-attested);
 }
 .cm-act .cm-on-na {
-  border-color: var(--cm-skipped);
-  color: var(--cm-fg);
-  background: var(--cm-na);
+  border-color: var(--cm-na);
+  color: var(--cm-na);
+  background: color-mix(in srgb, var(--cm-na) 18%, transparent);
 }
 .cm-act .cm-on-flag {
   border-color: var(--cm-flag);
@@ -382,10 +437,14 @@ html.covmap-mode body {
   line-height: 14px;
   color: var(--cm-muted);
 }
+.cm-todo {
+  color: var(--cm-partial);
+}
 .cm-detail input {
+  display: block;
   width: 100%;
   height: 20px;
-  margin-top: 2px;
+  margin: 2px 0 3px;
   padding: 0 4px;
   border: 1px solid var(--cm-line);
   border-radius: 3px;
@@ -428,6 +487,11 @@ html.covmap-mode body {
   margin: 3px 0;
   background: var(--cm-line);
 }
+.cm-pop-text {
+  padding: 2px 6px 4px;
+  font-size: 11px;
+  line-height: 14px;
+}
 .cm-pop-title {
   padding: 2px 6px;
   font-size: 10px;
@@ -444,7 +508,7 @@ html.covmap-mode body {
   background: transparent;
   text-align: left;
 }
-.cm-sample:hover {
+.cm-sample:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
 }
 .cm-sample small {
@@ -480,13 +544,11 @@ html.covmap-mode body {
   color: var(--cm-accent);
   text-decoration: underline;
 }
+/* finish sheet: takes the place of map, actions and list, so the header lines and the
+   research note stay visible */
 .cm-sheet {
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 30px;
-  bottom: 4px;
-  z-index: 15;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -502,6 +564,33 @@ html.covmap-mode body {
   overflow-y: auto;
   border-top: 1px solid var(--cm-line);
   border-bottom: 1px solid var(--cm-line);
+}
+.cm-decisions {
+  flex: 0 1 auto;
+  max-height: 32%;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 11px;
+  line-height: 15px;
+}
+.cm-dec {
+  display: inline-block;
+  min-width: 30px;
+  padding: 0 3px;
+  border: 1px solid;
+  border-radius: 3px;
+  font-size: 9.5px;
+  line-height: 12px;
+  text-align: center;
+}
+.cm-dec--done {
+  color: var(--cm-attested);
+}
+.cm-dec--na {
+  color: var(--cm-na);
+}
+.cm-dec--flag {
+  color: var(--cm-flag);
 }
 .cm-replay {
   display: flex;

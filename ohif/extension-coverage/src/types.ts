@@ -59,6 +59,21 @@ export interface Rules {
   skipped_threshold: number;
 }
 
+/** GET /api/sessions/{id}, and `session_info` in every coverage response. */
+export interface SessionInfo {
+  session: string;
+  case: string;
+  label?: string | null;
+  from_sample?: string | null;
+  sample_events?: number;
+  created?: string;
+  finished?: boolean;
+  events?: number;
+  last_seq: number | null;
+  last_t_ms: number | null;
+  rules?: Partial<Rules>;
+}
+
 export interface Coverage {
   case: string;
   session: string;
@@ -69,6 +84,32 @@ export interface Coverage {
   baseline?: Record<string, unknown>;
   events?: { total: number; views: number; ignored: Record<string, number>; sources: Record<string, number> };
   timing_ms?: Record<string, number>;
+  session_info?: SessionInfo;
+}
+
+/** GET /api/sessions/{id}/gap?organ= : where the organ still has unseen voxels (case k). */
+export interface Gap {
+  organ: string;
+  k: number | null;
+  sop: string | null;
+  window: WindowClass | null;
+  unseen_voxels: number;
+  ranges: [number, number][];
+}
+
+export interface CaseInfo {
+  case: string;
+  study_uid: string;
+  series_uid: string;
+  n_slices: number;
+  organs: number;
+  segmented: boolean;
+}
+
+/** Where the session came from, for the header and exports. */
+export interface Origin {
+  sample: { name: string; label: string; source: string; events?: number } | null;
+  resumed: boolean;
 }
 
 export interface Volume {
@@ -96,6 +137,8 @@ export interface TimelineFrame {
   summary: Summary;
   statuses: Record<string, Status>;
   coverage?: Record<string, number>;
+  /** the image the reader was on at this time (last stack view of the case series) */
+  view?: { sop: string; k: number; voi: { wc: number; ww: number }; window: WindowClass | null } | null;
 }
 
 export interface ReaderLayer {
@@ -139,4 +182,11 @@ export interface CoverageState {
   samples: Sample[];
   eventsSent: number;
   lastPostMs: number | null;
+  /** displayed VOI of the active viewport (null until the first view) */
+  voi: { wc: number; ww: number } | null;
+  /** latest gap per organ (from the server) */
+  gaps: Record<string, Gap>;
+  origin: Origin;
+  /** false while replay is open or a session is switching: nothing is recorded */
+  recording: boolean;
 }
