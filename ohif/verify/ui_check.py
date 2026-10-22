@@ -904,6 +904,49 @@ def main() -> int:
         C.run("U8/U19/U22 Finish: list, decisions, jump, Go back, Esc, Confirm -> finish events + summary",
               finish_flow)
 
+        def finish_follows_last():
+            """C13: finished = the last finish event confirmed (SPEC). After a Confirm, F then Go
+            back (or Esc) un-finishes: the chip goes at once, without a reload, and the server agrees."""
+            s = session()
+            need(tid("covmap-finished").count() == 1, "not finished before the check")
+            steps = {}
+            for how in ("go-back", "escape"):
+                drv.press_key("f")
+                dlg = tid("covmap-finish-dialog")
+                dlg.wait_for(timeout=3000)
+                if how == "go-back":
+                    tid("covmap-go-back").click()
+                else:
+                    page.keyboard.press("Escape")
+                dlg.wait_for(state="detached", timeout=3000)
+                tid("covmap-finished").wait_for(state="detached", timeout=1500)  # at once, not after a reload
+                need(tid("covmap-summary").get_attribute("data-finished") == "0", f"summary still finished after {how}")
+                if how == "go-back":
+                    shot("c13-after-go-back", tid("covmap-panel"))
+                flush()
+                page.wait_for_timeout(200)
+                srv = api.coverage(s)["summary"]["finished"]
+                need(srv and srv["confirmed"] is False, f"server finished after {how}: {srv}")
+                need(cov()["summary"]["finished"]["confirmed"] is False, "client coverage still confirmed")
+                need(tid("covmap-finished").count() == 0, f"chip back after the server reply ({how})")
+                steps[how] = {"server": srv["confirmed"], "chip": tid("covmap-finished").count()}
+                # Confirm again: the chip returns, and the server says finished
+                drv.press_key("f")
+                dlg.wait_for(timeout=3000)
+                tid("covmap-confirm-finish").click()
+                tid("covmap-finished").wait_for(timeout=1500)
+                flush()
+                page.wait_for_timeout(200)
+                srv = api.coverage(s)["summary"]["finished"]
+                need(srv and srv["confirmed"] is True, f"server not finished after Confirm: {srv}")
+                need(tid("covmap-finished").count() == 1, "chip gone after the server confirmed")
+                steps[how]["reconfirmed"] = srv["confirmed"]
+            fin = [e["confirmed"] for e in api.events(s) if e["kind"] == "finish"]
+            need(fin[-5:] == [True, False, True, False, True], f"finish events {fin}")
+            return {"steps": steps, "finish_events": fin}
+        C.run("C13 finished follows the last finish event: Confirm, then F + Go back / Esc un-finishes at once "
+              "(chip, server), Confirm again", finish_follows_last)
+
         # ---- session menu: export, rules, replay, samples, new reading ------------------
         def menu(item):
             tid("covmap-session-menu").click()
@@ -995,6 +1038,52 @@ def main() -> int:
             for _ in range(3):
                 page.mouse.wheel(0, 100)
                 page.wait_for_timeout(150)
+
+            # each frame shows its own marks and counts: rows carry the reader marks at the
+            # frame's time, the header the frame's summary ('left' counts N/A and done)
+            def frame_view(i):
+                page.evaluate("i => window.__covmap.service.setReplayIndex(i)", i)
+                page.wait_for_function("i => window.__covmap.state().replay.index === i", arg=i, timeout=3000)
+                page.wait_for_timeout(150)
+                fs = page.evaluate("i => window.__covmap.state().replay.frames[i].summary", i)
+                rows_ = page.evaluate(ROWS_JS)
+                left = int(tid("covmap-remaining").inner_text().split()[0])
+                got = {"left": left, "na": sorted(r["key"] for r in rows_ if r["reader"] == "na"),
+                       "done": sorted(r["key"] for r in rows_ if r["reader"] == "done"),
+                       "flagged": sorted(r["key"] for r in rows_ if r["flagged"] == "1"),
+                       "attested": sum(r["reader"] == "done" and r["status"] != "reviewed" for r in rows_),
+                       "row_left": sum(r["status"] != "reviewed" and r["reader"] not in ("done", "na") for r in rows_)}
+                want = {"left": len(fs["remaining"]), "na": fs["not_applicable"], "flagged": fs["flagged"],
+                        "attested": fs["attested"]}
+                need(got["left"] == want["left"] == got["row_left"],
+                     f"frame {i}: {got['left']} left shown, {got['row_left']} by its rows, summary {want['left']}")
+                need(len(got["na"]) == want["na"] and len(got["flagged"]) == want["flagged"]
+                     and got["attested"] == want["attested"], f"frame {i}: rows {got} vs summary {want}")
+                return {"index": i, "t_ms": page.evaluate("i => window.__covmap.state().replay.frames[i].t_ms", i),
+                        "shown": got, "summary": want}
+            frames_checked = [frame_view(i) for i in sorted({0, idx, n - 1})]
+            last = frames_checked[-1]["shown"]
+            need(marks["na"] in last["na"] and marks["done"] in last["done"] and marks["flag"] in last["flagged"],
+                 f"last frame lost the reader marks {marks}: {last}")
+            panel_text = tid("covmap-panel").inner_text()
+            need(f"{frames_checked[-1]['summary']['na']} N/A" in panel_text, "N/A count missing from the last frame header")
+            live_left = len(api.coverage(s)["summary"]["remaining"])
+            shot("replay-last-frame", tid("covmap-panel"))
+            # Rules during replay: disabled with the reason, never a silent no-op
+            tid("covmap-session-menu").click()
+            rules_item = tid("covmap-rules")
+            rules_item.wait_for(timeout=2000)
+            need(rules_item.is_disabled(), "Rules menu item enabled during replay")
+            rules_title = rules_item.get_attribute("title") or ""
+            need("close replay" in rules_title.lower(), f"Rules item title {rules_title!r}")
+            shot("replay-rules-disabled", tid("covmap-panel"))
+            page.keyboard.press("Escape")
+            tid("covmap-session-popover").wait_for(state="detached", timeout=2000)
+            params0 = api.coverage(s)["params"]
+            direct = page.evaluate("""async () => { try { await window.__covmap.service.applyRules({min_dwell_ms: 300});
+                                       return 'applied'; } catch (e) { return 'refused: ' + e.message; } }""")
+            need(direct.startswith("refused") and "close replay" in direct.lower(), f"applyRules during replay: {direct}")
+            need(api.coverage(s)["params"] == params0, "rules changed during replay")
             tid("covmap-replay-close").click()
             bar.wait_for(state="detached", timeout=3000)
             need(first != mid, "replay frames did not change the summary")
@@ -1010,9 +1099,11 @@ def main() -> int:
             stray = [e["sop"] for e in after if e["sop"] != before["sop"]]
             need(not stray, f"{len(stray)} view events recorded during replay")
             return {"frames": n, "mid_index": idx, "frame_view": fv, "summary_start": first, "summary_mid": mid,
-                    "read_only": disabled, "aria": aria, "restored": view(), "views_after_close": len(after)}
-        C.run("U5/U14 Replay: viewer follows frames, nothing recorded, view restored, recording resumes, aria",
-              replay)
+                    "read_only": disabled, "aria": aria, "restored": view(), "views_after_close": len(after),
+                    "frame_marks": frames_checked, "live_left_at_close": live_left, "rules_item_title": rules_title,
+                    "apply_rules_in_replay": direct}
+        C.run("U5/U14 Replay: viewer follows frames, nothing recorded, view restored, recording resumes, aria; "
+              "each frame shows its marks and counts (N/A, done, flag); Rules disabled during replay", replay)
 
         samples = api.json(f"/api/cases/{a.case}/samples")
 
@@ -1145,6 +1236,162 @@ def main() -> int:
             return {"session": s0, "events_before_reload": n_before, "events_after": len(evs),
                     "continued_from": evs[n_before]["seq"] if len(evs) > n_before else None, "new_after_quick": session()}
         C.run("U10 reload resumes the case's session (seq/t continue); 'New reading' next to 'resumed'", resume)
+
+        # ---- C12 one writer per session: two tabs on the same case ---------------------------
+        def seen_now(s):
+            return {o["key"]: o["seen_voxels"] for o in api.coverage(s)["organs"]}
+
+        def unread(sv, exclude=()):
+            """An organ nothing of which counts yet (soft-tissue organs first, largest first)."""
+            cand = [o for o in organs if sv.get(o["key"], 0) == 0 and o["key"] not in exclude]
+            need(cand, "no unread organ left")
+            cand.sort(key=lambda o: (o["windows"][0] != "soft", -o["voxels"]))
+            return cand[0]["key"]
+
+        def read_in(pg, drv_, key):
+            """Jump to the organ's gap slice in its window, dwell, then the brain window (counts
+            for nothing) so the display state closes, and send."""
+            pg.evaluate("k => window.__covmap.jump(k)", key)
+            pg.wait_for_timeout(900)
+            drv_.press_key("5")
+            pg.wait_for_timeout(300)
+            pg.evaluate("() => window.__covmap.flush()")
+            pg.wait_for_timeout(200)
+
+        def two_tabs():
+            s = session()
+            need(page.evaluate("() => window.__covmap.writer") is True, "this tab does not record its session")
+            neutral()
+            x = unread(seen_now(s))
+            read_in(page, drv, x)
+            need(seen_now(s)[x] > 0, f"tab A's reading of {x} not counted")
+            # tab B opens the same case: it resumes the same session but must not record it
+            b_posts: list[str] = []
+            pb = ctx.new_page()
+            pb.on("console", lambda m: console.append({"type": m.type, "text": "[tab B] " + m.text[:400],
+                                                       "check": C.current, "at": m.location})
+                  if m.type in ("error", "warning") else None)
+            pb.on("pageerror", lambda e: console.append({"type": "pageerror", "text": "[tab B] " + str(e)[:400],
+                                                         "check": C.current}))
+            pb.on("request", lambda r: b_posts.append(r.url) if r.method == "POST" and "/events" in r.url else None)
+            drv_b = OhifDriver(pb)
+            try:
+                drv_b.open(url)
+                pb.wait_for_function("() => window.__covmap && window.__covmap.ready && window.__covmap.sessionId",
+                                     timeout=90000)
+                banner_b = pb.locator('[data-testid="covmap-other-tab"]')
+                banner_b.wait_for(timeout=10000)
+                text = banner_b.inner_text()
+                need("open in another tab" in text and "not recording here" in text, f"banner {text!r}")
+                need(pb.evaluate("() => window.__covmap.sessionId") == s, "tab B opened another session")
+                need(pb.evaluate("() => window.__covmap.writer") is False, "tab B records too")
+                need(page.evaluate("() => window.__covmap.writer") is True and tid("covmap-other-tab").count() == 0,
+                     "tab A stopped recording when B opened")
+                pb.wait_for_selector('[data-testid="covmap-map"][data-ready="1"]', timeout=60000)
+                # B shows the reading A records (the server's coverage of the session)
+                pb.wait_for_function("k => ((window.__covmap.lastCoverage || {}).organs || []).some(o => o.key === k && o.seen_voxels > 0)",
+                                     arg=x, timeout=8000)
+                pb.wait_for_timeout(300)
+                shot_b = str(out / "c-c12-tabB-not-recording.png")
+                pb.locator('[data-testid="covmap-panel"]').screenshot(path=shot_b)
+                shots.append(shot_b)
+                # B reads while not recording: nothing posted, nothing counted, reader keys refused
+                y = unread(seen_now(s), exclude=(x,))
+                read_in(pb, drv_b, y)
+                pb.evaluate("k => window.__covmap.service.toggleDone(k)", y)
+                pb.wait_for_timeout(300)
+                flush()
+                need(not b_posts, f"tab B posted {len(b_posts)} event batches while not recording")
+                need(seen_now(s)[y] == 0, f"tab B's reading of {y} counted while it was not recording")
+                need(pb.evaluate("k => (window.__covmap.state().reader[k] || {}).reader || null", y) is None,
+                     "tab B marked done while not recording")
+                toast_b = pb.get_by_text('Press "Record here" to record in this tab').count()
+                # switch to tab B and take over
+                pb.bring_to_front()
+                pb.locator('[data-testid="covmap-record-here"]').click()
+                pb.wait_for_function("() => window.__covmap.writer === true", timeout=10000)
+                banner_b.wait_for(state="detached", timeout=3000)
+                page.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
+                tid("covmap-other-tab").wait_for(timeout=3000)
+                shot("c12-tabA-after-takeover", tid("covmap-panel"))
+                read_in(pb, drv_b, y)
+                need(b_posts, "tab B posted nothing after Record here")
+                need(seen_now(s)[y] > 0, f"tab B's reading of {y} not counted after it took over")
+                # switch to A: not recording now, its scrolling posts nothing; it follows the server
+                page.bring_to_front()
+                n_a = len(posts)
+                xx, yy = drv.viewport_center()
+                page.mouse.move(xx, yy)
+                for _ in range(3):
+                    page.mouse.wheel(0, 100)
+                    page.wait_for_timeout(200)
+                page.wait_for_timeout(800)
+                need(len(posts) == n_a, f"tab A posted {len(posts) - n_a} batches while B records")
+                page.wait_for_function("k => ((window.__covmap.lastCoverage.organs || []).find(o => o.key === k) || {}).seen_voxels > 0",
+                                       arg=y, timeout=10000)
+                # A takes over again; B shows the banner
+                tid("covmap-record-here").click()
+                page.wait_for_function("() => window.__covmap.writer === true", timeout=10000)
+                tid("covmap-other-tab").wait_for(state="detached", timeout=3000)
+                pb.wait_for_function("() => window.__covmap.writer === false", timeout=10000)
+                banner_b.wait_for(timeout=3000)
+                z = unread(seen_now(s), exclude=(x, y))
+                read_in(page, drv, z)
+                n_b = len(b_posts)
+                pb.wait_for_timeout(800)
+                need(len(b_posts) == n_b, "tab B kept posting after A took over")
+            finally:
+                pb.close()
+            c = api.coverage(s)
+            sv = {o["key"]: o["seen_voxels"] for o in c["organs"]}
+            ign = c["events"]["ignored"]
+            need(ign.get("other", 0) == 0 and ign.get("conflict", 0) == 0, f"server ignored events {ign}")
+            need(all(sv[k] > 0 for k in (x, y, z)), f"expected organs not all counted: {[(k, sv[k]) for k in (x, y, z)]}")
+            evs = api.events(s)
+            seqs = [e["seq"] for e in evs]
+            need(len(set(seqs)) == len(seqs) and seqs == sorted(seqs), "seqs not unique and increasing in the log")
+            ts = [e["t_ms"] for e in evs]
+            need(ts == sorted(ts), "t_ms not monotonic across the takeovers")
+            gaps_ = [(a_, b_) for a_, b_ in zip(seqs, seqs[1:]) if b_ != a_ + 1]
+            return {"session": s, "read_in_A": x, "read_in_B": y, "read_in_A_again": z,
+                    "seen_voxels": {k: sv[k] for k in (x, y, z)}, "ignored": ign, "events": len(evs),
+                    "seq_gaps": gaps_, "tab_B_posts": len(b_posts), "tab_B_refusal_toast": toast_b,
+                    "banner": text}
+        C.run("C12 two tabs on one case: one records (Web Lock), the other shows 'open in another tab' and "
+              "records nothing; Record here takes over both ways; server ignored.other == 0, organs counted",
+              two_tabs)
+
+        def seq_conflict():
+            """C12 defence in depth: a writer whose counter reuses accepted seqs (as a second tab
+            without Web Locks would) gets a 409, renumbers after the server's last event and
+            sends once more; nothing is dropped or double counted."""
+            s = session()
+            neutral()
+            n0 = len(api.events(s))
+            n_warn = sum("seq conflict (409)" in c_["text"] for c_ in console)
+            page.evaluate("() => { const svc = window.__covmap.service; svc.seq = Math.max(0, svc.seq - 4); }")
+            xx, yy = drv.viewport_center()
+            page.mouse.move(xx, yy)
+            for _ in range(3):
+                page.mouse.wheel(0, 100)
+                page.wait_for_timeout(200)
+            flush()
+            page.wait_for_timeout(300)
+            flush()
+            evs = api.events(s)
+            seqs = [e["seq"] for e in evs]
+            need(len(evs) > n0, "the renumbered events did not land")
+            need(len(set(seqs)) == len(seqs) and seqs == sorted(seqs), "duplicate or unordered seqs after the 409")
+            ign = api.coverage(s)["events"]["ignored"]
+            need(ign.get("other", 0) == 0 and ign.get("conflict", 0) == 0, f"server ignored events {ign}")
+            warned = sum("seq conflict (409)" in c_["text"] for c_ in console) - n_warn
+            need(warned == 1, f"expected one 409 resync, saw {warned}")
+            need(page.evaluate("() => window.__covmap.writer") is True and tid("covmap-other-tab").count() == 0,
+                 "a single conflict stopped recording")
+            return {"events_before": n0, "events_after": len(evs), "resyncs": warned, "ignored": ign,
+                    "last_seqs": seqs[-6:]}
+        C.run("C12 409 on a reused seq: resync from the 409 body, renumber the queue, retry once; no loss, "
+              "no duplicates", seq_conflict)
 
         # ---- U6 radiological display survives a camera reset --------------------------------
         def same_corners(c1, c2, ordered=True, tol=0.5):

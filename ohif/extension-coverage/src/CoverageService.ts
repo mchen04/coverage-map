@@ -1,7 +1,7 @@
 import { PubSubService } from '@ohif/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
-import { CovmapApi } from './api';
+import { CovmapApi, type ApiError } from './api';
 import type { MeshesJson } from '@covmap/organ-map';
 import {
   ViewTracker,
@@ -43,6 +43,11 @@ const NO_READER: ReaderLayer = { reader: null, flagged: false, note: null };
 /** localStorage: the last session per case, resumed after a reload (docs/SPEC.md UI contract). */
 const STORE_PREFIX = 'covmap:session:';
 const LIVE_LABEL = 'Live reading';
+/** Web Lock held by the one tab of this browser that records a session. */
+const LOCK_PREFIX = 'covmap-session-';
+/** While another tab records the session: how often this tab re-reads its coverage. */
+const FOLLOW_MS = 2500;
+const OTHER_TAB_HINT = 'This reading is open in another tab. Press "Record here" to record in this tab.';
 
 interface StoredSession {
   session: string;
@@ -61,6 +66,49 @@ interface SavedView {
 /** Display label of a sample without its own "Sample:" prefix. */
 function sampleName(sample: { label?: string; name: string }): string {
   return (sample.label || sample.name).replace(/^sample\s*:?\s*/i, '');
+}
+
+/** The scorer's annotation rule (covmap/scoring.py Scorer._annotate) for one logged event. */
+function logAction(layer: ReaderLayer, action: string, note?: string | null): ReaderLayer {
+  if (action === 'clear') {
+    return { ...NO_READER };
+  }
+  const next: ReaderLayer =
+    action === 'flag' ? { ...layer, flagged: true } : { ...layer, reader: action as ReaderLayer['reader'] };
+  return note ? { ...next, note } : next;
+}
+
+/**
+ * The reader's marks at each replay frame: the logged annotation events up to the frame's
+ * time, in the scorer's order ((t_ms, seq); the first event of a seq counts).
+ */
+function frameLayers(
+  frames: TimelineFrame[],
+  log: Array<Record<string, any>>,
+  organs: string[]
+): Array<Record<string, ReaderLayer>> {
+  const known = new Set(organs);
+  const evs = log
+    .filter(e => typeof e?.t_ms === 'number' && typeof e?.seq === 'number')
+    .sort((a, b) => a.t_ms - b.t_ms || a.seq - b.seq);
+  const used = new Set<number>();
+  const cur: Record<string, ReaderLayer> = {};
+  const out: Array<Record<string, ReaderLayer>> = [];
+  let i = 0;
+  for (const f of frames) {
+    for (; i < evs.length && evs[i].t_ms <= f.t_ms; i++) {
+      const e = evs[i];
+      if (used.has(e.seq)) {
+        continue;
+      }
+      used.add(e.seq);
+      if (e.kind === 'annotation' && known.has(e.organ)) {
+        cur[e.organ] = logAction(cur[e.organ] ?? NO_READER, e.action, e.note);
+      }
+    }
+    out.push({ ...cur });
+  }
+  return out;
 }
 
 /** Marks a stack viewport's resetCamera as wrapped to restore the radiological flips. */
@@ -123,6 +171,7 @@ function initialState(): CoverageState {
     gaps: {},
     origin: { sample: null, resumed: false },
     recording: true,
+    otherTab: false,
   };
 }
 
@@ -185,7 +234,19 @@ export default class CoverageService extends PubSubService {
   private sopToK = new Map<string, number>();
   private pending = new Map<string, { layer: ReaderLayer; seq: number }>();
   private localReader: Record<string, ReaderLayer> = {};
-  private localFinish: { confirmed: boolean } | null = null;
+  /** the last finish decision until the server has it (then the server's value is shown) */
+  private localFinish: { confirmed: boolean; seq: number } | null = null;
+  /**
+   * Single writer per session: this tab records the session only while it holds the
+   * session's Web Lock; another tab with the same session shows it without recording.
+   */
+  private writer = true;
+  private lock: { session: string; token: number; release: () => void } | null = null;
+  private lockToken = 0;
+  private takingOver: Promise<boolean> | null = null;
+  /** 409 resyncs since the last accepted batch (one retry; a second stops recording here) */
+  private conflicts = 0;
+  private followAt = -Infinity;
   private active = false;
   private switching = false;
   private outlineOverlay: OutlineOverlay;
@@ -226,6 +287,8 @@ export default class CoverageService extends PubSubService {
     this.pending.clear();
     this.localReader = {};
     this.localFinish = null;
+    this.writer = true;
+    this.conflicts = 0;
     this.firstImageAt = null;
     this.mapReadyAt = null;
     document.addEventListener('visibilitychange', this.onVisibility);
@@ -244,9 +307,15 @@ export default class CoverageService extends PubSubService {
     if (!this.active) {
       return;
     }
-    if (this.state.sessionId) {
+    // the lock goes once the last events are sent, so a tab taking over continues after them
+    const lock = this.lock;
+    this.lock = null;
+    this.lockToken++;
+    if (this.state.sessionId && this.writer) {
       this.enqueue('end', {});
-      this.finalFlush();
+      this.finalFlush().finally(() => lock?.release());
+    } else {
+      lock?.release();
     }
     this.tracker.stop();
     this.outlineOverlay.stop();
@@ -312,9 +381,10 @@ export default class CoverageService extends PubSubService {
   }
 
   /** Display events (view, hidden) are not recorded while replay is open or a session is
-   *  switching; reader events always are. */
+   *  switching; reader events always are. Nothing is recorded while another tab records the
+   *  session. */
   private enqueue(kind: CovEvent['kind'], fields: Record<string, unknown>): CovEvent | null {
-    if (!this.recording && (kind === 'view' || kind === 'hidden')) {
+    if (!this.writer || (!this.recording && (kind === 'view' || kind === 'hidden'))) {
       return null;
     }
     if (this.t0 === null) {
@@ -488,6 +558,10 @@ export default class CoverageService extends PubSubService {
       this.flush(true);
     } else {
       this.tracker.recaptureAll();
+      if (!this.writer) {
+        this.followAt = -Infinity; // shown again: the other tab's progress at once
+        this.follow();
+      }
     }
   };
 
@@ -498,26 +572,32 @@ export default class CoverageService extends PubSubService {
     // 'end' is the session's last event: nothing displayed after it is recorded (the
     // visibilitychange that follows would otherwise post a 'hidden' racing the beacon)
     this.setRecording(false);
-    this.enqueue('end', {});
-    const sessionId = this.state.sessionId;
-    const events = this.queue.splice(0).map(e => this.stamp(e));
-    if (!this.api.beacon(sessionId, events, this.nowMs())) {
-      this.api.postEvents(sessionId, events, this.nowMs(), true).catch(() => {});
+    if (this.writer) {
+      this.enqueue('end', {});
+      const sessionId = this.state.sessionId;
+      const events = this.queue.splice(0).map(e => this.stamp(e));
+      if (!this.api.beacon(sessionId, events, this.nowMs())) {
+        this.api.postEvents(sessionId, events, this.nowMs(), true).catch(() => {});
+      }
     }
+    // another tab may record the session now (a page kept in the back/forward cache would
+    // otherwise keep the lock)
+    this.releaseLock();
   };
 
-  /** Back from the back/forward cache: the page is shown again, record again. */
+  /** Back from the back/forward cache: record again if no other tab took the session over
+   *  (continuing after its last event), else show it without recording. */
   private onPageShow = (e: PageTransitionEvent) => {
-    if (e.persisted && this.state.sessionId && !this.state.replay && !this.switching) {
-      this.resumeRecording();
+    if (e.persisted && this.state.sessionId && !this.switching && this.writer) {
+      this.takeOver(false);
     }
   };
 
   /** Send what is queued now (mode exit), after any request in flight, with keepalive. */
-  private finalFlush(): void {
+  private finalFlush(): Promise<unknown> {
     const sessionId = this.state.sessionId;
-    if (!sessionId) {
-      return;
+    if (!sessionId || !this.writer) {
+      return Promise.resolve();
     }
     const events = this.queue.splice(0).map(e => this.stamp(e));
     const now = this.nowMs();
@@ -525,7 +605,7 @@ export default class CoverageService extends PubSubService {
       this.api.postEvents(sessionId, events, now, true).catch(() => {
         this.api.beacon(sessionId, events, now);
       });
-    (this.inflight ?? Promise.resolve()).then(send, send);
+    return (this.inflight ?? Promise.resolve()).then(send, send);
   }
 
   private stamp(e: CovEvent): CovEvent {
@@ -533,41 +613,76 @@ export default class CoverageService extends PubSubService {
   }
 
   private tick(): void {
-    if (this.state.phase === 'ready' && this.state.sessionId && !this.inflight && !this.switching) {
+    if (this.state.phase !== 'ready' || !this.state.sessionId || this.switching) {
+      return;
+    }
+    if (!this.writer) {
+      this.follow();
+    } else if (!this.inflight) {
       this.flush();
     }
   }
 
+  /** While another tab records the session: show the server's coverage of it. */
+  private follow(): void {
+    const sessionId = this.state.sessionId;
+    if (
+      !sessionId ||
+      this.state.replay ||
+      document.visibilityState === 'hidden' ||
+      performance.now() - this.followAt < FOLLOW_MS
+    ) {
+      return;
+    }
+    this.followAt = performance.now();
+    this.api
+      .coverage(sessionId)
+      .then(cov => {
+        if (sessionId === this.state.sessionId && !this.writer) {
+          this.takeCoverage(cov);
+        }
+      })
+      .catch(e => console.warn('covmap: coverage of the reading in the other tab unavailable', e));
+  }
+
   /** POST queued events (or a heartbeat) and take the returned coverage. Nothing is sent
-   *  while a session switch is in progress unless `force` (the old session's end). */
+   *  while a session switch is in progress unless `force` (the old session's end), or while
+   *  another tab records the session. A 409 (seq already used) resyncs and sends once more. */
   public async flush(keepalive = false, force = false): Promise<void> {
     while (this.inflight) {
       await this.inflight;
     }
     const sessionId = this.state.sessionId;
-    if (!sessionId || (this.switching && !force)) {
+    if (!sessionId || !this.writer || (this.switching && !force)) {
       return;
     }
     const events = this.queue.splice(0).map(e => this.stamp(e));
     const maxSeq = events.length ? events[events.length - 1].seq : -1;
     const now = this.nowMs();
     const t = performance.now();
+    let resend = false;
     this.inflight = (async () => {
       try {
         const cov = await this.api.postEvents(sessionId, events, now, keepalive);
         if (sessionId !== this.state.sessionId) {
           return;
         }
+        this.conflicts = 0;
         this.state.eventsSent += events.length;
         this.state.lastPostMs = Math.round(performance.now() - t);
         this.pending.forEach((p, key) => p.seq <= maxSeq && this.pending.delete(key));
+        if (this.localFinish && this.localFinish.seq <= maxSeq) {
+          this.localFinish = null; // the server has the last finish decision now
+        }
         this.takeCoverage(cov);
       } catch (e) {
-        const status = (e as { status?: number }).status;
-        if (status === 400) {
+        const err = e as ApiError;
+        if (err.status === 400) {
           console.error('covmap: server rejected an event batch; dropped', e, events);
+        } else if (err.status === 409) {
+          resend = await this.resync(sessionId, events, err.body ?? null);
         } else {
-          if (sessionId === this.state.sessionId) {
+          if (sessionId === this.state.sessionId && this.writer) {
             this.queue.unshift(...events);
           }
           console.warn('covmap: event POST failed, will retry', e);
@@ -576,7 +691,227 @@ export default class CoverageService extends PubSubService {
     })().finally(() => {
       this.inflight = null;
     });
-    return this.inflight;
+    await this.inflight;
+    if (resend) {
+      await this.flush(keepalive, force);
+    }
+  }
+
+  /**
+   * 409: the server already has some of the batch's seqs from different events (another
+   * writer on this session, e.g. a tab without Web Locks, or the last batch of the tab that
+   * recorded before this one took over). Nothing of the batch was applied: continue after the
+   * server's last event, renumbering the batch and everything queued since and keeping the
+   * clock after its last t_ms, and send once more (true). A second conflict in a row means
+   * another tab keeps recording: stop recording here and show the banner.
+   */
+  private async resync(
+    sessionId: string,
+    events: CovEvent[],
+    body: Record<string, unknown> | null
+  ): Promise<boolean> {
+    if (sessionId !== this.state.sessionId || !this.writer) {
+      console.info('covmap: batch refused (seq already used); this tab no longer records the session', body);
+      return false;
+    }
+    if (this.conflicts > 0) {
+      console.warn('covmap: seq conflict again after a resync: another writer records this session', body);
+      this.releaseLock();
+      this.standBy();
+      return false;
+    }
+    this.conflicts++;
+    const [bodySeq, bodyT] = [body?.last_seq, body?.last_t_ms];
+    let lastSeq: number | null = typeof bodySeq === 'number' ? bodySeq : null;
+    let lastT: number | null = typeof bodyT === 'number' ? bodyT : null;
+    if (lastSeq === null) {
+      try {
+        const info = await this.api.session(sessionId);
+        lastSeq = info.last_seq;
+        lastT = info.last_t_ms;
+      } catch (e) {
+        console.warn('covmap: could not read the session after a seq conflict; will retry', e);
+        this.queue.unshift(...events);
+        return false;
+      }
+    }
+    if (sessionId !== this.state.sessionId || !this.writer) {
+      return false;
+    }
+    const batch = [...events, ...this.queue];
+    const first = (lastSeq ?? -1) + 1;
+    const shift = batch.length && lastT !== null && batch[0].t_ms <= lastT ? lastT + 1 - batch[0].t_ms : 0;
+    const renumbered = new Map<number, number>();
+    batch.forEach((e, i) => {
+      renumbered.set(e.seq, first + i);
+      e.seq = first + i;
+      e.t_ms = Math.round((e.t_ms + shift) * 10) / 10;
+    });
+    this.seq = first + batch.length;
+    if (shift > 0 && this.t0 !== null) {
+      this.t0 -= shift;
+    }
+    this.pending.forEach(p => (p.seq = renumbered.get(p.seq) ?? p.seq));
+    if (this.localFinish) {
+      this.localFinish.seq = renumbered.get(this.localFinish.seq) ?? this.localFinish.seq;
+    }
+    this.queue = batch;
+    console.warn(
+      `covmap: seq conflict (409); continuing after the server's last event: ${batch.length} events ` +
+        `renumbered from seq ${first}${shift > 0 ? `, clock +${Math.round(shift)} ms` : ''}`
+    );
+    return true;
+  }
+
+  // ---------------------------------------------------------------- single writer
+
+  /** Take the session's Web Lock (`steal`: from the tab that holds it). True when held, or
+   *  when the browser has no Web Locks (then every tab records, as before). */
+  private acquireLock(sessionId: string, steal = false): Promise<boolean> {
+    if (this.lock?.session === sessionId) {
+      return Promise.resolve(true); // held already (a release would not be seen in time)
+    }
+    this.releaseLock();
+    const locks = (navigator as any).locks;
+    if (!locks?.request) {
+      return Promise.resolve(true);
+    }
+    const token = ++this.lockToken;
+    return new Promise<boolean>(resolve => {
+      let answered = false;
+      locks
+        .request(LOCK_PREFIX + sessionId, steal ? { steal: true } : { ifAvailable: true }, (lock: unknown) => {
+          answered = true;
+          if (!lock || token !== this.lockToken) {
+            resolve(false);
+            return undefined;
+          }
+          // held until released here, or stolen by another tab (then request() rejects)
+          return new Promise<void>(release => {
+            this.lock = { session: sessionId, token, release };
+            resolve(true);
+          });
+        })
+        .catch((e: unknown) => {
+          if (!answered) {
+            // the lock manager refused the request itself: record without the guard
+            console.warn('covmap: Web Locks unavailable; this tab records without the one-tab guard', e);
+            resolve(true);
+            return;
+          }
+          if (this.lock?.token === token) {
+            this.lock = null;
+            this.onLockLost(sessionId, e);
+          }
+        });
+    });
+  }
+
+  private releaseLock(): void {
+    const held = this.lock;
+    this.lock = null;
+    this.lockToken++;
+    held?.release();
+  }
+
+  /** Another tab pressed "Record here" for this session. */
+  private onLockLost(sessionId: string, reason: unknown): void {
+    if (sessionId !== this.state.sessionId || !this.writer) {
+      return;
+    }
+    console.info('covmap: another tab records this reading now; not recording here', reason);
+    this.standBy();
+  }
+
+  /** Another tab records this session: record nothing here, show the banner and follow the
+   *  server's coverage. Whatever was queued here is dropped (it would collide with the
+   *  other tab's numbering). */
+  private standBy(): void {
+    this.writer = false;
+    this.queue = [];
+    this.pending.clear();
+    this.localReader = {};
+    this.localFinish = null;
+    this.conflicts = 0;
+    this.followAt = -Infinity; // the next follow() reads at once
+    Object.assign(this.state, { otherTab: true, finishOpen: false });
+    this.state.reader = this.mergeReader(this.state.coverage);
+    this.emit();
+    this.follow();
+  }
+
+  /**
+   * Become the session's writer: take its lock (`steal`: from the other tab, which then
+   * stops recording), then continue after the server's last event (seq and clock), as after
+   * a reload. False (banner stays) when the lock is not free or the session is unreadable.
+   */
+  private takeOver(steal: boolean): Promise<boolean> {
+    if (!this.takingOver) {
+      this.takingOver = this.doTakeOver(steal).finally(() => {
+        this.takingOver = null;
+      });
+    }
+    return this.takingOver;
+  }
+
+  private async doTakeOver(steal: boolean): Promise<boolean> {
+    const sessionId = this.state.sessionId;
+    if (!sessionId) {
+      return false;
+    }
+    const held = await this.acquireLock(sessionId, steal);
+    if (sessionId !== this.state.sessionId) {
+      return false;
+    }
+    if (!held) {
+      this.standBy();
+      return false;
+    }
+    let info: SessionInfo;
+    try {
+      info = await this.api.session(sessionId);
+    } catch (e) {
+      this.releaseLock();
+      this.standBy();
+      this.notify(`Could not record here: ${(e as Error).message}`);
+      return false;
+    }
+    if (sessionId !== this.state.sessionId) {
+      return false;
+    }
+    this.continueAfter(info);
+    this.pending.clear();
+    this.localReader = {};
+    this.localFinish = null;
+    this.conflicts = 0;
+    this.writer = true;
+    this.state.otherTab = false;
+    this.emit();
+    if (!this.state.replay) {
+      this.resumeRecording();
+    }
+    await this.flush();
+    return true;
+  }
+
+  /** "Record here": take the session over from the tab that records it. */
+  public recordHere(): Promise<boolean> {
+    if (this.writer || !this.state.sessionId) {
+      return Promise.resolve(this.writer);
+    }
+    return this.takeOver(true);
+  }
+
+  /** Continue a stored session after its last event: anything queued is dropped and the
+   *  displayed state is re-captured. */
+  private continueAfter(info: SessionInfo): void {
+    this.queue = [];
+    this.seq = (info.last_seq ?? -1) + 1;
+    this.t0 = performance.now() - ((info.last_t_ms ?? 0) + 1);
+  }
+
+  private notifyOtherTab(): void {
+    this.notify(OTHER_TAB_HINT);
   }
 
   private takeCoverage(cov: Coverage): void {
@@ -668,23 +1003,28 @@ export default class CoverageService extends PubSubService {
     }
   }
 
-  /** The case's last session if the server still has it, else a new live session. */
+  /** The case's last session if the server still has it, else a new live session; `writer`
+   *  false when another tab of this browser records that session. */
   private async resumeOrCreate(
     caseId: string
-  ): Promise<{ session: string; info: SessionInfo | null; rec: StoredSession | null }> {
+  ): Promise<{ session: string; info: SessionInfo | null; rec: StoredSession | null; writer: boolean }> {
     const rec = this.recall(caseId);
     if (rec) {
+      // the lock first, so the session read below is where this tab continues
+      const writer = await this.acquireLock(rec.session);
       try {
         const info = await this.api.session(rec.session);
         if (info?.case === caseId) {
-          return { session: rec.session, info, rec };
+          return { session: rec.session, info, rec, writer };
         }
       } catch (e) {
         console.info('covmap: last session not resumable, starting a new one', e);
       }
+      this.releaseLock();
     }
     const { session } = await this.api.createSession(caseId, 'live reading (OHIF)');
-    return { session, info: null, rec: null };
+    const writer = await this.acquireLock(session);
+    return { session, info: null, rec: null, writer };
   }
 
   private async openCase(caseId: string): Promise<void> {
@@ -716,13 +1056,11 @@ export default class CoverageService extends PubSubService {
     if (vps.length) {
       this.applyPreset(PRESETS.soft, vps);
     }
-    const { session, info, rec } = await sessionReq;
+    const { session, info, rec, writer } = await sessionReq;
     if (info) {
       // Continue the stored session after its last event: events shown before it was found
       // (a few frames of this page load) are dropped and the current state re-captured.
-      this.queue = [];
-      this.seq = (info.last_seq ?? -1) + 1;
-      this.t0 = performance.now() - ((info.last_t_ms ?? 0) + 1);
+      this.continueAfter(info);
     }
     const sample = rec?.sample ?? null;
     Object.assign(this.state, {
@@ -737,6 +1075,10 @@ export default class CoverageService extends PubSubService {
     }
     this.state.reader = this.mergeReader(null);
     this.emit();
+    if (!writer) {
+      this.standBy(); // another tab records this reading
+      return;
+    }
     if (info) {
       this.tracker.recaptureAll();
     }
@@ -762,7 +1104,7 @@ export default class CoverageService extends PubSubService {
     let session: string;
     try {
       this.setRecording(false);
-      if (this.state.sessionId) {
+      if (this.state.sessionId && this.writer) {
         this.enqueue('end', {});
         await this.flush(false, true);
       }
@@ -774,6 +1116,9 @@ export default class CoverageService extends PubSubService {
         sample ? label : 'live reading (OHIF)',
         sample?.name
       ));
+      // the old session's lock goes, the new one's is free: this tab records the new session
+      this.writer = await this.acquireLock(session);
+      this.conflicts = 0;
       // Live events restart at t=0/seq=0; for sample sessions the server shifts them after
       // the prefilled sample events.
       this.queue = [];
@@ -787,6 +1132,7 @@ export default class CoverageService extends PubSubService {
         sessionLabel: label,
         sessionSource: 'ohif',
         origin: { sample: origin, resumed: false },
+        otherTab: !this.writer,
         coverage: null,
         finishOpen: false,
         selected: null,
@@ -850,7 +1196,9 @@ export default class CoverageService extends PubSubService {
 
   public async applyRules(rules: Partial<Rules>): Promise<void> {
     if (this.state.replay) {
-      return;
+      // the menu disables Rules during replay; nothing fails silently
+      this.notify('Close replay to change the reading rules.');
+      throw new Error('Close replay to change the reading rules.');
     }
     if (!this.state.sessionId) {
       return;
@@ -876,9 +1224,18 @@ export default class CoverageService extends PubSubService {
     const saved = this.saveView();
     this.setRecording(false);
     let list: TimelineFrame[] = [];
+    let log: Array<Record<string, any>> | null = null;
     try {
       await this.flush();
-      list = (await this.api.timeline(sessionId, frames)).frames ?? [];
+      const [timeline, events] = await Promise.all([
+        this.api.timeline(sessionId, frames),
+        this.api.eventLog(sessionId).catch(e => {
+          console.warn('covmap: event log unavailable; replay rows show no reader marks', e);
+          return null;
+        }),
+      ]);
+      list = timeline.frames ?? [];
+      log = events;
     } catch (e) {
       console.warn('covmap: timeline failed', e);
     }
@@ -891,7 +1248,8 @@ export default class CoverageService extends PubSubService {
     }
     this.replaySaved = saved;
     this.replayShown = -1;
-    this.state.replay = { frames: list, index: 0, playing: false };
+    const layers = log ? frameLayers(list, log, this.state.organs.map(o => o.key)) : null;
+    this.state.replay = { frames: list, layers, index: 0, playing: false };
     this.emit();
     this.showReplayFrame();
     this.playReplay();
@@ -1057,8 +1415,13 @@ export default class CoverageService extends PubSubService {
       .map(o => o.key);
   }
 
+  /** The last finish decision (docs/SPEC.md: finished = the last finish event confirmed):
+   *  this tab's own until the server has it, then the server's. */
   public finished(): { confirmed: boolean } | null {
-    return this.localFinish ?? this.state.coverage?.summary?.finished ?? null;
+    if (this.localFinish) {
+      return { confirmed: this.localFinish.confirmed };
+    }
+    return this.state.coverage?.summary?.finished ?? null;
   }
 
   public select(key: string | null): void {
@@ -1072,6 +1435,10 @@ export default class CoverageService extends PubSubService {
   private annotate(key: string, action: ReaderAction, note?: string | null): void {
     if (this.state.replay) {
       this.notify('Replay is read-only. Close replay to annotate.');
+      return;
+    }
+    if (!this.writer) {
+      this.notifyOtherTab();
       return;
     }
     const fields: Record<string, unknown> = { organ: key, action };
@@ -1088,6 +1455,10 @@ export default class CoverageService extends PubSubService {
   }
 
   private setLayer(key: string, next: ReaderLayer): void {
+    if (!this.writer && !this.state.replay) {
+      this.notifyOtherTab();
+      return;
+    }
     const cur = this.state.reader[key] ?? NO_READER;
     if (cur.reader === next.reader && cur.flagged === next.flagged && cur.note === next.note) {
       return;
@@ -1160,16 +1531,24 @@ export default class CoverageService extends PubSubService {
       this.notify('Replay is read-only. Close replay first.');
       return;
     }
+    if (open && !this.writer) {
+      this.notifyOtherTab();
+      return;
+    }
     this.state.finishOpen = open;
     this.emit();
   }
 
   public async finish(confirmed: boolean): Promise<void> {
-    this.enqueue('finish', { confirmed, remaining: this.remaining() });
     this.state.finishOpen = false;
-    if (confirmed) {
-      this.localFinish = { confirmed: true };
+    const ev = this.enqueue('finish', { confirmed, remaining: this.remaining() });
+    if (!ev) {
+      this.emit();
+      this.notifyOtherTab();
+      return;
     }
+    // the last finish event decides (Go back after a Confirm un-finishes): shown at once
+    this.localFinish = { confirmed, seq: ev.seq };
     this.emit();
     await this.flush();
   }
@@ -1292,7 +1671,8 @@ export default class CoverageService extends PubSubService {
     const timer = setTimeout(() => ctl.abort(), GAP_TIMEOUT_MS);
     const req = (async () => {
       try {
-        const gap = await this.api.gap(sessionId, key, this.nowMs(), ctl.signal);
+        // this tab's clock credits its open display state; not when another tab records
+        const gap = await this.api.gap(sessionId, key, this.writer ? this.nowMs() : undefined, ctl.signal);
         if (sessionId !== this.state.sessionId) {
           return null;
         }
@@ -1499,6 +1879,11 @@ export default class CoverageService extends PubSubService {
       get queued() {
         return svc.queue.length;
       },
+      /** this tab records the session (holds its lock); false while another tab does */
+      get writer() {
+        return svc.writer;
+      },
+      recordHere: () => svc.recordHere(),
       flush: () => svc.flush(),
       newReading: () => svc.newReading(),
       state: () => svc.state,

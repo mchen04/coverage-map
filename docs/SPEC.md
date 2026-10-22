@@ -319,8 +319,16 @@ a one-line research-use note.
   On a session switch, recording pauses, the old session's `end` is flushed and the event queue
   is cleared before the new session's clock starts at its first event. At `pagehide` recording
   stops, so `end` is the page's last event.
-- Replay plays a session's timeline frames, moving the viewer to each frame's `view`; it sends
-  `hidden '*'` when it starts and records nothing until it closes, then restores the view.
+- One recording tab per session. A tab records only while it holds the Web Lock
+  `covmap-session-<id>`; another tab on the same session shows "This reading is open in another
+  tab — not recording here", follows the session's coverage, and can take over with Record here
+  (steals the lock, continues at the server's `last_seq + 1`). Without Web Locks (non-secure
+  origins) the server's 409 on a reused `seq` makes the client renumber its queue and resend once.
+- Finished state follows the last `finish` event: Go back or Escape after a confirmed finish
+  clears the "✓ Finished" chip at once, as on the server.
+- Replay plays a session's timeline frames, moving the viewer to each frame's `view` and showing
+  that frame's statuses, counts and done / N/A / flag marks; it sends `hidden '*'` when it starts,
+  records nothing and disables the rules form until it closes, then restores the view.
 - Finish opens a compact list of remaining gray/yellow organs with per-organ decisions
   (done / N/A / flag), Go back and Confirm finish; the research note stays visible.
 - Test hooks: `window.__covmap` exposes `sessionId`, `flush()`, `newReading(): Promise<string|null>`

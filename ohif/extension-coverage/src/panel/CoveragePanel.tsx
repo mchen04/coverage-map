@@ -65,6 +65,19 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
 
   return (
     <div className="cm-root" data-testid="covmap-panel" data-phase={state.phase}>
+      {state.otherTab && state.sessionId && (
+        <div className="cm-other-tab" data-testid="covmap-other-tab" role="status">
+          <span className="cm-grow">This reading is open in another tab — not recording here</span>
+          <button
+            className="cm-btn cm-btn--primary"
+            data-testid="covmap-record-here"
+            title="Record this reading in this tab; the other tab stops recording"
+            onClick={() => service.recordHere()}
+          >
+            Record here
+          </button>
+        </div>
+      )}
       <div className="cm-summary" data-testid="covmap-summary" data-finished={finished?.confirmed ? '1' : '0'}>
         <span className="cm-counts" title={countsTitle} aria-label={countsTitle}>
           <span className="cm-count">
@@ -115,7 +128,7 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
           {replaying ? 'Replay (read-only, recording paused): ' : ''}
           {state.sessionLabel || 'No session yet'}
         </span>
-        {state.origin.resumed && !replaying && (
+        {state.origin.resumed && !replaying && !state.otherTab && (
           <span className="cm-chip" data-testid="covmap-resumed" title="Continued after the page was reloaded">
             resumed
             <button
@@ -133,9 +146,12 @@ export default function CoveragePanel({ servicesManager }: { servicesManager: Ap
             className="cm-chip cm-chip--rules"
             data-testid="covmap-custom-rules"
             data-covmap-menu-toggle=""
+            disabled={replaying}
             title={`Custom research rules: min dwell ${params!.min_dwell_ms} ms, reviewed at ${Math.round(
               params!.reviewed_threshold * 100
-            )}%, skipped below ${Math.round(params!.skipped_threshold * 100)}%. Click to change or restore defaults.`}
+            )}%, skipped below ${Math.round(params!.skipped_threshold * 100)}%. ${
+              replaying ? 'Close replay to change them.' : 'Click to change or restore defaults.'
+            }`}
             onClick={() => setMenu('rules')}
           >
             custom rules

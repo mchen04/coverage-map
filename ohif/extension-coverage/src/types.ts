@@ -157,6 +157,8 @@ export type CovEvent = Record<string, unknown> & {
 
 export interface ReplayState {
   frames: TimelineFrame[];
+  /** the reader's marks (done / N/A / flag) at each frame's time, from the session's log */
+  layers: Array<Record<string, ReaderLayer>> | null;
   index: number;
   playing: boolean;
 }
@@ -189,4 +191,6 @@ export interface CoverageState {
   origin: Origin;
   /** false while replay is open or a session is switching: nothing is recorded */
   recording: boolean;
+  /** another tab of this browser records this session; this tab shows it but records nothing */
+  otherTab: boolean;
 }

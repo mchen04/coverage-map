@@ -1,6 +1,9 @@
 import { fetchMeshes } from '@covmap/organ-map';
 import type { CaseInfo, Coverage, Gap, Organ, Rules, Sample, SessionInfo, TimelineFrame, Volume } from './types';
 
+/** A failed API request: HTTP status and the parsed JSON error body (null if none). */
+export type ApiError = Error & { status?: number; body?: Record<string, unknown> | null };
+
 /** Thin client for the covmap HTTP API (docs/SPEC.md "HTTP API"). Same origin. */
 export class CovmapApi {
   constructor(public readonly root: string = '/api') {
@@ -10,10 +13,13 @@ export class CovmapApi {
   private async json<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(`${this.root}${path}`, init);
     if (!res.ok) {
-      const err = new Error(`${init?.method ?? 'GET'} ${path} -> ${res.status}`) as Error & {
-        status?: number;
-      };
+      const err = new Error(`${init?.method ?? 'GET'} ${path} -> ${res.status}`) as ApiError;
       err.status = res.status;
+      try {
+        err.body = await res.json(); // the API's JSON error ({error, ...}; a 409 adds last_seq, last_t_ms)
+      } catch {
+        err.body = null;
+      }
       throw err;
     }
     return res.json() as Promise<T>;
@@ -47,6 +53,30 @@ export class CovmapApi {
   /** Session info (last_seq / last_t_ms to continue a session after a reload). */
   session(id: string) {
     return this.json<SessionInfo>(`/sessions/${encodeURIComponent(id)}`);
+  }
+
+  /** The session's coverage from the events already accepted (no new events). */
+  coverage(id: string) {
+    return this.json<Coverage>(`/sessions/${encodeURIComponent(id)}/coverage`);
+  }
+
+  /** The session's accepted event log (JSONL), parsed; unparsable lines are skipped. */
+  async eventLog(id: string): Promise<Array<Record<string, any>>> {
+    const res = await fetch(`${this.root}/sessions/${encodeURIComponent(id)}/events.jsonl`);
+    if (!res.ok) {
+      throw Object.assign(new Error(`GET events.jsonl -> ${res.status}`), { status: res.status });
+    }
+    const out: Array<Record<string, any>> = [];
+    for (const line of (await res.text()).split('\n')) {
+      if (line.trim()) {
+        try {
+          out.push(JSON.parse(line));
+        } catch {
+          // a partly written last line
+        }
+      }
+    }
+    return out;
   }
 
   /** Where the organ still has unseen voxels; nowMs credits the open display state. */

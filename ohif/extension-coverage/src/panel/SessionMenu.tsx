@@ -90,15 +90,27 @@ function RulesForm({ service, state, onDone }: { service: CoverageService; state
       />
     </>
   );
+  const replaying = !!state.replay;
   return (
     <div data-testid="covmap-rules-form">
       <div className="cm-pop-title">Research reading rules</div>
+      {replaying && (
+        <div className="cm-msg" data-testid="covmap-rules-replay">
+          Close replay to change the reading rules.
+        </div>
+      )}
       <div className="cm-form">
         {field('Min dwell per voxel (ms)', dwell, setDwell, 'covmap-rules-dwell')}
         {field('Reviewed at ≥ (% voxels)', reviewed, setReviewed, 'covmap-rules-reviewed', 100)}
         {field('Skipped below (% voxels)', skipped, setSkipped, 'covmap-rules-skipped', 100)}
         <span className="cm-muted">Re-scores this whole session.</span>
-        <button className="cm-btn cm-btn--primary" data-testid="covmap-rules-apply" disabled={busy} onClick={apply}>
+        <button
+          className="cm-btn cm-btn--primary"
+          data-testid="covmap-rules-apply"
+          disabled={busy || replaying}
+          title={replaying ? 'Close replay to change the reading rules' : undefined}
+          onClick={apply}
+        >
           Apply
         </button>
       </div>
@@ -110,7 +122,7 @@ function RulesForm({ service, state, onDone }: { service: CoverageService; state
         <button
           className="cm-btn"
           data-testid="covmap-rules-restore"
-          disabled={busy || !isCustomRules(state.coverage?.params)}
+          disabled={busy || replaying || !isCustomRules(state.coverage?.params)}
           onClick={() => submit({ ...DEFAULT_RULES })}
         >
           Restore defaults
@@ -305,10 +317,12 @@ export default function SessionMenu({ service, state, initial = 'main', onClose 
           <button
             className="cm-pop-item"
             data-testid="covmap-rules"
-            disabled={!live}
+            disabled={!live || !!state.replay}
+            title={state.replay ? 'Close replay to change the reading rules' : undefined}
             onClick={() => setView('rules')}
           >
             Research reading rules…
+            {state.replay && <span className="cm-muted"> (close replay first)</span>}
           </button>
           <div className="cm-pop-sep" />
           <div className="cm-pop-title">Export this session</div>

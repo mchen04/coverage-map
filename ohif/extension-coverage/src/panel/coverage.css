@@ -289,6 +289,22 @@ button.cm-chip {
   line-height: 16px;
 }
 
+/* another tab records this session (single writer) */
+.cm-other-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 6px;
+  border: 1px solid var(--cm-flag);
+  border-radius: 4px;
+  color: var(--cm-flag);
+  font-size: 11px;
+  line-height: 14px;
+}
+.cm-other-tab .cm-btn {
+  flex: none;
+}
+
 /* quick actions */
 .cm-actions {
   display: flex;

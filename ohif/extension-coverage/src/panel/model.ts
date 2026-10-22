@@ -35,9 +35,10 @@ export function useCoverageState(service: CoverageService): CoverageState {
   return state;
 }
 
-/** Rows in list order; statuses from the live coverage or the replay frame. */
+/** Rows in list order; statuses and reader marks from the live coverage or the replay frame. */
 export function buildRows(service: CoverageService, state: CoverageState): Row[] {
   const frame = state.replay ? state.replay.frames[state.replay.index] : null;
+  const marks = state.replay?.layers?.[state.replay.index] ?? null;
   const live = new Map((state.coverage?.organs ?? []).map(o => [o.key, o]));
   return service.orderedOrgans().map(organ => {
     const c = live.get(organ.key);
@@ -47,7 +48,7 @@ export function buildRows(service: CoverageService, state: CoverageState): Row[]
         status: frame.statuses[organ.key] ?? 'skipped',
         coverage: frame.coverage?.[organ.key] ?? null,
         unseen: null,
-        layer: NO_LAYER,
+        layer: marks?.[organ.key] ?? NO_LAYER,
       };
     }
     return {
@@ -60,22 +61,29 @@ export function buildRows(service: CoverageService, state: CoverageState): Row[]
   });
 }
 
+/** Header counts. In replay they are the frame's own (the server's summary at that time,
+ *  reader marks included); live they follow the rows (the reader's latest marks). */
 export function summarize(rows: Row[], state: CoverageState): SummaryView {
   const frame = state.replay ? state.replay.frames[state.replay.index] : null;
+  const fs = frame?.summary;
   const count = (s: Status) => rows.filter(r => r.status === s).length;
+  const num = (v: unknown, fallback: number) => (typeof v === 'number' ? v : fallback);
   const remaining = rows.filter(
     r => r.status !== 'reviewed' && r.layer.reader !== 'done' && r.layer.reader !== 'na'
   ).length;
-  const vox = frame ? frame.summary?.voxel_coverage : state.coverage?.summary?.voxel_coverage;
+  const vox = frame ? fs?.voxel_coverage : state.coverage?.summary?.voxel_coverage;
+  const attested = rows.filter(r => r.layer.reader === 'done' && r.status !== 'reviewed').length;
+  const na = rows.filter(r => r.layer.reader === 'na').length;
+  const flagged = rows.filter(r => r.layer.flagged).length;
   return {
     reviewed: count('reviewed'),
     partial: count('partial'),
     skipped: count('skipped'),
-    remaining,
+    remaining: fs && Array.isArray(fs.remaining) ? fs.remaining.length : remaining,
     voxelPct: typeof vox === 'number' ? floorPct(vox) : null,
-    attested: rows.filter(r => r.layer.reader === 'done' && r.status !== 'reviewed').length,
-    na: rows.filter(r => r.layer.reader === 'na').length,
-    flagged: rows.filter(r => r.layer.flagged).length,
+    attested: fs ? num(fs.attested, attested) : attested,
+    na: fs ? num(fs.not_applicable, na) : na,
+    flagged: fs ? num(fs.flagged, flagged) : flagged,
   };
 }
 
